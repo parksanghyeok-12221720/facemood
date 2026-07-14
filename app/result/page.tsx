@@ -18,6 +18,7 @@ import {
 
 const ANSWERS_KEY = "facemood_answers";
 const PREVIEW_RESULT_KEY = "facemood_preview_result";
+const REPORT_ID_KEY = "facemood_report_id";
 const MOCK_MARKER = "__MOCK__";
 
 function subscribeToAnswers(callback: () => void) {
@@ -234,9 +235,18 @@ export default function ResultPage() {
   }, [answersRaw]);
 
   useEffect(() => {
-    if (previewResult) {
-      localStorage.setItem(PREVIEW_RESULT_KEY, JSON.stringify(previewResult));
-    }
+    if (!previewResult) return;
+    localStorage.setItem(PREVIEW_RESULT_KEY, JSON.stringify(previewResult));
+
+    const reportId = localStorage.getItem(REPORT_ID_KEY);
+    if (!reportId) return;
+    fetch(`/api/reports/${reportId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ previewResult }),
+    }).catch(() => {
+      console.warn("미리보기 결과 저장에 실패했습니다 (서버 연결 문제로 추정).");
+    });
   }, [previewResult]);
 
   if (!previewResult) {

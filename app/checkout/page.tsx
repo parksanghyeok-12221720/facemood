@@ -1,6 +1,12 @@
 "use client";
 
+import { useState } from "react";
+import { ANONYMOUS, loadTossPayments } from "@tosspayments/tosspayments-sdk";
 import Container from "@/app/components/Container";
+
+const REPORT_ID_KEY = "facemood_report_id";
+const PENDING_PASSWORD_KEY = "facemood_pending_password";
+const REPORT_PRICE_KRW = 9900;
 
 const includedItems: { text: string; accent?: boolean }[] = [
   { text: "현재 이미지 무드 분석" },
@@ -24,17 +30,69 @@ const includedItems: { text: string; accent?: boolean }[] = [
   { text: "피하면 좋은 메이크업 방향", accent: true },
 ];
 
-/**
- * Placeholder checkout handler. Swap the body of this function for the
- * real Toss Payments flow (open the payment widget, wait for approval),
- * then keep the `/report` redirect as the final step on success.
- */
-async function startCheckout() {
-  // TODO: integrate Toss Payments here.
-  window.location.href = "/report";
-}
-
 export default function CheckoutPage() {
+  const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function startCheckout() {
+    if (isSubmitting) return;
+
+    if (password.length < 4) {
+      setError("비밀번호는 4자 이상 입력해주세요.");
+      return;
+    }
+    if (password !== passwordConfirm) {
+      setError("비밀번호가 서로 일치하지 않아요.");
+      return;
+    }
+
+    const reportId = localStorage.getItem(REPORT_ID_KEY);
+    if (!reportId) {
+      setError(
+        "결제를 진행할 리포트를 찾을 수 없습니다. 처음부터 다시 진행해주세요.",
+      );
+      return;
+    }
+
+    const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
+    if (!clientKey) {
+      setError("결제 설정이 누락되었습니다. 잠시 후 다시 시도해주세요.");
+      return;
+    }
+
+    setError("");
+    setIsSubmitting(true);
+
+    try {
+      // Read back on the success page after Toss redirects here — the
+      // payment is only confirmed (and this password saved) server-side
+      // once Toss verifies the charge.
+      sessionStorage.setItem(PENDING_PASSWORD_KEY, password);
+
+      const tossPayments = await loadTossPayments(clientKey);
+      const payment = tossPayments.payment({ customerKey: ANONYMOUS });
+
+      await payment.requestPayment({
+        method: "CARD",
+        amount: { currency: "KRW", value: REPORT_PRICE_KRW },
+        orderId: reportId,
+        orderName: "FACEMOOD 상세 리포트",
+        successUrl: `${window.location.origin}/checkout/success`,
+        failUrl: `${window.location.origin}/checkout/fail`,
+      });
+      // Browser navigates away to Toss's payment page here on success.
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "결제창을 여는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
+      setError(message);
+      setIsSubmitting(false);
+    }
+  }
+
   return (
     <main className="flex min-h-screen flex-col justify-center bg-white py-16 text-black">
       <Container>
@@ -68,16 +126,42 @@ export default function CheckoutPage() {
           </div>
         </div>
 
+        <div className="mt-8 rounded-2xl border border-violet-100 bg-white p-6 shadow-sm shadow-violet-100/60">
+          <p className="text-xs tracking-[0.2em] text-violet-500">
+            다시보기용 비밀번호 설정
+          </p>
+          <p className="mt-2 text-xs leading-relaxed text-gray-500">
+            나중에 이 리포트 링크로 다시 접속할 때 필요해요.
+          </p>
+          <input
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            placeholder="비밀번호 (4자 이상)"
+            disabled={isSubmitting}
+            className="mt-4 w-full rounded-xl border border-violet-100 px-4 py-3 text-sm text-black outline-none focus:border-violet-300"
+          />
+          <input
+            type="password"
+            value={passwordConfirm}
+            onChange={(event) => setPasswordConfirm(event.target.value)}
+            placeholder="비밀번호 확인"
+            disabled={isSubmitting}
+            className="mt-2 w-full rounded-xl border border-violet-100 px-4 py-3 text-sm text-black outline-none focus:border-violet-300"
+          />
+          {error && <p className="mt-2 text-xs text-red-500">{error}</p>}
+        </div>
+
         <div className="mt-10">
           <button
             onClick={startCheckout}
-            className="flex w-full items-center justify-center rounded-full bg-black px-8 py-4 text-sm font-semibold text-white"
+            disabled={isSubmitting}
+            className="flex w-full items-center justify-center rounded-full bg-black px-8 py-4 text-sm font-semibold text-white disabled:opacity-50"
           >
-            9,900원으로 상세 리포트 보기
+            {isSubmitting ? "결제창 여는 중..." : "9,900원으로 상세 리포트 보기"}
           </button>
           <p className="mt-3 text-center text-xs text-gray-400">
-            결제 기능은 추후 연결 예정입니다. 지금은 클릭 시 바로 리포트로
-            이동합니다.
+            토스페이먼츠 결제창으로 이동합니다.
           </p>
         </div>
       </Container>

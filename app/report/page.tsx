@@ -9,6 +9,7 @@ const FULL_REPORT_KEY = "facemood_full_report";
 const ANSWERS_KEY = "facemood_answers";
 const IMAGE_KEY = "facemood_uploaded_image";
 const PREVIEW_RESULT_KEY = "facemood_preview_result";
+const REPORT_ID_KEY = "facemood_report_id";
 
 function subscribeToFullReport(callback: () => void) {
   window.addEventListener("storage", callback);
@@ -23,8 +24,17 @@ function getServerFullReportSnapshot() {
   return null;
 }
 
+// Read directly (not via useSyncExternalStore/render state) — this only
+// ever needs to be read inside effects/handlers, both of which run after
+// mount, so there's no server/client snapshot to reconcile.
+function getIdParam(): string | null {
+  return new URLSearchParams(window.location.search).get("id");
+}
+
 type FetchState =
   | { status: "loading" }
+  | { status: "locked"; error?: string }
+  | { status: "verifying" }
   | { status: "error"; message: string }
   | { status: "done"; report: FullReport };
 
@@ -59,6 +69,46 @@ function ErrorState({
         className="mt-6 rounded-full bg-black px-6 py-3 text-sm font-semibold text-white"
       >
         다시 시도
+      </button>
+      <Link href="/upload" className="mt-4 text-xs text-gray-400 underline">
+        처음부터 다시 진행하기
+      </Link>
+    </main>
+  );
+}
+
+function PasswordGate({
+  error,
+  isVerifying,
+  onSubmit,
+}: {
+  error?: string;
+  isVerifying: boolean;
+  onSubmit: (password: string) => void;
+}) {
+  const [password, setPassword] = useState("");
+
+  return (
+    <main className="flex min-h-screen flex-col items-center justify-center bg-white px-6 text-center text-black">
+      <p className="text-sm font-semibold text-black">
+        비밀번호를 입력하면 리포트를 다시 볼 수 있어요.
+      </p>
+      <input
+        type="password"
+        value={password}
+        onChange={(event) => setPassword(event.target.value)}
+        placeholder="비밀번호"
+        disabled={isVerifying}
+        className="mt-5 w-full max-w-xs rounded-xl border border-violet-100 px-4 py-3 text-center text-sm text-black outline-none focus:border-violet-300"
+      />
+      {error && <p className="mt-2 text-xs text-red-500">{error}</p>}
+      <button
+        type="button"
+        onClick={() => onSubmit(password)}
+        disabled={isVerifying || password.length === 0}
+        className="mt-5 rounded-full bg-black px-6 py-3 text-sm font-semibold text-white disabled:opacity-50"
+      >
+        {isVerifying ? "확인 중..." : "리포트 확인하기"}
       </button>
       <Link href="/upload" className="mt-4 text-xs text-gray-400 underline">
         처음부터 다시 진행하기
@@ -121,13 +171,43 @@ function TagList({ items, tone = "neutral" }: { items: string[]; tone?: "neutral
   );
 }
 
+async function requestFullReport(
+  answers: Record<string, unknown>,
+  imageDataUrl: string | null,
+  previewResult: PreviewResult | null,
+): Promise<FullReport> {
+  const response = await fetch("/api/generate-report", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ answers, imageDataUrl, previewResult }),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? "리포트 생성에 실패했습니다.");
+  }
+  return data.report as FullReport;
+}
+
+function persistFullReportToServer(
+  reportId: string | null,
+  fullReport: FullReport,
+) {
+  if (!reportId) return;
+  fetch(`/api/reports/${reportId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ fullReport }),
+  }).catch(() => {
+    console.warn("상세 리포트 저장에 실패했습니다 (서버 연결 문제로 추정).");
+  });
+}
+
 export default function ReportPage() {
   const cachedReportRaw = useSyncExternalStore(
     subscribeToFullReport,
     getFullReportSnapshot,
     getServerFullReportSnapshot,
   );
-
   const [fetchState, setFetchState] = useState<FetchState>({
     status: "loading",
   });
@@ -149,8 +229,15 @@ export default function ReportPage() {
       await Promise.resolve();
 
       const answersRaw = localStorage.getItem(ANSWERS_KEY);
+      const idParam = getIdParam();
       if (!answersRaw) {
-        if (!cancelled) {
+        if (cancelled) return;
+        // No local data on this device — if the link carries a report id,
+        // let the user unlock it with the password they set at checkout
+        // instead of just failing.
+        if (idParam) {
+          setFetchState({ status: "locked" });
+        } else {
           setFetchState({
             status: "error",
             message: "저장된 답변이 없습니다. 처음부터 다시 진행해주세요.",
@@ -161,29 +248,19 @@ export default function ReportPage() {
 
       const imageDataUrl = localStorage.getItem(IMAGE_KEY);
       const previewRaw = localStorage.getItem(PREVIEW_RESULT_KEY);
+      const reportId = localStorage.getItem(REPORT_ID_KEY) ?? idParam;
 
       try {
-        const response = await fetch("/api/generate-report", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            answers: JSON.parse(answersRaw) as Record<string, unknown>,
-            imageDataUrl: imageDataUrl ?? null,
-            previewResult: previewRaw
-              ? (JSON.parse(previewRaw) as PreviewResult)
-              : null,
-          }),
-        });
+        const report = await requestFullReport(
+          JSON.parse(answersRaw) as Record<string, unknown>,
+          imageDataUrl,
+          previewRaw ? (JSON.parse(previewRaw) as PreviewResult) : null,
+        );
 
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error ?? "리포트 생성에 실패했습니다.");
-        }
-
-        localStorage.setItem(FULL_REPORT_KEY, JSON.stringify(data.report));
+        localStorage.setItem(FULL_REPORT_KEY, JSON.stringify(report));
+        persistFullReportToServer(reportId, report);
         if (!cancelled) {
-          setFetchState({ status: "done", report: data.report });
+          setFetchState({ status: "done", report });
         }
       } catch (error) {
         if (!cancelled) {
@@ -211,6 +288,67 @@ export default function ReportPage() {
     setRetryTrigger((n) => n + 1);
   }
 
+  async function handleVerifyPassword(password: string) {
+    const idParam = getIdParam();
+    if (!idParam) return;
+    setFetchState({ status: "verifying" });
+
+    try {
+      const response = await fetch(`/api/reports/${idParam}/verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        setFetchState({
+          status: "locked",
+          error: data.error ?? "비밀번호가 올바르지 않습니다.",
+        });
+        return;
+      }
+
+      localStorage.setItem(REPORT_ID_KEY, idParam);
+      localStorage.setItem(ANSWERS_KEY, JSON.stringify(data.answers ?? {}));
+      if (data.previewResult) {
+        localStorage.setItem(
+          PREVIEW_RESULT_KEY,
+          JSON.stringify(data.previewResult),
+        );
+      }
+
+      if (data.fullReport) {
+        localStorage.setItem(
+          FULL_REPORT_KEY,
+          JSON.stringify(data.fullReport),
+        );
+        setFetchState({ status: "done", report: data.fullReport });
+        return;
+      }
+
+      // No stored report yet (shouldn't normally happen once paid) —
+      // regenerate. The original photo isn't kept server-side, so this
+      // pass runs without it.
+      const report = await requestFullReport(
+        data.answers ?? {},
+        null,
+        data.previewResult ?? null,
+      );
+      localStorage.setItem(FULL_REPORT_KEY, JSON.stringify(report));
+      persistFullReportToServer(idParam, report);
+      setFetchState({ status: "done", report });
+    } catch (error) {
+      setFetchState({
+        status: "locked",
+        error:
+          error instanceof Error
+            ? error.message
+            : "확인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
+      });
+    }
+  }
+
   let report: FullReport | null = null;
   if (cachedReportRaw) {
     try {
@@ -223,6 +361,15 @@ export default function ReportPage() {
   }
 
   if (!report) {
+    if (fetchState.status === "locked" || fetchState.status === "verifying") {
+      return (
+        <PasswordGate
+          error={fetchState.status === "locked" ? fetchState.error : undefined}
+          isVerifying={fetchState.status === "verifying"}
+          onSubmit={handleVerifyPassword}
+        />
+      );
+    }
     if (fetchState.status === "error") {
       return <ErrorState message={fetchState.message} onRetry={handleRetry} />;
     }

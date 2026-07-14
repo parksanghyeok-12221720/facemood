@@ -50,6 +50,33 @@ export default function UploadPage() {
     });
   }
 
+  function parseAnswers(raw: string | null): Record<string, unknown> {
+    if (!raw) return {};
+    try {
+      return JSON.parse(raw) as Record<string, unknown>;
+    } catch {
+      return {};
+    }
+  }
+
+  // Persists the answers server-side so the report survives a cleared
+  // localStorage. Best-effort: the free preview still works from
+  // localStorage alone if this fails, so failures here are non-fatal.
+  async function createReportRecord(answers: Record<string, unknown>) {
+    try {
+      const response = await fetch("/api/reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answers }),
+      });
+      if (!response.ok) return;
+      const data = await response.json();
+      if (data.id) localStorage.setItem("facemood_report_id", data.id);
+    } catch {
+      console.warn("리포트 저장에 실패했습니다 (서버 연결 문제로 추정).");
+    }
+  }
+
   async function handleSubmit() {
     // No OpenAI API call here — /upload only saves the answers and the
     // primary photo locally. AI analysis happens later, only in /report
@@ -71,7 +98,9 @@ export default function UploadPage() {
         console.warn("사진을 로컬에 저장하지 못했습니다 (용량 제한).");
       }
 
-      window.location.href = "/result";
+      await createReportRecord(parseAnswers(savedAnswers));
+
+      window.location.href = "/loading";
     } catch (error) {
       const message =
         error instanceof Error
@@ -90,7 +119,8 @@ export default function UploadPage() {
       const savedAnswers = localStorage.getItem("facemood_test_answers");
       localStorage.setItem("facemood_answers", savedAnswers ?? "{}");
       localStorage.removeItem("facemood_uploaded_image");
-      window.location.href = "/result";
+      await createReportRecord(parseAnswers(savedAnswers));
+      window.location.href = "/loading";
     } catch (error) {
       const message =
         error instanceof Error
