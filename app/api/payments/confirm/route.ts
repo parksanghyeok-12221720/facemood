@@ -13,6 +13,7 @@ export async function POST(request: NextRequest) {
     orderId?: string;
     amount?: number;
     password?: string;
+    phone?: string;
   };
   try {
     body = await request.json();
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { paymentKey, orderId, amount, password } = body;
+  const { paymentKey, orderId, amount, password, phone } = body;
 
   if (!paymentKey || !orderId || typeof amount !== "number" || !password) {
     return NextResponse.json(
@@ -67,7 +68,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: result.message }, { status: 502 });
   }
 
-  setCheckoutPassword(orderId, password, { paymentKey, orderId, amount });
+  setCheckoutPassword(
+    orderId,
+    password,
+    { paymentKey, orderId, amount },
+    phone ?? null,
+  );
 
   return NextResponse.json({ ok: true });
 }

@@ -1,4 +1,4 @@
-export const REPORT_PRICE_KRW = 9900;
+export const REPORT_PRICE_KRW = 34900;
 export const REPORT_ORDER_NAME = "FACEMOOD 상세 리포트";
 
 export type TossConfirmResult =

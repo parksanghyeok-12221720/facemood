@@ -10,6 +10,8 @@ export type ReportRecord = {
   fullReport: FullReport | null;
   paid: boolean;
   paymentKey: string | null;
+  phone: string | null;
+  reportSentAt: string | null;
   createdAt: string;
 };
 
@@ -24,6 +26,8 @@ type ReportRow = {
   payment_key: string | null;
   order_id: string | null;
   amount: number | null;
+  phone: string | null;
+  report_sent_at: string | null;
   created_at: string;
 };
 
@@ -35,6 +39,8 @@ function rowToRecord(row: ReportRow): ReportRecord {
     fullReport: row.full_report ? JSON.parse(row.full_report) : null,
     paid: row.paid === 1,
     paymentKey: row.payment_key,
+    phone: row.phone,
+    reportSentAt: row.report_sent_at,
     createdAt: row.created_at,
   };
 }
@@ -76,13 +82,14 @@ export function setCheckoutPassword(
   id: string,
   password: string,
   payment: { paymentKey: string; orderId: string; amount: number },
+  phone?: string | null,
 ): boolean {
   const passwordHash = bcrypt.hashSync(password, 10);
   const result = db
     .prepare(
       `UPDATE reports
        SET password_hash = ?, paid = 1, paid_at = datetime('now'),
-           payment_key = ?, order_id = ?, amount = ?
+           payment_key = ?, order_id = ?, amount = ?, phone = ?
        WHERE id = ?`,
     )
     .run(
@@ -90,9 +97,16 @@ export function setCheckoutPassword(
       payment.paymentKey,
       payment.orderId,
       payment.amount,
+      phone ?? null,
       id,
     );
   return result.changes > 0;
+}
+
+export function markReportSent(id: string): void {
+  db.prepare(
+    `UPDATE reports SET report_sent_at = datetime('now') WHERE id = ?`,
+  ).run(id);
 }
 
 export function verifyReportPassword(id: string, password: string): boolean {

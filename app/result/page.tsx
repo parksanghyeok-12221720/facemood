@@ -799,7 +799,7 @@ export default function ResultPage() {
             href="/checkout"
             className="mt-6 flex w-full items-center justify-center rounded-full bg-black px-8 py-4 text-sm font-semibold text-white"
           >
-            내 상세 리포트 확인하기
+            상세 리포트 보러가기
           </Link>
           <p className="mt-3 text-center text-xs leading-relaxed text-gray-500">
             무료 미리보기는 방향만, 상세 리포트는 실행 가이드까지 보여드려요.

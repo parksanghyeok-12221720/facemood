@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import Container from "@/app/components/Container";
 
 const PENDING_PASSWORD_KEY = "facemood_pending_password";
+const PENDING_PHONE_KEY = "facemood_pending_phone";
 
 type ConfirmState =
   | { status: "confirming" }
@@ -28,6 +29,7 @@ export default function CheckoutSuccessPage() {
       const orderId = params.get("orderId");
       const amount = params.get("amount");
       const password = sessionStorage.getItem(PENDING_PASSWORD_KEY);
+      const phone = sessionStorage.getItem(PENDING_PHONE_KEY);
 
       if (!paymentKey || !orderId || !amount || !password) {
         if (!cancelled) {
@@ -48,6 +50,7 @@ export default function CheckoutSuccessPage() {
             orderId,
             amount: Number(amount),
             password,
+            phone,
           }),
         });
         const data = await response.json();
@@ -57,6 +60,7 @@ export default function CheckoutSuccessPage() {
         }
 
         sessionStorage.removeItem(PENDING_PASSWORD_KEY);
+        sessionStorage.removeItem(PENDING_PHONE_KEY);
         if (!cancelled) {
           window.location.href = `/report?id=${orderId}`;
         }

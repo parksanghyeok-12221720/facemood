@@ -6,45 +6,71 @@ import Container from "@/app/components/Container";
 
 const REPORT_ID_KEY = "facemood_report_id";
 const PENDING_PASSWORD_KEY = "facemood_pending_password";
-const REPORT_PRICE_KRW = 9900;
+const PENDING_PHONE_KEY = "facemood_pending_phone";
+const REPORT_PRICE_KRW = 34900;
+const ORIGINAL_PRICE_KRW = 79800;
+const DISCOUNT_KRW = ORIGINAL_PRICE_KRW - REPORT_PRICE_KRW;
+const DISCOUNT_PERCENT = Math.round((DISCOUNT_KRW / ORIGINAL_PRICE_KRW) * 100);
 
-const includedItems: { text: string; accent?: boolean }[] = [
-  { text: "현재 이미지 무드 분석" },
-  { text: "추구미 유형 정리" },
-  { text: "헤어 추천" },
-  { text: "메이크업 방향" },
-  { text: "패션 실루엣" },
-  { text: "피해야 할 스타일" },
-  { text: "사진 포즈 추천" },
-  { text: "사진상 컬러 무드 분석", accent: true },
-  { text: "추천 컬러 팔레트", accent: true },
-  { text: "헤어 컬러 방향", accent: true },
-  { text: "메이크업 색조 추천", accent: true },
-  { text: "패션 색감 추천", accent: true },
-  { text: "피하면 좋은 컬러감", accent: true },
-  { text: "베이스 메이크업 방향", accent: true },
-  { text: "눈썹 스타일", accent: true },
-  { text: "아이메이크업 강도", accent: true },
-  { text: "블러셔 위치와 색감", accent: true },
-  { text: "립 컬러 추천", accent: true },
-  { text: "피하면 좋은 메이크업 방향", accent: true },
-];
+const phonePrefixOptions = ["010", "011", "016", "017", "018", "019"];
+
+function PriceRow({
+  label,
+  value,
+  tone = "neutral",
+  strike = false,
+}: {
+  label: string;
+  value: string;
+  tone?: "neutral" | "accent" | "bold";
+  strike?: boolean;
+}) {
+  const valueClass =
+    tone === "bold"
+      ? "text-lg font-bold text-black"
+      : tone === "accent"
+        ? "font-semibold text-violet-600"
+        : "text-gray-500";
+  return (
+    <div className="flex items-center justify-between py-1.5 text-sm">
+      <span className={tone === "bold" ? "font-semibold text-black" : "text-gray-500"}>
+        {label}
+      </span>
+      <span className={`${valueClass} ${strike ? "line-through decoration-gray-400" : ""}`}>
+        {value}
+      </span>
+    </div>
+  );
+}
 
 export default function CheckoutPage() {
+  const [phonePrefix, setPhonePrefix] = useState("010");
+  const [phoneMiddle, setPhoneMiddle] = useState("");
+  const [phoneLast, setPhoneLast] = useState("");
   const [password, setPassword] = useState("");
-  const [passwordConfirm, setPasswordConfirm] = useState("");
+  const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  function validate(): string | null {
+    if (phoneMiddle.length < 3 || phoneLast.length !== 4) {
+      return "리포트를 받을 연락처를 정확히 입력해주세요.";
+    }
+    if (password.length < 4) {
+      return "비밀번호는 4자 이상 입력해주세요.";
+    }
+    if (!agreed) {
+      return "결제 서비스 이용약관과 개인정보 처리에 동의해주세요.";
+    }
+    return null;
+  }
 
   async function startCheckout() {
     if (isSubmitting) return;
 
-    if (password.length < 4) {
-      setError("비밀번호는 4자 이상 입력해주세요.");
-      return;
-    }
-    if (password !== passwordConfirm) {
-      setError("비밀번호가 서로 일치하지 않아요.");
+    const validationError = validate();
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
@@ -66,14 +92,20 @@ export default function CheckoutPage() {
     setIsSubmitting(true);
 
     try {
+      const phone = `${phonePrefix}-${phoneMiddle}-${phoneLast}`;
+
       // Read back on the success page after Toss redirects here — the
-      // payment is only confirmed (and this password saved) server-side
-      // once Toss verifies the charge.
+      // payment is only confirmed (and this password/phone saved)
+      // server-side once Toss verifies the charge.
       sessionStorage.setItem(PENDING_PASSWORD_KEY, password);
+      sessionStorage.setItem(PENDING_PHONE_KEY, phone);
 
       const tossPayments = await loadTossPayments(clientKey);
       const payment = tossPayments.payment({ customerKey: ANONYMOUS });
 
+      // method: "CARD" with the default flowMode opens Toss's own
+      // integrated payment window, where the buyer picks card, 카카오페이,
+      // 네이버페이, etc. themselves — Toss owns the method selection UI.
       await payment.requestPayment({
         method: "CARD",
         amount: { currency: "KRW", value: REPORT_PRICE_KRW },
@@ -93,44 +125,85 @@ export default function CheckoutPage() {
     }
   }
 
+  const numericInputClass =
+    "w-full rounded-xl border border-violet-100 bg-white px-3 py-3 text-center text-sm text-black outline-none focus:border-violet-300";
+
   return (
-    <main className="flex min-h-screen flex-col justify-center bg-white py-16 text-black">
-      <Container>
-        <h1 className="text-xl font-bold text-black">상세 리포트</h1>
+    <main className="min-h-screen bg-[#faf9f7] pb-24 text-black">
+      <div className="sticky top-0 z-10 border-b border-black/5 bg-white/90 backdrop-blur">
+        <Container className="flex items-center justify-center py-4">
+          <h1 className="text-sm font-bold tracking-[0.1em]">결제하기</h1>
+        </Container>
+      </div>
 
-        <div className="mt-8 rounded-2xl border border-violet-100 bg-white p-6 shadow-sm shadow-violet-100/60">
-          <p className="text-xs tracking-[0.2em] text-violet-500">런칭가</p>
-          <p className="mt-2 text-3xl font-bold text-black">9,900원</p>
-
-          <div className="mt-8 border-t border-violet-100 pt-6">
-            <p className="text-xs tracking-[0.2em] text-violet-500">
-              포함 내용
-            </p>
-            <ul className="mt-4 flex flex-col gap-3">
-              {includedItems.map((item) => (
-                <li
-                  key={item.text}
-                  className={`flex items-center gap-3 text-sm ${
-                    item.accent ? "text-violet-700" : "text-gray-600"
-                  }`}
-                >
-                  <span
-                    className={`h-1 w-1 shrink-0 rounded-full ${
-                      item.accent ? "bg-violet-400" : "bg-gray-400"
-                    }`}
-                  />
-                  {item.text}
-                </li>
-              ))}
-            </ul>
-          </div>
+      <Container className="mt-6">
+        {/* Promo banner */}
+        <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 p-5 text-white shadow-lg shadow-violet-200">
+          <p className="text-[11px] font-semibold tracking-wide text-violet-100">
+            결제 혜택 놓치지 마세요
+          </p>
+          <p className="mt-1 text-lg font-extrabold leading-snug">
+            런칭 기념 얼리버드 할인
+          </p>
+          <span className="mt-3 inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold">
+            오늘 결제 시 {DISCOUNT_PERCENT}% 할인
+          </span>
         </div>
 
-        <div className="mt-8 rounded-2xl border border-violet-100 bg-white p-6 shadow-sm shadow-violet-100/60">
-          <p className="text-xs tracking-[0.2em] text-violet-500">
+        {/* Contact */}
+        <section className="mt-8">
+          <p className="text-xs font-semibold tracking-[0.2em] text-violet-500">
+            리포트 받을 연락처
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-gray-500">
+            리포트가 완성되면 이 번호로 알려드려요.
+          </p>
+          <div className="mt-3 grid grid-cols-[88px_1fr_1fr] gap-2">
+            <select
+              value={phonePrefix}
+              onChange={(event) => setPhonePrefix(event.target.value)}
+              disabled={isSubmitting}
+              className={`${numericInputClass} appearance-none`}
+            >
+              {phonePrefixOptions.map((prefix) => (
+                <option key={prefix} value={prefix}>
+                  {prefix}
+                </option>
+              ))}
+            </select>
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={4}
+              value={phoneMiddle}
+              onChange={(event) =>
+                setPhoneMiddle(event.target.value.replace(/\D/g, ""))
+              }
+              placeholder="1234"
+              disabled={isSubmitting}
+              className={numericInputClass}
+            />
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={4}
+              value={phoneLast}
+              onChange={(event) =>
+                setPhoneLast(event.target.value.replace(/\D/g, ""))
+              }
+              placeholder="5678"
+              disabled={isSubmitting}
+              className={numericInputClass}
+            />
+          </div>
+        </section>
+
+        {/* Password */}
+        <section className="mt-8">
+          <p className="text-xs font-semibold tracking-[0.2em] text-violet-500">
             다시보기용 비밀번호 설정
           </p>
-          <p className="mt-2 text-xs leading-relaxed text-gray-500">
+          <p className="mt-1 text-xs leading-relaxed text-gray-500">
             나중에 이 리포트 링크로 다시 접속할 때 필요해요.
           </p>
           <input
@@ -139,31 +212,87 @@ export default function CheckoutPage() {
             onChange={(event) => setPassword(event.target.value)}
             placeholder="비밀번호 (4자 이상)"
             disabled={isSubmitting}
-            className="mt-4 w-full rounded-xl border border-violet-100 px-4 py-3 text-sm text-black outline-none focus:border-violet-300"
+            className="mt-3 w-full rounded-xl border border-violet-100 px-4 py-3 text-sm text-black outline-none focus:border-violet-300"
           />
-          <input
-            type="password"
-            value={passwordConfirm}
-            onChange={(event) => setPasswordConfirm(event.target.value)}
-            placeholder="비밀번호 확인"
-            disabled={isSubmitting}
-            className="mt-2 w-full rounded-xl border border-violet-100 px-4 py-3 text-sm text-black outline-none focus:border-violet-300"
-          />
-          {error && <p className="mt-2 text-xs text-red-500">{error}</p>}
-        </div>
+        </section>
 
-        <div className="mt-10">
+        {/* Product selection */}
+        <section className="mt-8">
+          <p className="text-xs font-semibold tracking-[0.2em] text-violet-500">
+            상품 선택
+          </p>
+          <div className="mt-3 rounded-2xl border-2 border-violet-500 bg-violet-50/50 p-5">
+            <div className="flex items-center justify-between">
+              <span className="inline-flex items-center rounded-full bg-violet-600 px-2.5 py-1 text-[10px] font-bold text-white">
+                BEST
+              </span>
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-500 text-[10px] font-bold text-white">
+                ✓
+              </span>
+            </div>
+            <p className="mt-3 text-sm font-bold text-black">
+              FACEMOOD 상세 리포트
+            </p>
+            <p className="mt-1 text-xs text-gray-500">
+              컬러 · 헤어 · 메이크업 · 스타일링 전 영역 상세 분석
+            </p>
+            <p className="mt-3 text-xl font-extrabold text-black">
+              {REPORT_PRICE_KRW.toLocaleString()}원
+            </p>
+          </div>
+        </section>
+
+        {/* Price breakdown */}
+        <section className="mt-8 rounded-2xl border border-violet-100 bg-white p-5">
+          <PriceRow
+            label="기준 가격"
+            value={`${ORIGINAL_PRICE_KRW.toLocaleString()}원`}
+            strike
+          />
+          <PriceRow
+            label="얼리버드 특별 할인"
+            value={`-${DISCOUNT_PERCENT}% -${DISCOUNT_KRW.toLocaleString()}원`}
+            tone="accent"
+          />
+          <div className="my-2 border-t border-violet-100" />
+          <PriceRow
+            label="최종 결제금액"
+            value={`${REPORT_PRICE_KRW.toLocaleString()}원`}
+            tone="bold"
+          />
+        </section>
+
+        {/* Agreement */}
+        <section className="mt-8">
+          <label className="flex items-start gap-2.5 text-xs leading-relaxed text-gray-600">
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={(event) => setAgreed(event.target.checked)}
+              disabled={isSubmitting}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-violet-200 bg-white accent-violet-300 focus:ring-violet-300"
+            />
+            <span>(필수) 결제 서비스 이용약관 및 개인정보 처리방침에 동의합니다.</span>
+          </label>
+          {error && <p className="mt-3 text-xs text-red-500">{error}</p>}
+        </section>
+
+        {/* Pay */}
+        <section className="mt-6">
           <button
+            type="button"
             onClick={startCheckout}
-            disabled={isSubmitting}
-            className="flex w-full items-center justify-center rounded-full bg-black px-8 py-4 text-sm font-semibold text-white disabled:opacity-50"
+            disabled={!agreed || isSubmitting}
+            className="flex w-full items-center justify-center rounded-full bg-black px-8 py-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {isSubmitting ? "결제창 여는 중..." : "9,900원으로 상세 리포트 보기"}
+            {isSubmitting
+              ? "결제창 여는 중..."
+              : `${REPORT_PRICE_KRW.toLocaleString()}원 결제하기`}
           </button>
           <p className="mt-3 text-center text-xs text-gray-400">
-            토스페이먼츠 결제창으로 이동합니다.
+            토스페이먼츠 결제창에서 원하는 결제수단을 선택할 수 있습니다.
           </p>
-        </div>
+        </section>
       </Container>
     </main>
   );
