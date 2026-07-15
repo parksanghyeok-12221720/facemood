@@ -49,7 +49,94 @@ export type PreviewResult = {
     };
   };
   lockedSections: string[];
+  images: {
+    hero: string;
+    hair: string;
+    makeup: string;
+  };
 };
+
+// The "멘트" fields an AI call is allowed to personalize per user answers +
+// photo. Everything else in PreviewResult (mood pick, palette, locked
+// sections, images) stays rule-based so the layout/blur treatment never
+// has to change.
+export type PreviewPersonalization = {
+  oneLineSummary: string;
+  tags: string[];
+  currentMood: string[];
+  upgradePoints: string[];
+  colorHint: {
+    summary: string;
+    description: string;
+  };
+  hints: {
+    styling: string;
+    hair: string;
+    makeup: string;
+  };
+};
+
+export function applyPreviewPersonalization(
+  base: PreviewResult,
+  patch: PreviewPersonalization,
+): PreviewResult {
+  return {
+    ...base,
+    oneLineSummary: patch.oneLineSummary,
+    tags: patch.tags,
+    currentMood: patch.currentMood,
+    upgradePoints: patch.upgradePoints,
+    colorHint: {
+      ...base.colorHint,
+      summary: patch.colorHint.summary,
+      description: patch.colorHint.description,
+    },
+    hints: {
+      styling: { ...base.hints.styling, content: patch.hints.styling },
+      hair: { ...base.hints.hair, content: patch.hints.hair },
+      makeup: { ...base.hints.makeup, content: patch.hints.makeup },
+    },
+  };
+}
+
+// Per-mood reference photo, already prepared in public/mood/cards but not
+// wired up before now — every mood always rendered the same 청순 자연형
+// hero image regardless of the actual recommendation.
+const MOOD_HERO_IMAGE: Record<MoodCandidate, string> = {
+  "청순 자연형": "/mood/cards/청순자연st.png",
+  "고급 도시형": "/mood/cards/고급도시st.png",
+  "차분 시크형": "/mood/cards/차분시크st.png",
+  "러블리 여리형": "/mood/cards/러블리 여리st.png",
+  "힙 트렌디형": "/mood/cards/힙 트렌디st.png",
+  "러블리 힙형": "/mood/cards/러블리 힙st.png",
+  "청순 에겐형": "/mood/cards/청순 에겐st.png",
+  "일본 여주형": "/mood/cards/일본여주st.png",
+};
+
+const HAIR_IMAGES = [
+  "/mood/hair/hair1.png",
+  "/mood/hair/hair2.png",
+  "/mood/hair/hair_샌드펌.png",
+  "/mood/hair/hair_시스루.png",
+  "/mood/hair/hair_히피펌.png",
+];
+
+const MAKEUP_IMAGES = [
+  "/mood/makeup/makeup1.png",
+  "/mood/makeup/makeup2.png",
+  "/mood/makeup/makeup3.png",
+  "/mood/makeup/makeup4.png",
+  "/mood/makeup/makeup5.png",
+];
+
+function imagesForMood(mood: MoodCandidate): PreviewResult["images"] {
+  const index = MOOD_CANDIDATES.indexOf(mood);
+  return {
+    hero: MOOD_HERO_IMAGE[mood],
+    hair: HAIR_IMAGES[index % HAIR_IMAGES.length],
+    makeup: MAKEUP_IMAGES[index % MAKEUP_IMAGES.length],
+  };
+}
 
 // Reference shape for local development. Only rendered when visiting
 // /result?mock=1 — with no saved localStorage result and no mock flag,
@@ -133,6 +220,7 @@ export const mockPreviewResult: PreviewResult = {
     "옷 색감 적용법",
     "헤어 컬러 방향",
   ],
+  images: imagesForMood("청순 자연형"),
 };
 
 // ---------------------------------------------------------------------------
@@ -610,5 +698,6 @@ export function buildPreviewResult(
     missions: SHARED_MISSIONS,
     hints: SHARED_HINTS,
     lockedSections: SHARED_LOCKED_SECTIONS,
+    images: imagesForMood(recommendedMood),
   };
 }

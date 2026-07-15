@@ -39,17 +39,18 @@ function getServerAnswersSnapshot() {
   return null;
 }
 
-const previewImages = [
-  { label: "추구미 예시", src: "/mood/cards/청순자연st.png" },
-  { label: "헤어 예시", src: "/mood/hair/hair1.png" },
-  { label: "메이크업 예시", src: "/mood/makeup/makeup1.png" },
-];
+function subscribeToPreview(callback: () => void) {
+  window.addEventListener("storage", callback);
+  return () => window.removeEventListener("storage", callback);
+}
 
-const hintImages: Record<"styling" | "hair" | "makeup", string> = {
-  styling: "/mood/sikeu.jpg",
-  hair: "/mood/hair/hair1.png",
-  makeup: "/mood/makeup/makeup1.png",
-};
+function getPreviewSnapshot() {
+  return localStorage.getItem(PREVIEW_RESULT_KEY);
+}
+
+function getServerPreviewSnapshot() {
+  return null;
+}
 
 function LockIcon() {
   return (
@@ -220,11 +221,28 @@ export default function ResultPage() {
     getAnswersSnapshot,
     getServerAnswersSnapshot,
   );
+  const personalizedRaw = useSyncExternalStore(
+    subscribeToPreview,
+    getPreviewSnapshot,
+    getServerPreviewSnapshot,
+  );
 
-  // Rule-based only — no OpenAI call. See buildPreviewResult in types/report.ts.
   const previewResult = useMemo<PreviewResult | null>(() => {
     if (!answersRaw) return null;
     if (answersRaw === MOCK_MARKER) return mockPreviewResult;
+
+    // /loading already ran the personalized preview call and cached the
+    // result here — use it directly instead of recomputing the rule-based
+    // version. Falls back to buildPreviewResult (no OpenAI call) if that
+    // never happened, e.g. this device skipped /loading.
+    if (personalizedRaw) {
+      try {
+        return JSON.parse(personalizedRaw) as PreviewResult;
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
     try {
       const answers = JSON.parse(answersRaw) as Record<string, unknown>;
       return buildPreviewResult(answers);
@@ -232,7 +250,7 @@ export default function ResultPage() {
       console.error(error);
       return null;
     }
-  }, [answersRaw]);
+  }, [answersRaw, personalizedRaw]);
 
   useEffect(() => {
     if (!previewResult) return;
@@ -282,7 +300,7 @@ export default function ResultPage() {
         <div className="overflow-hidden rounded-3xl border border-violet-100 bg-gradient-to-br from-violet-50 via-white to-violet-100">
           <div className="relative aspect-[4/5] w-full">
             <Image
-              src="/mood/cheongsun.jpg"
+              src={previewResult.images.hero}
               alt="추구미 예시"
               fill
               priority
@@ -486,6 +504,10 @@ export default function ResultPage() {
         <div className="flex flex-col gap-3">
           {(["styling", "hair", "makeup"] as const).map((key) => {
             const hint = previewResult.hints[key];
+            const hintImage =
+              key === "styling"
+                ? previewResult.images.hero
+                : previewResult.images[key];
             return (
               <div
                 key={key}
@@ -493,7 +515,7 @@ export default function ResultPage() {
               >
                 <div className="relative aspect-[16/9] w-full">
                   <Image
-                    src={hintImages[key]}
+                    src={hintImage}
                     alt={hint.title}
                     fill
                     sizes="(min-width: 448px) 448px, 100vw"
@@ -532,7 +554,13 @@ export default function ResultPage() {
         </p>
 
         <div className="mt-5 grid grid-cols-3 gap-3">
-          {previewImages.map((preview) => (
+          {(
+            [
+              { label: "추구미 예시", src: previewResult.images.hero },
+              { label: "헤어 예시", src: previewResult.images.hair },
+              { label: "메이크업 예시", src: previewResult.images.makeup },
+            ] as const
+          ).map((preview) => (
             <div
               key={preview.label}
               className="relative aspect-square overflow-hidden rounded-2xl border border-violet-100"
