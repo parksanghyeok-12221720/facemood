@@ -10,25 +10,25 @@ const floatingTags: {
 }[] = [
   {
     label: "#추구미",
-    className: "left-[8%] top-[18%]",
+    className: "left-[16%] top-6",
     delay: "0s",
     duration: "6s",
   },
   {
     label: "#헤어스타일",
-    className: "right-[8%] top-[26%]",
+    className: "right-[16%] top-12",
     delay: "1.2s",
     duration: "7s",
   },
   {
     label: "#메이크업",
-    className: "left-[10%] top-[68%]",
+    className: "left-[16%] bottom-6",
     delay: "0.6s",
     duration: "6.5s",
   },
   {
     label: "#스타일링",
-    className: "right-[10%] top-[72%]",
+    className: "right-[16%] bottom-12",
     delay: "1.8s",
     duration: "7.5s",
   },
@@ -51,7 +51,7 @@ export default function Home() {
       {floatingTags.map((tag) => (
         <span
           key={tag.label}
-          className={`animate-float pointer-events-none absolute z-10 rounded-full border border-white/60 bg-white/70 px-4 py-2 text-xs font-semibold tracking-wide text-violet-600 shadow-sm backdrop-blur-sm ${tag.className}`}
+          className={`animate-float pointer-events-none absolute z-10 whitespace-nowrap rounded-full border border-white/60 bg-white/70 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-violet-600 shadow-sm backdrop-blur-sm ${tag.className}`}
           style={{ animationDelay: tag.delay, animationDuration: tag.duration }}
         >
           {tag.label}
