@@ -135,57 +135,207 @@ export const mockPreviewResult: PreviewResult = {
   ],
 };
 
+// ---------------------------------------------------------------------------
+// Paid full report — 13 numbered chapters, each a long-form write-up (title
+// is fixed here so it always matches the 목차 exactly; the AI only writes
+// the body text).
+// ---------------------------------------------------------------------------
+
+export type ReportChapterKey =
+  | "finalSummary"
+  | "currentImageMood"
+  | "gapAnalysis"
+  | "recommendedMoodDetail"
+  | "firstImpression"
+  | "stylingGuide"
+  | "hairGuide"
+  | "makeupGuide"
+  | "colorMoodAnalysis"
+  | "colorPalette"
+  | "avoidStyles"
+  | "situationGuide"
+  | "finalChecklist";
+
+export const REPORT_CHAPTERS: {
+  key: ReportChapterKey;
+  number: string;
+  title: string;
+  points: string[];
+}[] = [
+  {
+    key: "finalSummary",
+    number: "01",
+    title: "나에게 어울리는 추구미 최종 요약",
+    points: [
+      "추천 추구미",
+      "보조 무드",
+      "전체 이미지 방향",
+      "핵심 키워드",
+      "한 줄 총평",
+      "앞으로의 스타일 방향",
+    ],
+  },
+  {
+    key: "currentImageMood",
+    number: "02",
+    title: "현재 이미지 무드 분석",
+    points: [
+      "사진상으로 보이는 첫인상",
+      "현재 이미지가 주는 분위기",
+      "헤어, 메이크업, 옷 색감이 만드는 느낌",
+      "현재 이미지에서 잘 살아나는 포인트",
+      "전체적으로 어떤 무드에 가까운지",
+    ],
+  },
+  {
+    key: "gapAnalysis",
+    number: "03",
+    title: "원하는 추구미와 현재 이미지의 차이",
+    points: [
+      "사용자가 원하는 추구미",
+      "현재 이미지와 가까운 부분",
+      "현재 이미지와 다른 부분",
+      "원하는 추구미에 가까워지기 위해 조정하면 좋은 요소",
+      "가장 먼저 바꿔보면 좋은 포인트",
+    ],
+  },
+  {
+    key: "recommendedMoodDetail",
+    number: "04",
+    title: "추천 추구미 상세 해석",
+    points: [
+      "추천 추구미가 어떤 분위기인지",
+      "이 추구미가 사용자에게 잘 맞을 수 있는 이유",
+      "이 무드를 완성하는 핵심 요소",
+      "잘 맞는 컬러, 헤어, 메이크업, 패션 방향",
+      "전체적인 이미지 전략",
+    ],
+  },
+  {
+    key: "firstImpression",
+    number: "05",
+    title: "이성이 봤을 때 첫인상 무드",
+    points: [
+      "사진상으로 전달될 수 있는 첫인상",
+      "이성이 처음 봤을 때 느낄 수 있는 분위기",
+      "첫 3초 안에 남을 수 있는 이미지",
+      "호감이 쌓이는 방식",
+      "첫인상을 더 잘 살리는 방법",
+    ],
+  },
+  {
+    key: "stylingGuide",
+    number: "06",
+    title: "스타일링 세부 가이드",
+    points: [
+      "추천 옷 색감",
+      "추천 실루엣",
+      "추천 소재",
+      "키와 체형 정보를 참고한 옷 길이와 핏 (체형 지적이 아니라 비율 스타일링 조언으로)",
+      "상의, 하의, 아우터, 신발, 가방 방향",
+      "데일리룩 예시",
+      "피하면 좋은 스타일링",
+    ],
+  },
+  {
+    key: "hairGuide",
+    number: "07",
+    title: "헤어 스타일 방향",
+    points: [
+      "추천 헤어 길이",
+      "앞머리 유무",
+      "펌/컬 방향",
+      "헤어 컬러 방향",
+      "현재 이미지와 어울릴 가능성이 높은 헤어",
+      "피하면 좋은 헤어",
+      "미용실에서 말하기 좋은 문장",
+    ],
+  },
+  {
+    key: "makeupGuide",
+    number: "08",
+    title: "메이크업 방향",
+    points: [
+      "베이스 표현",
+      "눈썹",
+      "아이메이크업",
+      "아이라인",
+      "블러셔",
+      "립 컬러",
+      "추천 메이크업 강도",
+      "피하면 좋은 메이크업",
+      "데일리 메이크업 적용법",
+    ],
+  },
+  {
+    key: "colorMoodAnalysis",
+    number: "09",
+    title: "사진상 컬러 무드 분석",
+    points: [
+      "사진 기준으로 보이는 컬러 흐름",
+      "밝기, 채도, 온도감, 선명도",
+      "어울릴 가능성이 높은 컬러 방향",
+      "조심하면 좋은 컬러 방향",
+      "퍼스널컬러 확정 진단이 아니라는 안내",
+      "옷, 메이크업, 헤어 컬러에 적용하는 방법",
+    ],
+  },
+  {
+    key: "colorPalette",
+    number: "10",
+    title: "추천 컬러 팔레트",
+    points: [
+      "추천 컬러 5~7개",
+      "각 컬러별 활용법",
+      "상의에 쓰면 좋은 색",
+      "립/블러셔에 쓰면 좋은 색",
+      "포인트 컬러로 쓰면 좋은 색",
+      "피하면 좋은 컬러 조합",
+    ],
+  },
+  {
+    key: "avoidStyles",
+    number: "11",
+    title: "피하면 좋은 스타일 방향",
+    points: [
+      "추천 추구미와 멀어질 수 있는 색감",
+      "과하게 보일 수 있는 메이크업",
+      "무드를 흐릴 수 있는 헤어",
+      "어색해질 수 있는 옷 실루엣",
+      "단점 지적이 아니라 원하는 분위기와 멀어질 수 있는 방향으로 부드럽게 설명",
+    ],
+  },
+  {
+    key: "situationGuide",
+    number: "12",
+    title: "상황별 이미지 전략",
+    points: [
+      "소개팅/데이트",
+      "인스타 프로필 사진",
+      "데일리룩",
+      "출근/면접",
+      "친구 약속",
+      "사진 찍는 날",
+      "각 상황에서 어떤 옷, 헤어, 메이크업, 컬러를 선택하면 좋은지",
+    ],
+  },
+  {
+    key: "finalChecklist",
+    number: "13",
+    title: "최종 스타일 체크리스트",
+    points: [
+      "오늘 바로 바꿔볼 것",
+      "쇼핑할 때 확인할 것",
+      "미용실에서 말할 것",
+      "메이크업에서 바꿔볼 것",
+      "사진 찍을 때 신경 쓸 것",
+      "최종 한 줄 조언",
+    ],
+  },
+];
+
 export type FullReport = {
-  summary: {
-    recommendedMood: string;
-    subMood: string;
-    keywords: string[];
-    finalAdvice: string;
-  };
-  currentImageMood: {
-    title: string;
-    content: string;
-  };
-  gapAnalysis: {
-    title: string;
-    content: string;
-  };
-  styling: {
-    title: string;
-    colors: string[];
-    silhouettes: string[];
-    items: string[];
-    avoid: string[];
-  };
-  hair: {
-    title: string;
-    length: string;
-    bangs: string;
-    perm: string;
-    color: string;
-    salonScript: string;
-  };
-  makeup: {
-    base: string;
-    eyebrow: string;
-    eye: string;
-    blush: string;
-    lip: string;
-  };
-  colorMood: {
-    title: string;
-    tone: string;
-    recommendedPalette: string[];
-    avoidColors: string[];
-    notice: string;
-  };
-  situationGuide: {
-    dating: string;
-    instagram: string;
-    daily: string;
-    interview: string;
-  };
-  finalChecklist: string[];
+  [K in ReportChapterKey]: { body: string };
 };
 
 // ---------------------------------------------------------------------------

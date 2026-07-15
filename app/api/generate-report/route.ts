@@ -1,152 +1,142 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
-import { MOOD_CANDIDATES } from "@/types/report";
-import type { FullReport, PreviewResult } from "@/types/report";
+import { MOOD_CANDIDATES, REPORT_CHAPTERS } from "@/types/report";
+import type { FullReport, PreviewResult, ReportChapterKey } from "@/types/report";
 
 export const runtime = "nodejs";
 
 // This is the ONLY place in the app that calls the OpenAI API. It only
 // runs after checkout, from /report — never from /upload or /result, so
 // the free preview flow never costs API usage.
+//
+// The paid report has 13 long-form chapters. A single JSON-schema response
+// covering all 13 at ~3,000+ characters each would need roughly 30-50k
+// output tokens, well past what gpt-4o can return in one completion — so
+// chapters are split into groups and generated with parallel requests,
+// then merged back into one FullReport.
 
-const SYSTEM_PROMPT = `당신은 FACEMOOD의 이미지 컨설팅 리포트 작성 어시스턴트입니다.
+// One chapter per request — gpt-4o reliably undershoots length targets
+// when several chapters share a single completion, so each chapter gets
+// its own call (run in parallel) and its own full attention/token budget.
+const CHAPTER_GROUPS: ReportChapterKey[][] = REPORT_CHAPTERS.map((c) => [
+  c.key,
+]);
 
-FACEMOOD는 외모를 평가하거나 점수를 매기는 서비스가 아닙니다. 사진과 답변을 바탕으로 사용자가 원하는 "추구미"에 가까워지는 스타일 방향을 이미지 컨설팅 관점에서 참고용으로 제안하는 서비스입니다.
+const CHAPTER_BY_KEY = new Map(REPORT_CHAPTERS.map((c) => [c.key, c]));
 
-절대 규칙:
-- 얼굴 점수, 외모 등급, 외모 순위, 단점 지적 표현을 절대 사용하지 마세요.
-- 연예인이나 유명인과 닮았다는 표현을 절대 사용하지 마세요.
-- 퍼스널컬러를 "봄웜입니다", "여쿨입니다"처럼 확정해서 말하지 마세요. 조명, 카메라 보정, 피부 상태, 배경색에 따라 색감은 달라질 수 있습니다.
-- "전문가가 직접 얼굴을 분석했다"는 식으로 말하지 말고, "이미지 컨설팅 관점에서는", "스타일 분석 흐름상" 같은 표현을 사용하세요.
-- 모든 문장은 "사진상으로는", "~할 가능성이 높아요", "~와 잘 맞을 수 있어요" 같은 부드럽고 참고형인 표현을 사용하세요.
-- 20대 여성이 감성적인 뷰티/스타일 앱에서 유료 상세 리포트를 받아보는 느낌으로, 부드럽고 자연스럽지만 충분히 구체적으로 작성하세요.
+// How many chapter requests run at once. Keep this low — OpenAI accounts
+// on lower usage tiers have fairly small tokens-per-minute limits, and
+// firing all 13 (+ any expansion follow-ups) at once reliably 429s.
+const CHAPTER_CONCURRENCY = 2;
 
-recommendedMood와 subMood는 반드시 아래 8개 후보 중에서만 선택하세요:
+async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 5): Promise<T> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      const isRateLimit = error instanceof OpenAI.APIError && error.status === 429;
+      if (!isRateLimit || attempt >= maxAttempts) throw error;
+
+      const retryAfterHeader =
+        error instanceof OpenAI.APIError
+          ? (error.headers as Headers | undefined)?.get?.("retry-after")
+          : undefined;
+      const retryAfterSeconds = Number(retryAfterHeader ?? NaN);
+      const waitMs = Number.isFinite(retryAfterSeconds)
+        ? retryAfterSeconds * 1000 + 500
+        : attempt * 4000;
+
+      await new Promise((resolve) => setTimeout(resolve, waitMs));
+    }
+  }
+}
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let nextIndex = 0;
+
+  async function worker() {
+    for (;;) {
+      const current = nextIndex++;
+      if (current >= items.length) return;
+      results[current] = await fn(items[current]);
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, worker),
+  );
+  return results;
+}
+
+const SYSTEM_PROMPT = `당신은 FACEMOOD의 퍼스널 이미지 무드 리포트를 작성하는 AI입니다.
+
+FACEMOOD는 사용자가 입력한 기본 정보, 설문 답변, 업로드한 사진을 바탕으로
+사용자에게 어울리는 추구미, 퍼스널컬러 방향, 헤어, 메이크업, 스타일링, 첫인상 무드를 분석하는 서비스입니다.
+
+이 리포트는 단순한 테스트 결과가 아니라, 사용자가 실제로 헤어샵, 쇼핑, 메이크업, 프로필 사진,
+데이트/소개팅 준비에 참고할 수 있는 상세 이미지 컨설팅 리포트처럼 작성되어야 합니다.
+
+작성 원칙:
+
+1. 사용자가 입력한 성별, 나이대, 키, 몸무게, 원하는 추구미, 피하고 싶은 이미지, 평소 스타일,
+자주 입는 색감, 메이크업 습관, 헤어 고민, 분석 목적과 업로드한 사진에서 보이는 분위기(헤어, 메이크업,
+옷 색감, 전체 무드)를 최대한 반영해서, 사람마다 결과가 다르게 나오도록 개인화해서 작성하세요.
+같은 문장을 여러 사용자에게 반복하지 마세요.
+
+2. 키와 몸무게는 외모 평가나 체형 지적이 아니라 스타일링 참고 요소로만 사용하세요.
+예: 비율이 더 좋아 보이는 실루엣, 키에 맞는 옷 길이, 전체 분위기를 가볍게 보이게 하는 소재,
+체형을 평가하지 않고 스타일 균형을 맞추는 조언. "살이 쪘다", "말랐다", "체형이 단점이다" 같은
+표현은 절대 사용하지 마세요.
+
+3. 사진 분석은 단정하지 말고 부드럽게 표현하세요.
+사용할 표현: "사진상으로는", "전달될 가능성이 높아요", "잘 맞을 수 있어요",
+"이런 방향이 더 자연스럽게 연결될 수 있어요", "현재 이미지에서는 이런 분위기가 먼저 느껴져요".
+금지 표현: 얼굴 점수, 외모 등급, 단점, 못생김/예쁨 평가, 확정적인 퍼스널컬러 진단
+(예: "당신은 무조건 봄웜입니다"), 연예인 닮은꼴, 실제 전문가가 직접 진단한 것처럼 보이는 표현.
+
+4. 인스타그램, 뷰티 트렌드, 스타일링 콘텐츠에서 자주 쓰이는 말투처럼 자연스럽게 작성하세요.
+단, 특정 인플루언서나 연예인 이름은 직접 언급하지 말고, "인스타 프로필에서 잘 살아나는 무드",
+"요즘 뷰티 콘텐츠에서 많이 보이는 소프트한 결", "사진에서 분위기가 잘 잡히는 컬러"처럼
+일반적인 트렌드 표현으로 작성하세요.
+
+5. 단순히 "어울립니다"로 끝내지 말고, 앞으로 어떻게 하면 좋은지 구체적인 조언을 많이 넣으세요.
+각 챕터 본문에는 가능한 한 아래 흐름을 자연스럽게 녹여 넣으세요: 현재 상태 분석 → 왜 그렇게
+보이는지 → 어떤 방향이 잘 맞는지 → 구체적으로 어떻게 바꾸면 좋은지 → 피하면 좋은 방향 →
+바로 적용할 수 있는 팁.
+
+6. 각 챕터는 짧은 요약이 아니라 충분한 설명이 있는 장문으로 작성하세요. 내용이 반복되지 않게
+실질적인 분석과 조언으로 채우세요. 분량은 사용자 메시지에 안내된 목표 글자 수를 최대한 채우세요.
+
+7. 문체는 너무 딱딱한 전문가 보고서 느낌보다, 20대~30대 여성이 읽었을 때 자연스럽고 설득력
+있게 느껴지는 말투로 작성하세요. 다만 너무 가볍거나 유치하지 않게, "뷰티 리포트 + 이미지
+컨설팅 + 스타일 가이드" 느낌으로 쓰세요.
+
+8. recommendedMood와 subMood, 추구미 관련 언급은 반드시 아래 8개 후보 중에서만 선택하세요:
 ${MOOD_CANDIDATES.map((m, i) => `${i + 1}. ${m}`).join("\n")}
 
-각 섹션은 무료 미리보기보다 훨씬 구체적이고 분량이 많아야 합니다. 스타일링, 헤어, 메이크업, 컬러, 피하면 좋은 방향, 상황별 이미지 전략을 실제로 따라 할 수 있을 만큼 구체적으로 작성하세요.
+9. 결과는 반드시 요청된 JSON 스키마에 맞춰, 각 챕터의 "body" 필드에 본문 전체를 하나의
+문자열로 작성하세요 (문단 구분은 줄바꿈 두 번으로). 제목은 별도로 만들지 마세요 (이미 정해져 있습니다).`;
 
-hair.salonScript는 사용자가 미용실에 가서 그대로 읽을 수 있는 실제 대사 형태의 문장으로 작성하세요 (예: "앞머리는 살리고 전체적으로 레이어드컷을 넣어주세요. 컬러는...").
-
-결과는 반드시 JSON 스키마에 맞춰 반환하세요.`;
-
-const fullReportJsonSchema = {
-  type: "object",
-  additionalProperties: false,
-  required: [
-    "summary",
-    "currentImageMood",
-    "gapAnalysis",
-    "styling",
-    "hair",
-    "makeup",
-    "colorMood",
-    "situationGuide",
-    "finalChecklist",
-  ],
-  properties: {
-    summary: {
-      type: "object",
-      additionalProperties: false,
-      required: ["recommendedMood", "subMood", "keywords", "finalAdvice"],
-      properties: {
-        recommendedMood: { type: "string", enum: [...MOOD_CANDIDATES] },
-        subMood: { type: "string", enum: [...MOOD_CANDIDATES] },
-        keywords: { type: "array", items: { type: "string" } },
-        finalAdvice: { type: "string" },
-      },
-    },
-    currentImageMood: {
-      type: "object",
-      additionalProperties: false,
-      required: ["title", "content"],
-      properties: {
-        title: { type: "string" },
-        content: { type: "string" },
-      },
-    },
-    gapAnalysis: {
-      type: "object",
-      additionalProperties: false,
-      required: ["title", "content"],
-      properties: {
-        title: { type: "string" },
-        content: { type: "string" },
-      },
-    },
-    styling: {
-      type: "object",
-      additionalProperties: false,
-      required: ["title", "colors", "silhouettes", "items", "avoid"],
-      properties: {
-        title: { type: "string" },
-        colors: { type: "array", items: { type: "string" } },
-        silhouettes: { type: "array", items: { type: "string" } },
-        items: { type: "array", items: { type: "string" } },
-        avoid: { type: "array", items: { type: "string" } },
-      },
-    },
-    hair: {
-      type: "object",
-      additionalProperties: false,
-      required: ["title", "length", "bangs", "perm", "color", "salonScript"],
-      properties: {
-        title: { type: "string" },
-        length: { type: "string" },
-        bangs: { type: "string" },
-        perm: { type: "string" },
-        color: { type: "string" },
-        salonScript: { type: "string" },
-      },
-    },
-    makeup: {
-      type: "object",
-      additionalProperties: false,
-      required: ["base", "eyebrow", "eye", "blush", "lip"],
-      properties: {
-        base: { type: "string" },
-        eyebrow: { type: "string" },
-        eye: { type: "string" },
-        blush: { type: "string" },
-        lip: { type: "string" },
-      },
-    },
-    colorMood: {
-      type: "object",
-      additionalProperties: false,
-      required: [
-        "title",
-        "tone",
-        "recommendedPalette",
-        "avoidColors",
-        "notice",
-      ],
-      properties: {
-        title: { type: "string" },
-        tone: { type: "string" },
-        recommendedPalette: { type: "array", items: { type: "string" } },
-        avoidColors: { type: "array", items: { type: "string" } },
-        notice: { type: "string" },
-      },
-    },
-    situationGuide: {
-      type: "object",
-      additionalProperties: false,
-      required: ["dating", "instagram", "daily", "interview"],
-      properties: {
-        dating: { type: "string" },
-        instagram: { type: "string" },
-        daily: { type: "string" },
-        interview: { type: "string" },
-      },
-    },
-    finalChecklist: { type: "array", items: { type: "string" } },
-  },
-} as const;
+function buildChapterGuidance(keys: ReportChapterKey[]): string {
+  return keys
+    .map((key) => {
+      const chapter = CHAPTER_BY_KEY.get(key)!;
+      const bullets = chapter.points.map((p) => `  - ${p}`).join("\n");
+      return `${chapter.number}. ${chapter.title}\n${bullets}`;
+    })
+    .join("\n\n");
+}
 
 function buildUserPrompt(
   answers: Record<string, unknown>,
   previewResult: PreviewResult | null,
+  hasImage: boolean,
+  group: ReportChapterKey[],
 ) {
   const answerLines = Object.entries(answers ?? {}).map(
     ([key, value]) => `- ${key}: ${String(value)}`,
@@ -160,13 +150,147 @@ function buildUserPrompt(
     : [];
 
   return [
-    "사용자가 테스트에서 선택한 답변은 다음과 같습니다:",
+    "사용자가 테스트에서 선택한 답변(이름, 성별, 나이, 키, 몸무게, 직업 포함)은 다음과 같습니다:",
     answerLines.length > 0 ? answerLines.join("\n") : "(답변 없음)",
     "",
     ...previewLines,
     "",
-    "첨부된 사진(있다면)과 위 정보를 참고해서 유료 상세 리포트(FullReport) JSON을 생성해주세요.",
+    hasImage
+      ? "사진이 첨부되어 있습니다. 사진에서 보이는 헤어, 메이크업, 옷 색감, 전체 분위기를 참고하세요."
+      : "사진은 첨부되지 않았습니다. 답변 정보만으로 분석하세요.",
+    "",
+    "이번 응답에서는 아래 챕터의 본문(body)만 작성해주세요. 아래 소주제를 전부 자연스러운",
+    "문장으로 다루되, 하나의 소주제를 1~2문장으로 짧게 끝내지 말고 각각 최소 2~3문단, 문단당",
+    "4~6문장 분량으로 구체적인 이유·예시·적용 방법까지 풀어서 설명하세요.",
+    "",
+    "분량 요구사항 (반드시 지켜주세요):",
+    "- 이 챕터의 body는 공백 포함 최소 2,500자 이상, 목표는 3,000~4,000자입니다.",
+    "- 정보가 부족해서 짧아질 것 같으면, 소주제마다 구체적인 상황·아이템·색상·순서를 더 세분화해서",
+    "  분량을 채우세요. 같은 문장을 반복해서 글자 수만 채우지 말고, 매 문단마다 새로운 정보를",
+    "  담으세요.",
+    "- 요약형 결론으로 짧게 마무리하지 말고, 마지막 문단에도 구체적인 실행 팁을 담으세요.",
+    "",
+    buildChapterGuidance(group),
   ].join("\n");
+}
+
+function buildGroupSchema(group: ReportChapterKey[]) {
+  return {
+    type: "object",
+    additionalProperties: false,
+    required: group,
+    properties: Object.fromEntries(
+      group.map((key) => [
+        key,
+        {
+          type: "object",
+          additionalProperties: false,
+          required: ["body"],
+          properties: { body: { type: "string" } },
+        },
+      ]),
+    ),
+  } as const;
+}
+
+const MIN_CHAPTER_CHARS = 2200;
+
+// gpt-4o tends to undershoot explicit length targets even when instructed
+// clearly. Rather than trying to force it in one shot, chapters that come
+// back short get one follow-up pass asking it to expand what it already
+// wrote — this reliably gets closer to the 3,000-4,000자 target than
+// re-rolling the whole generation would.
+async function expandChapterBody(
+  client: OpenAI,
+  key: ReportChapterKey,
+  currentBody: string,
+): Promise<string> {
+  const chapter = CHAPTER_BY_KEY.get(key)!;
+
+  const completion = await withRetry(() =>
+    client.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        {
+          role: "user",
+          content: [
+            `아래는 "${chapter.title}" 챕터 본문 초안입니다. 내용과 어조는 그대로 유지하면서,`,
+            "각 소주제마다 구체적인 이유·예시·아이템·적용 방법을 더 추가해서 전체 분량을",
+            "공백 포함 3,000~4,000자 이상으로 확장해주세요. 같은 문장을 반복하거나 늘어뜨려서",
+            "글자 수만 채우지 말고, 문단마다 새로운 정보를 담아주세요. 결과는 확장된 본문",
+            "텍스트만 반환하세요 (JSON이나 따옴표 없이).",
+            "",
+            "--- 초안 ---",
+            currentBody,
+          ].join("\n"),
+        },
+      ],
+      max_tokens: 6000,
+    }),
+  );
+
+  const expanded = completion.choices[0]?.message?.content?.trim();
+  return expanded && expanded.length > currentBody.length ? expanded : currentBody;
+}
+
+async function generateChapterGroup(
+  client: OpenAI,
+  group: ReportChapterKey[],
+  answers: Record<string, unknown>,
+  previewResult: PreviewResult | null,
+  imageDataUrl: string | null,
+): Promise<Partial<FullReport>> {
+  const userContent: (
+    | { type: "text"; text: string }
+    | { type: "image_url"; image_url: { url: string } }
+  )[] = [
+    {
+      type: "text",
+      text: buildUserPrompt(answers, previewResult, !!imageDataUrl, group),
+    },
+  ];
+
+  if (imageDataUrl) {
+    userContent.push({ type: "image_url", image_url: { url: imageDataUrl } });
+  }
+
+  const completion = await withRetry(() =>
+    client.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: userContent },
+      ],
+      max_tokens: 6000,
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: `report_chapters_${group.join("_")}`,
+          strict: true,
+          schema: buildGroupSchema(group),
+        },
+      },
+    }),
+  );
+
+  const content = completion.choices[0]?.message?.content;
+  if (!content) {
+    throw new Error("AI 응답을 받지 못했습니다.");
+  }
+
+  const parsed = JSON.parse(content) as Partial<FullReport>;
+
+  await Promise.all(
+    group.map(async (key) => {
+      const chapter = parsed[key];
+      if (chapter && chapter.body.length < MIN_CHAPTER_CHARS) {
+        chapter.body = await expandChapterBody(client, key, chapter.body);
+      }
+    }),
+  );
+
+  return parsed;
 }
 
 export async function POST(request: NextRequest) {
@@ -197,43 +321,21 @@ export async function POST(request: NextRequest) {
   const imageDataUrl = body.imageDataUrl ?? null;
   const previewResult = body.previewResult ?? null;
 
-  const userContent: (
-    | { type: "text"; text: string }
-    | { type: "image_url"; image_url: { url: string } }
-  )[] = [{ type: "text", text: buildUserPrompt(answers, previewResult) }];
-
-  if (imageDataUrl) {
-    userContent.push({ type: "image_url", image_url: { url: imageDataUrl } });
-  }
-
   const client = new OpenAI({ apiKey });
 
   try {
-    const completion = await client.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: userContent },
-      ],
-      response_format: {
-        type: "json_schema",
-        json_schema: {
-          name: "full_report",
-          strict: true,
-          schema: fullReportJsonSchema,
-        },
-      },
-    });
+    const groupResults = await mapWithConcurrency(
+      CHAPTER_GROUPS,
+      CHAPTER_CONCURRENCY,
+      (group) =>
+        generateChapterGroup(client, group, answers, previewResult, imageDataUrl),
+    );
 
-    const content = completion.choices[0]?.message?.content;
-    if (!content) {
-      return NextResponse.json(
-        { error: "AI 응답을 받지 못했습니다." },
-        { status: 502 },
-      );
-    }
+    const report = groupResults.reduce(
+      (acc, group) => ({ ...acc, ...group }),
+      {} as Partial<FullReport>,
+    ) as FullReport;
 
-    const report = JSON.parse(content) as FullReport;
     return NextResponse.json({ report });
   } catch (error) {
     console.error("generate-report failed", error);

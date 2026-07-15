@@ -258,7 +258,7 @@ export default function ResultPage() {
   );
 
   return (
-    <main className="min-h-screen bg-white pb-16 pt-10 text-black">
+    <main className="min-h-screen bg-white pb-28 pt-10 text-black">
       {/* Header */}
       <Container className="text-center">
         <Link
@@ -795,17 +795,24 @@ export default function ResultPage() {
             ))}
           </ul>
 
-          <Link
-            href="/checkout"
-            className="mt-6 flex w-full items-center justify-center rounded-full bg-black px-8 py-4 text-sm font-semibold text-white"
-          >
-            상세 리포트 보러가기
-          </Link>
           <p className="mt-3 text-center text-xs leading-relaxed text-gray-500">
             무료 미리보기는 방향만, 상세 리포트는 실행 가이드까지 보여드려요.
           </p>
         </div>
       </Container>
+
+      {/* Floating CTA — stays pinned to the bottom of the viewport while
+          scrolling through the preview. */}
+      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-violet-100 bg-white/95 pb-[max(env(safe-area-inset-bottom),1rem)] pt-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] backdrop-blur">
+        <Container>
+          <Link
+            href="/checkout"
+            className="flex w-full items-center justify-center rounded-full bg-black px-8 py-4 text-sm font-semibold text-white"
+          >
+            상세 리포트 보러가기
+          </Link>
+        </Container>
+      </div>
     </main>
   );
 }
