@@ -10,25 +10,25 @@ const floatingTags: {
 }[] = [
   {
     label: "#추구미",
-    className: "left-[16%] top-6",
+    className: "left-[2%] top-16",
     delay: "0s",
     duration: "6s",
   },
   {
     label: "#헤어스타일",
-    className: "right-[16%] top-12",
+    className: "right-[4%] top-28",
     delay: "1.2s",
     duration: "7s",
   },
   {
     label: "#메이크업",
-    className: "left-[16%] bottom-6",
+    className: "left-[6%] bottom-24",
     delay: "0.6s",
     duration: "6.5s",
   },
   {
     label: "#스타일링",
-    className: "right-[16%] bottom-12",
+    className: "right-[2%] bottom-10",
     delay: "1.8s",
     duration: "7.5s",
   },
@@ -48,15 +48,20 @@ export default function Home() {
       />
       <div className="absolute inset-0 bg-gradient-to-b from-white/70 via-white/55 to-white/85" />
 
-      {floatingTags.map((tag) => (
-        <span
-          key={tag.label}
-          className={`animate-float pointer-events-none absolute z-10 whitespace-nowrap rounded-full border border-white/60 bg-white/70 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-violet-600 shadow-sm backdrop-blur-sm ${tag.className}`}
-          style={{ animationDelay: tag.delay, animationDuration: tag.duration }}
-        >
-          {tag.label}
-        </span>
-      ))}
+      {/* Positioned relative to the same max-w-md column as the text below
+          (not the full viewport) so the tags hug the content instead of
+          drifting out toward the screen edges on wide/desktop views. */}
+      <div className="pointer-events-none absolute left-1/2 top-0 z-10 h-full w-full max-w-md -translate-x-1/2">
+        {floatingTags.map((tag) => (
+          <span
+            key={tag.label}
+            className={`animate-float absolute whitespace-nowrap rounded-full border border-white/60 bg-white/70 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-violet-600 shadow-sm backdrop-blur-sm ${tag.className}`}
+            style={{ animationDelay: tag.delay, animationDuration: tag.duration }}
+          >
+            {tag.label}
+          </span>
+        ))}
+      </div>
 
       <Container className="relative z-20 flex flex-col items-center text-center">
         <p className="mb-8 text-sm tracking-[0.3em] text-violet-600">
