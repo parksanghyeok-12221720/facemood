@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ANONYMOUS, loadTossPayments } from "@tosspayments/tosspayments-sdk";
 import Container from "@/app/components/Container";
+import { TEST_AMOUNT_KRW, isTestPhone } from "@/lib/testPayment";
 
 const REPORT_ID_KEY = "facemood_report_id";
 const PENDING_PASSWORD_KEY = "facemood_pending_password";
@@ -278,6 +279,7 @@ export default function CheckoutPage() {
 
     try {
       const phone = `${phonePrefix}-${phoneMiddle}-${phoneLast}`;
+      const chargeAmount = isTestPhone(phone) ? TEST_AMOUNT_KRW : REPORT_PRICE_KRW;
 
       // Read back on the success page after Toss redirects here — the
       // payment is only confirmed (and this password/phone saved)
@@ -293,7 +295,7 @@ export default function CheckoutPage() {
       // 네이버페이, etc. themselves — Toss owns the method selection UI.
       await payment.requestPayment({
         method: "CARD",
-        amount: { currency: "KRW", value: REPORT_PRICE_KRW },
+        amount: { currency: "KRW", value: chargeAmount },
         orderId: reportId,
         orderName: "FACEMOOD 상세 리포트",
         successUrl: `${window.location.origin}/checkout/success`,

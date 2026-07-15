@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getReport, setCheckoutPassword } from "@/lib/reports";
 import { confirmTossPayment, REPORT_PRICE_KRW } from "@/lib/payment";
+import { TEST_AMOUNT_KRW, isTestPhone } from "@/lib/testPayment";
 
 export const runtime = "nodejs";
 
@@ -55,8 +56,13 @@ export async function POST(request: NextRequest) {
   }
 
   // Never trust the client-sent amount for the actual charge — verify it
-  // matches our fixed price before even asking Toss to confirm.
-  if (amount !== REPORT_PRICE_KRW) {
+  // matches our fixed price before even asking Toss to confirm. The one
+  // exception is the internal test phone number, which is allowed to
+  // charge TEST_AMOUNT_KRW instead so the real Toss flow can be tested
+  // end-to-end without paying full price.
+  const expectedAmount =
+    phone && isTestPhone(phone) ? TEST_AMOUNT_KRW : REPORT_PRICE_KRW;
+  if (amount !== expectedAmount) {
     return NextResponse.json(
       { error: "결제 금액이 올바르지 않습니다." },
       { status: 400 },

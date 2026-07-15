@@ -12,16 +12,6 @@ type Question = {
 
 const genderOptions = ["여성", "남성"];
 
-const jobOptions = [
-  "학생",
-  "직장인",
-  "프리랜서",
-  "공무원",
-  "자영업자",
-  "전업주부",
-  "기타",
-];
-
 const questions: Question[] = [
   {
     key: "moodDirection",
@@ -141,7 +131,6 @@ export default function TestPage() {
   const [age, setAge] = useState("");
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
-  const [job, setJob] = useState("");
 
   const isProfileStep = step === 0;
   const question = !isProfileStep ? questions[step - 1] : undefined;
@@ -150,8 +139,7 @@ export default function TestPage() {
     gender !== "" &&
     age.trim() !== "" &&
     height.trim() !== "" &&
-    weight.trim() !== "" &&
-    job !== "";
+    weight.trim() !== "";
 
   function handleProfileNext() {
     setStep(step + 1);
@@ -171,7 +159,6 @@ export default function TestPage() {
         age,
         height,
         weight,
-        job,
         ...nextAnswers,
       };
       localStorage.setItem("facemood_test_answers", JSON.stringify(result));
@@ -286,42 +273,6 @@ export default function TestPage() {
                     placeholder="예: 55"
                     className={inputClass}
                   />
-                </div>
-              </div>
-
-              <div>
-                <p className="mb-3 text-xs tracking-[0.2em] text-gray-500">
-                  직업
-                </p>
-                <div className="relative">
-                  <select
-                    value={job}
-                    onChange={(e) => setJob(e.target.value)}
-                    className={`appearance-none ${inputClass}`}
-                  >
-                    <option value="" disabled className="text-gray-400">
-                      선택하기
-                    </option>
-                    {jobOptions.map((option) => (
-                      <option key={option} value={option} className="text-black">
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                  <svg
-                    className="pointer-events-none absolute right-5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
-                    viewBox="0 0 20 20"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M5 7.5L10 12.5L15 7.5"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
                 </div>
               </div>
             </div>
