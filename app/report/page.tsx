@@ -1,10 +1,15 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Container from "@/app/components/Container";
 import { REPORT_CHAPTERS } from "@/types/report";
-import type { FullReport, PreviewResult } from "@/types/report";
+import type {
+  FullReport,
+  PreviewResult,
+  ReportChapterKey,
+} from "@/types/report";
 
 const FULL_REPORT_KEY = "facemood_full_report";
 const ANSWERS_KEY = "facemood_answers";
@@ -49,6 +54,8 @@ function GeneratingState() {
       <p className="mt-2 text-xs text-gray-400">
         사진과 답변을 바탕으로 스타일 방향을 정리하고 있어요. 잠시만
         기다려주세요.
+        <br />
+        (3~5분 정도 소요될 수 있습니다.)
       </p>
     </main>
   );
@@ -118,26 +125,131 @@ function PasswordGate({
   );
 }
 
-function SectionCard({
-  label,
-  title,
-  children,
-}: {
-  label: string;
-  title?: string;
-  children: React.ReactNode;
-}) {
+type ChapterVisual = "hero" | "hair" | "makeup" | "palette" | "none";
+
+// Only 3 real photos exist (mood/hair/makeup), so images are reserved for
+// the chapters they're actually relevant to rather than repeated on every
+// single one — alternating with text-only cards keeps a visual rhythm
+// instead of showing the same photo 13 times in a row.
+const CHAPTER_VISUALS: Record<ReportChapterKey, ChapterVisual> = {
+  finalSummary: "hero",
+  currentImageMood: "none",
+  gapAnalysis: "none",
+  recommendedMoodDetail: "hero",
+  firstImpression: "none",
+  stylingGuide: "hero",
+  hairGuide: "hair",
+  makeupGuide: "makeup",
+  colorMoodAnalysis: "palette",
+  colorPalette: "palette",
+  avoidStyles: "none",
+  situationGuide: "none",
+  finalChecklist: "none",
+};
+
+function ChapterBody({ text }: { text: string }) {
+  const paragraphs = text
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+
   return (
-    <Container maxWidth="max-w-3xl" className="mt-10">
-      <span className="inline-flex items-center rounded-full bg-violet-100 px-3 py-1 text-[11px] font-semibold tracking-[0.15em] text-violet-600">
-        {label}
-      </span>
-      {title && (
-        <h2 className="mt-4 text-lg font-bold leading-snug text-black">
-          {title}
-        </h2>
-      )}
-      <div className={title ? "mt-4" : "mt-4"}>{children}</div>
+    <div className="flex flex-col gap-4">
+      {paragraphs.map((paragraph, index) => (
+        <p key={index} className="text-[15px] leading-[1.9] text-gray-800">
+          {paragraph}
+        </p>
+      ))}
+    </div>
+  );
+}
+
+function PaletteGrid({ palette }: { palette: PreviewResult["colorHint"]["palette"] }) {
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      {palette.map((chip) => (
+        <div
+          key={chip.name}
+          className="rounded-2xl border border-violet-100 bg-violet-50/40 p-3"
+        >
+          <div className="flex items-center gap-2">
+            <span
+              className="h-9 w-9 shrink-0 rounded-full border border-black/5 shadow-sm"
+              style={{ backgroundColor: chip.hex }}
+            />
+            <div>
+              <p className="text-sm font-semibold text-black">{chip.name}</p>
+              <p className="text-[10px] uppercase tracking-wide text-gray-400">
+                {chip.hex}
+              </p>
+            </div>
+          </div>
+          <p className="mt-2 text-xs leading-relaxed text-gray-500">
+            {chip.description}
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ChapterCard({
+  chapter,
+  body,
+  images,
+  colorHint,
+}: {
+  chapter: (typeof REPORT_CHAPTERS)[number];
+  body: string;
+  images: PreviewResult["images"];
+  colorHint: PreviewResult["colorHint"];
+}) {
+  const visual = CHAPTER_VISUALS[chapter.key];
+  const imageSrc =
+    visual === "hero" ? images.hero : visual === "hair" ? images.hair : visual === "makeup" ? images.makeup : null;
+  const isFinal = chapter.key === "finalChecklist";
+
+  return (
+    <Container maxWidth="max-w-3xl" className="mt-8">
+      <div
+        className={`overflow-hidden rounded-3xl border shadow-sm ${
+          isFinal
+            ? "border-violet-200 bg-gradient-to-br from-violet-50 via-white to-violet-100 shadow-violet-100/60"
+            : "border-violet-100 bg-white shadow-violet-100/40"
+        }`}
+      >
+        {imageSrc && (
+          <div className="relative aspect-[16/9] w-full">
+            <Image
+              src={imageSrc}
+              alt={chapter.title}
+              fill
+              sizes="(min-width: 768px) 768px, 100vw"
+              className="object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-black/0 to-black/0" />
+          </div>
+        )}
+
+        <div className="p-6">
+          <span className="inline-flex items-center rounded-full bg-violet-100 px-3 py-1 text-[11px] font-semibold tracking-[0.15em] text-violet-600">
+            CHAPTER {chapter.number}
+          </span>
+          <h2 className="mt-4 text-lg font-bold leading-snug text-black">
+            {chapter.title}
+          </h2>
+
+          {visual === "palette" && (
+            <div className="mt-5">
+              <PaletteGrid palette={colorHint.palette} />
+            </div>
+          )}
+
+          <div className={visual === "palette" ? "mt-5" : "mt-4"}>
+            <ChapterBody text={body} />
+          </div>
+        </div>
+      </div>
     </Container>
   );
 }
@@ -364,15 +476,13 @@ export default function ReportPage() {
       </Container>
 
       {REPORT_CHAPTERS.map((chapter) => (
-        <SectionCard
+        <ChapterCard
           key={chapter.key}
-          label={`CHAPTER ${chapter.number}`}
-          title={chapter.title}
-        >
-          <p className="whitespace-pre-line text-sm leading-relaxed text-gray-700">
-            {report[chapter.key].body}
-          </p>
-        </SectionCard>
+          chapter={chapter}
+          body={report[chapter.key].body}
+          images={report.images}
+          colorHint={report.colorHint}
+        />
       ))}
 
       <Container className="mt-10">

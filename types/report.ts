@@ -119,6 +119,15 @@ const HAIR_IMAGES = [
   "/mood/hair/hair_샌드펌.png",
   "/mood/hair/hair_시스루.png",
   "/mood/hair/hair_히피펌.png",
+  "/mood/hair/hair_ 뱅드 보브.png",
+  "/mood/hair/hair_S컬(지지컬).png",
+  "/mood/hair/hair_러블리보브.png",
+  "/mood/hair/hair_박스 보브.png",
+  "/mood/hair/hair_슬릭 보브.png",
+  "/mood/hair/hair_시스루 뱅 보브.png",
+  "/mood/hair/hair_클라우드 보브.png",
+  "/mood/hair/hair_텍스처 웨이브.png",
+  "/mood/hair/hair_허쉬컷.png",
 ];
 
 const MAKEUP_IMAGES = [
@@ -127,14 +136,28 @@ const MAKEUP_IMAGES = [
   "/mood/makeup/makeup3.png",
   "/mood/makeup/makeup4.png",
   "/mood/makeup/makeup5.png",
+  "/mood/makeup/makeup_ 은은한 스모키.png",
+  "/mood/makeup/makeup_고스트 래시.png",
+  "/mood/makeup/makeup_굴로우베이스.png",
+  "/mood/makeup/makeup_실버포인트.png",
+  "/mood/makeup/makeup_절제된 컨투어.png",
+  "/mood/makeup/션makeup_라이트 레이어링 파운데이.png",
 ];
 
-function imagesForMood(mood: MoodCandidate): PreviewResult["images"] {
-  const index = MOOD_CANDIDATES.indexOf(mood);
+// Combines the primary + sub mood into one index so the (now much larger)
+// hair/makeup pools actually get used — indexing off the primary mood
+// alone would only ever touch the first 8 entries.
+function imagesForMood(
+  mood: MoodCandidate,
+  subMood: MoodCandidate,
+): PreviewResult["images"] {
+  const moodCount = MOOD_CANDIDATES.length;
+  const combinedIndex =
+    MOOD_CANDIDATES.indexOf(mood) * moodCount + MOOD_CANDIDATES.indexOf(subMood);
   return {
     hero: MOOD_HERO_IMAGE[mood],
-    hair: HAIR_IMAGES[index % HAIR_IMAGES.length],
-    makeup: MAKEUP_IMAGES[index % MAKEUP_IMAGES.length],
+    hair: HAIR_IMAGES[combinedIndex % HAIR_IMAGES.length],
+    makeup: MAKEUP_IMAGES[combinedIndex % MAKEUP_IMAGES.length],
   };
 }
 
@@ -220,7 +243,7 @@ export const mockPreviewResult: PreviewResult = {
     "옷 색감 적용법",
     "헤어 컬러 방향",
   ],
-  images: imagesForMood("청순 자연형"),
+  images: imagesForMood("청순 자연형", "러블리 여리형"),
 };
 
 // ---------------------------------------------------------------------------
@@ -425,6 +448,12 @@ export const REPORT_CHAPTERS: {
 
 export type FullReport = {
   [K in ReportChapterKey]: { body: string };
+} & {
+  // Reused as-is from the free preview (same rule-based mood images +
+  // color palette) rather than re-derived or AI-generated, so the paid
+  // report visually matches the preview and costs nothing extra.
+  images: PreviewResult["images"];
+  colorHint: PreviewResult["colorHint"];
 };
 
 // ---------------------------------------------------------------------------
@@ -699,6 +728,6 @@ export function buildPreviewResult(
     missions: SHARED_MISSIONS,
     hints: SHARED_HINTS,
     lockedSections: SHARED_LOCKED_SECTIONS,
-    images: imagesForMood(recommendedMood),
+    images: imagesForMood(recommendedMood, profile.subMood),
   };
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
-import { MOOD_CANDIDATES, REPORT_CHAPTERS } from "@/types/report";
+import { MOOD_CANDIDATES, REPORT_CHAPTERS, buildPreviewResult } from "@/types/report";
 import type { FullReport, PreviewResult, ReportChapterKey } from "@/types/report";
 
 export const runtime = "nodejs";
@@ -331,10 +331,21 @@ export async function POST(request: NextRequest) {
         generateChapterGroup(client, group, answers, previewResult, imageDataUrl),
     );
 
-    const report = groupResults.reduce(
-      (acc, group) => ({ ...acc, ...group }),
-      {} as Partial<FullReport>,
-    ) as FullReport;
+    // Reuse the same rule-based mood images + color palette as the free
+    // preview instead of asking the AI to pick them — no extra cost, and
+    // guarantees the paid report visually matches what the user already
+    // saw. Falls back to a fresh rule-based computation if the client
+    // didn't send its personalized preview along.
+    const visuals = previewResult ?? buildPreviewResult(answers);
+
+    const report = {
+      ...groupResults.reduce(
+        (acc, group) => ({ ...acc, ...group }),
+        {} as Partial<FullReport>,
+      ),
+      images: visuals.images,
+      colorHint: visuals.colorHint,
+    } as FullReport;
 
     return NextResponse.json({ report });
   } catch (error) {
