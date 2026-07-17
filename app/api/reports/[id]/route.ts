@@ -12,6 +12,17 @@ export const runtime = "nodejs";
 
 type Params = Promise<{ id: string }>;
 
+// Behind nginx, request.nextUrl.origin reflects whatever address Next.js
+// itself is bound to (http://localhost:3000) unless the proxy forwards
+// the original host/protocol — which this app's nginx config doesn't do.
+// SITE_URL (set in .env.local) is the reliable source for the public
+// domain; nextUrl.origin is only a local-dev fallback.
+function resolveSiteOrigin(request: NextRequest): string {
+  const siteUrl = process.env.SITE_URL;
+  if (siteUrl) return siteUrl.replace(/\/$/, "");
+  return request.nextUrl.origin;
+}
+
 export async function PATCH(
   request: NextRequest,
   segmentData: { params: Params },
@@ -43,7 +54,7 @@ export async function PATCH(
     updated = updateFullReport(id, body.fullReport) || updated;
 
     if (before && !before.fullReport && before.phone) {
-      const reportUrl = `${request.nextUrl.origin}/report?id=${id}`;
+      const reportUrl = `${resolveSiteOrigin(request)}/report?id=${id}`;
       sendReportReadySms(before.phone, reportUrl)
         .then(() => markReportSent(id))
         .catch((error) => console.error("sendReportReadySms failed", error));

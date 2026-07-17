@@ -142,6 +142,8 @@ const detailChecklist = [
   "어울리는 옷 색감과 실루엣",
   "소개팅·데이트·인스타용 이미지 전략",
   "최종 스타일 체크리스트",
+  "사진상 얼굴형 분석",
+  "사진상 동물상 분석",
 ];
 
 function FirstImpressionCounter() {
@@ -476,6 +478,46 @@ export default function ResultPage() {
           </p>
         </div>
       </Container>
+
+      {/* Face shape / animal type — photo-based, so only shown when a
+          photo was actually analyzed. */}
+      {(previewResult.faceShapeType || previewResult.animalType) && (
+        <Container className="mt-10">
+          <h2 className="text-base font-bold text-black">
+            사진상 얼굴형 · 동물상
+          </h2>
+          <p className="mt-2 text-xs leading-relaxed text-gray-500">
+            사진에서 느껴지는 인상을 참고로 분류해봤어요. 확정 진단이 아닌
+            참고용 분류입니다.
+          </p>
+
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            {previewResult.faceShapeType && (
+              <div className="rounded-2xl border border-violet-100 bg-white p-4 text-center">
+                <p className="text-xs font-semibold text-gray-500">얼굴형</p>
+                <p className="mt-2 text-lg font-bold text-violet-700">
+                  {previewResult.faceShapeType}
+                </p>
+              </div>
+            )}
+            {previewResult.animalType && (
+              <div className="rounded-2xl border border-violet-100 bg-white p-4 text-center">
+                <p className="text-xs font-semibold text-gray-500">동물상</p>
+                <p className="mt-2 text-lg font-bold text-violet-700">
+                  {previewResult.animalType}
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-4 rounded-2xl border border-dashed border-violet-200 bg-violet-50/30 p-4 text-center">
+            <p className="flex items-center justify-center gap-1.5 text-xs font-medium leading-relaxed text-violet-600">
+              <LockIcon />
+              자세한 분석과 활용법은 상세 리포트에서 확인할 수 있습니다.
+            </p>
+          </div>
+        </Container>
+      )}
 
       {/* Today's style missions */}
       <Container className="mt-10">

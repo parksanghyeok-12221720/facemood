@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
-import { applyPreviewPersonalization, buildPreviewResult } from "@/types/report";
+import {
+  ANIMAL_TYPE_CANDIDATES,
+  FACE_SHAPE_CANDIDATES,
+  applyPreviewPersonalization,
+  buildPreviewResult,
+} from "@/types/report";
 import type { PreviewPersonalization } from "@/types/report";
 
 export const runtime = "nodejs";
@@ -25,20 +30,12 @@ FACEMOOD는 외모를 평가하거나 점수를 매기는 서비스가 아니라
 - 이건 유료 상세 리포트가 아니라 무료 미리보기입니다. 각 항목은 1~2문장으로 짧고 간결하게
 작성하세요. 길게 늘어뜨리지 마세요.
 - 사용자의 답변(성별, 나이, 키, 몸무게, 원하는 추구미, 평소 스타일 등)과 사진에서 보이는
-분위기를 반영해서 개인화하세요. 키·몸무게는 체형 지적이 아니라 스타일 참고로만 언급하세요.`;
+분위기를 반영해서 개인화하세요. 키·몸무게는 체형 지적이 아니라 스타일 참고로만 언급하세요.
+- 사진이 첨부된 경우, 얼굴형과 동물상도 분류해주세요. 이건 확정 진단이 아니라 사진상으로
+보이는 인상 분류이니, 주어진 후보 중에서만 하나씩 고르세요.`;
 
-const schema = {
-  type: "object",
-  additionalProperties: false,
-  required: [
-    "oneLineSummary",
-    "tags",
-    "currentMood",
-    "upgradePoints",
-    "colorHint",
-    "hints",
-  ],
-  properties: {
+function buildSchema(hasImage: boolean) {
+  const base = {
     oneLineSummary: { type: "string" },
     tags: { type: "array", items: { type: "string" } },
     currentMood: { type: "array", items: { type: "string" } },
@@ -62,8 +59,37 @@ const schema = {
         makeup: { type: "string" },
       },
     },
-  },
-} as const;
+  };
+
+  const required = [
+    "oneLineSummary",
+    "tags",
+    "currentMood",
+    "upgradePoints",
+    "colorHint",
+    "hints",
+  ];
+
+  // Face shape / animal type need an actual photo — only ask for (and
+  // require) them when one was uploaded.
+  const properties = hasImage
+    ? {
+        ...base,
+        faceShapeType: { type: "string", enum: [...FACE_SHAPE_CANDIDATES] },
+        animalType: { type: "string", enum: [...ANIMAL_TYPE_CANDIDATES] },
+      }
+    : base;
+  if (hasImage) {
+    required.push("faceShapeType", "animalType");
+  }
+
+  return {
+    type: "object",
+    additionalProperties: false,
+    required,
+    properties,
+  } as const;
+}
 
 function buildUserPrompt(
   answers: Record<string, unknown>,
@@ -94,6 +120,12 @@ function buildUserPrompt(
     "- colorHint.summary: 컬러 무드 한줄 요약 (1문장)",
     "- colorHint.description: 컬러 무드 설명 (2~3문장)",
     "- hints.styling / hints.hair / hints.makeup: 각각 1~2문장짜리 짧은 힌트",
+    ...(hasImage
+      ? [
+          `- faceShapeType: 사진상 얼굴형을 [${FACE_SHAPE_CANDIDATES.join(", ")}] 중 하나로 분류`,
+          `- animalType: 사진상 동물상을 [${ANIMAL_TYPE_CANDIDATES.join(", ")}] 중 하나로 분류`,
+        ]
+      : []),
   ].join("\n");
 }
 
@@ -155,7 +187,7 @@ export async function POST(request: NextRequest) {
         json_schema: {
           name: "preview_personalization",
           strict: true,
-          schema,
+          schema: buildSchema(!!imageDataUrl),
         },
       },
     });

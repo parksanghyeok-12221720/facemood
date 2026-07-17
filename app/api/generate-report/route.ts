@@ -1,7 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
-import { MOOD_CANDIDATES, REPORT_CHAPTERS, buildPreviewResult } from "@/types/report";
-import type { FullReport, PreviewResult, ReportChapterKey } from "@/types/report";
+import {
+  ANIMAL_TYPE_CANDIDATES,
+  FACE_SHAPE_CANDIDATES,
+  MOOD_CANDIDATES,
+  REPORT_CHAPTERS,
+  buildPreviewResult,
+} from "@/types/report";
+import type {
+  AnimalTypeCandidate,
+  FaceShapeCandidate,
+  FullReport,
+  PreviewResult,
+  ReportChapterKey,
+} from "@/types/report";
 
 export const runtime = "nodejs";
 
@@ -18,9 +30,15 @@ export const runtime = "nodejs";
 // One chapter per request — gpt-4o reliably undershoots length targets
 // when several chapters share a single completion, so each chapter gets
 // its own call (run in parallel) and its own full attention/token budget.
-const CHAPTER_GROUPS: ReportChapterKey[][] = REPORT_CHAPTERS.map((c) => [
-  c.key,
-]);
+// faceShapeAnalysis/animalTypeAnalysis need an actual photo, so they're
+// dropped entirely when the user skipped the photo step.
+function getChapterGroups(hasImage: boolean): ReportChapterKey[][] {
+  return REPORT_CHAPTERS.filter(
+    (c) =>
+      hasImage ||
+      (c.key !== "faceShapeAnalysis" && c.key !== "animalTypeAnalysis"),
+  ).map((c) => [c.key]);
+}
 
 const CHAPTER_BY_KEY = new Map(REPORT_CHAPTERS.map((c) => [c.key, c]));
 
@@ -171,7 +189,46 @@ function buildUserPrompt(
     "- 요약형 결론으로 짧게 마무리하지 말고, 마지막 문단에도 구체적인 실행 팁을 담으세요.",
     "",
     buildChapterGuidance(group),
+    ...(group.includes("faceShapeAnalysis") || group.includes("animalTypeAnalysis")
+      ? [
+          "",
+          "얼굴형/동물상 챕터는 본문(body)과 별개로 \"type\" 필드에도 분류 결과를 넣어야",
+          "합니다. type 값은 반드시 주어진 후보 목록 중 하나와 정확히 똑같은 문자열이어야",
+          "하고, 본문 내용도 이 type과 일치해야 합니다.",
+        ]
+      : []),
   ].join("\n");
+}
+
+function chapterSchema(key: ReportChapterKey) {
+  if (key === "faceShapeAnalysis") {
+    return {
+      type: "object",
+      additionalProperties: false,
+      required: ["body", "type"],
+      properties: {
+        body: { type: "string" },
+        type: { type: "string", enum: [...FACE_SHAPE_CANDIDATES] },
+      },
+    };
+  }
+  if (key === "animalTypeAnalysis") {
+    return {
+      type: "object",
+      additionalProperties: false,
+      required: ["body", "type"],
+      properties: {
+        body: { type: "string" },
+        type: { type: "string", enum: [...ANIMAL_TYPE_CANDIDATES] },
+      },
+    };
+  }
+  return {
+    type: "object",
+    additionalProperties: false,
+    required: ["body"],
+    properties: { body: { type: "string" } },
+  };
 }
 
 function buildGroupSchema(group: ReportChapterKey[]) {
@@ -179,17 +236,7 @@ function buildGroupSchema(group: ReportChapterKey[]) {
     type: "object",
     additionalProperties: false,
     required: group,
-    properties: Object.fromEntries(
-      group.map((key) => [
-        key,
-        {
-          type: "object",
-          additionalProperties: false,
-          required: ["body"],
-          properties: { body: { type: "string" } },
-        },
-      ]),
-    ),
+    properties: Object.fromEntries(group.map((key) => [key, chapterSchema(key)])),
   } as const;
 }
 
@@ -234,13 +281,19 @@ async function expandChapterBody(
   return expanded && expanded.length > currentBody.length ? expanded : currentBody;
 }
 
+// Broader than FullReport's per-chapter `{ body }` shape — the two
+// classification chapters also carry a `type` (their pick from the
+// enum-constrained candidate list), extracted separately after
+// generation rather than stored on the chapter itself.
+type RawChapterResult = { body: string; type?: string };
+
 async function generateChapterGroup(
   client: OpenAI,
   group: ReportChapterKey[],
   answers: Record<string, unknown>,
   previewResult: PreviewResult | null,
   imageDataUrl: string | null,
-): Promise<Partial<FullReport>> {
+): Promise<Partial<Record<ReportChapterKey, RawChapterResult>>> {
   const userContent: (
     | { type: "text"; text: string }
     | { type: "image_url"; image_url: { url: string } }
@@ -279,7 +332,9 @@ async function generateChapterGroup(
     throw new Error("AI 응답을 받지 못했습니다.");
   }
 
-  const parsed = JSON.parse(content) as Partial<FullReport>;
+  const parsed = JSON.parse(content) as Partial<
+    Record<ReportChapterKey, RawChapterResult>
+  >;
 
   await Promise.all(
     group.map(async (key) => {
@@ -324,12 +379,26 @@ export async function POST(request: NextRequest) {
   const client = new OpenAI({ apiKey });
 
   try {
+    const groups = getChapterGroups(!!imageDataUrl);
     const groupResults = await mapWithConcurrency(
-      CHAPTER_GROUPS,
+      groups,
       CHAPTER_CONCURRENCY,
       (group) =>
         generateChapterGroup(client, group, answers, previewResult, imageDataUrl),
     );
+
+    const merged = groupResults.reduce(
+      (acc, group) => ({ ...acc, ...group }),
+      {} as Partial<Record<ReportChapterKey, RawChapterResult>>,
+    );
+
+    // Chapters only ever declare a `body` — the classification chapters'
+    // `type` pick is surfaced separately below, not stored on the chapter.
+    const chapters: Partial<FullReport> = {};
+    for (const key of Object.keys(merged) as ReportChapterKey[]) {
+      const chapter = merged[key];
+      if (chapter) chapters[key] = { body: chapter.body };
+    }
 
     // Reuse the same rule-based mood images + color palette as the free
     // preview instead of asking the AI to pick them — no extra cost, and
@@ -338,14 +407,19 @@ export async function POST(request: NextRequest) {
     // didn't send its personalized preview along.
     const visuals = previewResult ?? buildPreviewResult(answers);
 
-    const report = {
-      ...groupResults.reduce(
-        (acc, group) => ({ ...acc, ...group }),
-        {} as Partial<FullReport>,
-      ),
+    const report: FullReport = {
+      ...chapters,
       images: visuals.images,
       colorHint: visuals.colorHint,
-    } as FullReport;
+      faceShapeType:
+        (merged.faceShapeAnalysis?.type as FaceShapeCandidate | undefined) ??
+        visuals.faceShapeType ??
+        null,
+      animalType:
+        (merged.animalTypeAnalysis?.type as AnimalTypeCandidate | undefined) ??
+        visuals.animalType ??
+        null,
+    };
 
     return NextResponse.json({ report });
   } catch (error) {

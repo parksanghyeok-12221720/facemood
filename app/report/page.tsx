@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Container from "@/app/components/Container";
-import { REPORT_CHAPTERS } from "@/types/report";
+import { REPORT_CHAPTERS, buildPreviewResult } from "@/types/report";
 import type {
   FullReport,
   PreviewResult,
@@ -28,6 +28,29 @@ function getFullReportSnapshot() {
 
 function getServerFullReportSnapshot() {
   return null;
+}
+
+// Reports saved before `images`/`colorHint` were added to FullReport
+// (cached in localStorage or stored server-side) won't have them —
+// backfill from the same rule-based preview data instead of crashing.
+function ensureReportVisuals(report: FullReport): FullReport {
+  if (report.images && report.colorHint) return report;
+
+  try {
+    const answersRaw = localStorage.getItem(ANSWERS_KEY);
+    const answers = answersRaw
+      ? (JSON.parse(answersRaw) as Record<string, unknown>)
+      : {};
+    const fallback = buildPreviewResult(answers);
+    return {
+      ...report,
+      images: report.images ?? fallback.images,
+      colorHint: report.colorHint ?? fallback.colorHint,
+    };
+  } catch (error) {
+    console.error(error);
+    return report;
+  }
 }
 
 // Read directly (not via useSyncExternalStore/render state) — this only
@@ -125,7 +148,7 @@ function PasswordGate({
   );
 }
 
-type ChapterVisual = "hero" | "hair" | "makeup" | "palette" | "none";
+type ChapterVisual = "hero" | "hair" | "makeup" | "palette" | "typeBadge" | "none";
 
 // Only 3 real photos exist (mood/hair/makeup), so images are reserved for
 // the chapters they're actually relevant to rather than repeated on every
@@ -145,6 +168,8 @@ const CHAPTER_VISUALS: Record<ReportChapterKey, ChapterVisual> = {
   avoidStyles: "none",
   situationGuide: "none",
   finalChecklist: "none",
+  faceShapeAnalysis: "typeBadge",
+  animalTypeAnalysis: "typeBadge",
 };
 
 function ChapterBody({ text }: { text: string }) {
@@ -198,15 +223,17 @@ function ChapterCard({
   body,
   images,
   colorHint,
+  typeValue,
 }: {
   chapter: (typeof REPORT_CHAPTERS)[number];
   body: string;
-  images: PreviewResult["images"];
-  colorHint: PreviewResult["colorHint"];
+  images: PreviewResult["images"] | undefined;
+  colorHint: PreviewResult["colorHint"] | undefined;
+  typeValue?: string | null;
 }) {
   const visual = CHAPTER_VISUALS[chapter.key];
   const imageSrc =
-    visual === "hero" ? images.hero : visual === "hair" ? images.hair : visual === "makeup" ? images.makeup : null;
+    visual === "hero" ? images?.hero : visual === "hair" ? images?.hair : visual === "makeup" ? images?.makeup : null;
   const isFinal = chapter.key === "finalChecklist";
 
   return (
@@ -239,13 +266,27 @@ function ChapterCard({
             {chapter.title}
           </h2>
 
-          {visual === "palette" && (
+          {visual === "palette" && colorHint?.palette && (
             <div className="mt-5">
               <PaletteGrid palette={colorHint.palette} />
             </div>
           )}
 
-          <div className={visual === "palette" ? "mt-5" : "mt-4"}>
+          {visual === "typeBadge" && typeValue && (
+            <div className="mt-5 rounded-2xl border border-violet-200 bg-violet-50/60 p-5 text-center">
+              <p className="text-xs font-semibold tracking-[0.15em] text-violet-500">
+                사진상 분석 결과
+              </p>
+              <p className="mt-2 text-2xl font-extrabold text-violet-700">
+                {typeValue}
+              </p>
+              <p className="mt-1 text-xs text-gray-500">
+                에 가까운 인상으로 보여요
+              </p>
+            </div>
+          )}
+
+          <div className={visual === "palette" || visual === "typeBadge" ? "mt-5" : "mt-4"}>
             <ChapterBody text={body} />
           </div>
         </div>
@@ -443,6 +484,10 @@ export default function ReportPage() {
     report = fetchState.report;
   }
 
+  if (report) {
+    report = ensureReportVisuals(report);
+  }
+
   if (!report) {
     if (fetchState.status === "locked" || fetchState.status === "verifying") {
       return (
@@ -475,15 +520,31 @@ export default function ReportPage() {
         </p>
       </Container>
 
-      {REPORT_CHAPTERS.map((chapter) => (
-        <ChapterCard
-          key={chapter.key}
-          chapter={chapter}
-          body={report[chapter.key].body}
-          images={report.images}
-          colorHint={report.colorHint}
-        />
-      ))}
+      {REPORT_CHAPTERS.map((chapter) => {
+        const chapterData = report[chapter.key];
+        // Not every chapter is guaranteed to exist: faceShapeAnalysis /
+        // animalTypeAnalysis are skipped entirely when no photo was
+        // uploaded, and older cached reports may predate a given chapter.
+        if (!chapterData) return null;
+
+        const typeValue =
+          chapter.key === "faceShapeAnalysis"
+            ? report.faceShapeType
+            : chapter.key === "animalTypeAnalysis"
+              ? report.animalType
+              : undefined;
+
+        return (
+          <ChapterCard
+            key={chapter.key}
+            chapter={chapter}
+            body={chapterData.body}
+            images={report.images}
+            colorHint={report.colorHint}
+            typeValue={typeValue}
+          />
+        );
+      })}
 
       <Container className="mt-10">
         <p className="text-center text-xs leading-relaxed text-gray-400">

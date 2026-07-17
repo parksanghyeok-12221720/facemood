@@ -11,6 +11,31 @@ export const MOOD_CANDIDATES = [
 
 export type MoodCandidate = (typeof MOOD_CANDIDATES)[number];
 
+export const FACE_SHAPE_CANDIDATES = [
+  "긴 형",
+  "둥근형",
+  "육각형",
+  "땅콩형",
+  "하트형",
+  "마름모형",
+] as const;
+
+export type FaceShapeCandidate = (typeof FACE_SHAPE_CANDIDATES)[number];
+
+export const ANIMAL_TYPE_CANDIDATES = [
+  "강아지상",
+  "사슴상",
+  "토끼상",
+  "고양이상",
+  "다람쥐상",
+  "곰돌이상",
+  "범상",
+  "여우상",
+  "수달상",
+] as const;
+
+export type AnimalTypeCandidate = (typeof ANIMAL_TYPE_CANDIDATES)[number];
+
 export type PreviewResult = {
   recommendedMood: string;
   subMood: string;
@@ -54,6 +79,12 @@ export type PreviewResult = {
     hair: string;
     makeup: string;
   };
+  // Photo-based, so only set when a photo was uploaded (AI vision call) —
+  // null for the rule-based fallback and the no-photo flow. The preview
+  // only ever shows the type itself; the reasoning stays locked to the
+  // paid report.
+  faceShapeType: FaceShapeCandidate | null;
+  animalType: AnimalTypeCandidate | null;
 };
 
 // The "멘트" fields an AI call is allowed to personalize per user answers +
@@ -74,6 +105,9 @@ export type PreviewPersonalization = {
     hair: string;
     makeup: string;
   };
+  // Only requested from the AI when a photo was uploaded.
+  faceShapeType?: FaceShapeCandidate;
+  animalType?: AnimalTypeCandidate;
 };
 
 export function applyPreviewPersonalization(
@@ -86,6 +120,8 @@ export function applyPreviewPersonalization(
     tags: patch.tags,
     currentMood: patch.currentMood,
     upgradePoints: patch.upgradePoints,
+    faceShapeType: patch.faceShapeType ?? base.faceShapeType,
+    animalType: patch.animalType ?? base.animalType,
     colorHint: {
       ...base.colorHint,
       summary: patch.colorHint.summary,
@@ -244,6 +280,8 @@ export const mockPreviewResult: PreviewResult = {
     "헤어 컬러 방향",
   ],
   images: imagesForMood("청순 자연형", "러블리 여리형"),
+  faceShapeType: "하트형",
+  animalType: "사슴상",
 };
 
 // ---------------------------------------------------------------------------
@@ -265,7 +303,9 @@ export type ReportChapterKey =
   | "colorPalette"
   | "avoidStyles"
   | "situationGuide"
-  | "finalChecklist";
+  | "finalChecklist"
+  | "faceShapeAnalysis"
+  | "animalTypeAnalysis";
 
 export const REPORT_CHAPTERS: {
   key: ReportChapterKey;
@@ -444,16 +484,47 @@ export const REPORT_CHAPTERS: {
       "최종 한 줄 조언",
     ],
   },
+  {
+    key: "faceShapeAnalysis",
+    number: "14",
+    title: "사진상 얼굴형 분석",
+    points: [
+      `사진상으로 보이는 얼굴형 분류 (${FACE_SHAPE_CANDIDATES.join(" / ")} 중 하나)`,
+      "이 얼굴형에서 자주 느껴지는 인상",
+      "이 얼굴형과 잘 어울리는 헤어 라인 · 앞머리 방향",
+      "이 얼굴형과 잘 어울리는 메이크업 음영 · 블러셔 위치",
+      "이 얼굴형과 잘 어울리는 안경 · 귀걸이 방향",
+      "확정적인 진단이 아니라는 안내",
+    ],
+  },
+  {
+    key: "animalTypeAnalysis",
+    number: "15",
+    title: "사진상 동물상 분석",
+    points: [
+      `사진상으로 보이는 동물상 분류 (${ANIMAL_TYPE_CANDIDATES.join(" / ")} 중 하나)`,
+      "이 동물상이 주는 인상과 매력 포인트",
+      "이 동물상과 잘 어울리는 스타일링 방향",
+      "이 동물상과 잘 어울리는 헤어 · 메이크업 방향",
+      "확정적인 진단이 아니라는 안내",
+    ],
+  },
 ];
 
 export type FullReport = {
-  [K in ReportChapterKey]: { body: string };
+  // Optional, not required — faceShapeAnalysis/animalTypeAnalysis only
+  // exist when a photo was uploaded, and older cached reports (saved
+  // before a given chapter/field existed) won't have every key either.
+  // Renderers must check before reading a chapter.
+  [K in ReportChapterKey]?: { body: string };
 } & {
   // Reused as-is from the free preview (same rule-based mood images +
   // color palette) rather than re-derived or AI-generated, so the paid
   // report visually matches the preview and costs nothing extra.
   images: PreviewResult["images"];
   colorHint: PreviewResult["colorHint"];
+  faceShapeType?: FaceShapeCandidate | null;
+  animalType?: AnimalTypeCandidate | null;
 };
 
 // ---------------------------------------------------------------------------
@@ -684,6 +755,8 @@ const SHARED_LOCKED_SECTIONS = [
   "피하면 좋은 색감",
   "옷 색감 적용법",
   "헤어 컬러 방향",
+  "사진상 얼굴형 분석",
+  "사진상 동물상 분석",
 ];
 
 function pickRecommendedMood(answers: Record<string, unknown>): MoodCandidate {
@@ -729,5 +802,9 @@ export function buildPreviewResult(
     hints: SHARED_HINTS,
     lockedSections: SHARED_LOCKED_SECTIONS,
     images: imagesForMood(recommendedMood, profile.subMood),
+    // Photo-based — only /api/generate-preview (with a photo) can fill
+    // these in. The rule-based path has no photo to go on.
+    faceShapeType: null,
+    animalType: null,
   };
 }
