@@ -108,7 +108,6 @@ export type PaidReportSummary = {
   name: string | null;
   phone: string | null;
   amount: number | null;
-  recommendedMood: string | null;
   paidAt: string | null;
   reportSentAt: string | null;
   createdAt: string;
@@ -117,7 +116,6 @@ export type PaidReportSummary = {
 type PaidReportRow = {
   id: string;
   answers: string;
-  preview_result: string | null;
   amount: number | null;
   phone: string | null;
   paid_at: string | null;
@@ -128,7 +126,7 @@ type PaidReportRow = {
 export function listPaidReports(): PaidReportSummary[] {
   const rows = db
     .prepare(
-      `SELECT id, answers, preview_result, amount, phone, paid_at, report_sent_at, created_at
+      `SELECT id, answers, amount, phone, paid_at, report_sent_at, created_at
        FROM reports WHERE paid = 1 ORDER BY paid_at DESC`,
     )
     .all() as PaidReportRow[];
@@ -144,27 +142,82 @@ export function listPaidReports(): PaidReportSummary[] {
       // Malformed/legacy answers JSON — just show no name instead of failing.
     }
 
-    let recommendedMood: string | null = null;
-    try {
-      if (row.preview_result) {
-        const preview = JSON.parse(row.preview_result) as { recommendedMood?: string };
-        recommendedMood = preview.recommendedMood ?? null;
-      }
-    } catch {
-      // Same as above — degrade gracefully.
-    }
-
     return {
       id: row.id,
       name,
       phone: row.phone,
       amount: row.amount,
-      recommendedMood,
       paidAt: row.paid_at,
       reportSentAt: row.report_sent_at,
       createdAt: row.created_at,
     };
   });
+}
+
+export type DailyRevenuePoint = { date: string; total: number; count: number };
+
+export type RevenueStats = {
+  todayTotal: number;
+  todayCount: number;
+  monthTotal: number;
+  monthCount: number;
+  allTimeTotal: number;
+  daily: DailyRevenuePoint[];
+};
+
+// paid_at is written via SQLite's datetime('now'), which is UTC — shift
+// by +9h before taking the date portion so "오늘"/"이번달" line up with
+// Korea Standard Time regardless of what timezone the server itself runs in.
+function toKstDateString(epochMs: number): string {
+  return new Date(epochMs + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+export function getRevenueStats(days = 30): RevenueStats {
+  const rows = db
+    .prepare(`SELECT amount, paid_at FROM reports WHERE paid = 1 AND paid_at IS NOT NULL`)
+    .all() as { amount: number | null; paid_at: string }[];
+
+  const byDay = new Map<string, { total: number; count: number }>();
+  let allTimeTotal = 0;
+
+  for (const row of rows) {
+    const utcMs = new Date(`${row.paid_at.replace(" ", "T")}Z`).getTime();
+    if (Number.isNaN(utcMs)) continue;
+    const day = toKstDateString(utcMs);
+    const entry = byDay.get(day) ?? { total: 0, count: 0 };
+    entry.total += row.amount ?? 0;
+    entry.count += 1;
+    byDay.set(day, entry);
+    allTimeTotal += row.amount ?? 0;
+  }
+
+  const now = Date.now();
+  const todayKey = toKstDateString(now);
+  const monthKey = todayKey.slice(0, 7);
+
+  let todayTotal = 0;
+  let todayCount = 0;
+  let monthTotal = 0;
+  let monthCount = 0;
+  for (const [day, entry] of byDay) {
+    if (day === todayKey) {
+      todayTotal = entry.total;
+      todayCount = entry.count;
+    }
+    if (day.startsWith(monthKey)) {
+      monthTotal += entry.total;
+      monthCount += entry.count;
+    }
+  }
+
+  const daily: DailyRevenuePoint[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const day = toKstDateString(now - i * 24 * 60 * 60 * 1000);
+    const entry = byDay.get(day) ?? { total: 0, count: 0 };
+    daily.push({ date: day, total: entry.total, count: entry.count });
+  }
+
+  return { todayTotal, todayCount, monthTotal, monthCount, allTimeTotal, daily };
 }
 
 export function markReportSent(id: string): void {
