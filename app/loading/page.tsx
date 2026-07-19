@@ -4,11 +4,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Container from "@/app/components/Container";
 
-const ANSWERS_KEY = "facemood_answers";
-const IMAGE_KEY = "facemood_uploaded_image";
-const PREVIEW_RESULT_KEY = "facemood_preview_result";
-const PERSONALIZE_TIMEOUT_MS = 20000;
-
 const steps = [
   "답변 분석 중",
   "사진 분위기 확인 중",
@@ -52,66 +47,16 @@ export default function LoadingPage() {
   useEffect(() => {
     let cancelled = false;
     let timeoutId: ReturnType<typeof setTimeout>;
-    let animationDone = false;
-    let personalizeDone = false;
 
-    function tryNavigate() {
-      if (animationDone && personalizeDone && !cancelled) {
-        router.push("/result");
-      }
-    }
-
-    // Personalizes the preview's blurbs (not its layout/blur treatment) via
-    // /api/generate-preview, using the answers + photo already saved from
-    // /upload. Best-effort: /result falls back to the rule-based preview
-    // if this never lands, times out, or the API key isn't configured.
-    async function personalizePreview() {
-      try {
-        const answersRaw = localStorage.getItem(ANSWERS_KEY);
-        if (!answersRaw) return;
-
-        const imageDataUrl = localStorage.getItem(IMAGE_KEY);
-        const controller = new AbortController();
-        const abortTimer = setTimeout(
-          () => controller.abort(),
-          PERSONALIZE_TIMEOUT_MS,
-        );
-
-        const response = await fetch("/api/generate-preview", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            answers: JSON.parse(answersRaw),
-            imageDataUrl,
-          }),
-          signal: controller.signal,
-        });
-        clearTimeout(abortTimer);
-
-        if (!response.ok) return;
-        const data = await response.json();
-        if (data.previewResult) {
-          localStorage.setItem(
-            PREVIEW_RESULT_KEY,
-            JSON.stringify(data.previewResult),
-          );
-        }
-      } catch {
-        // Network error, timeout, or bad response — /result still works
-        // from the rule-based preview.
-      } finally {
-        personalizeDone = true;
-        tryNavigate();
-      }
-    }
-
+    // Purely a paced animation — /result computes its rule-based preview
+    // locally, so there's nothing to fetch or wait on here. The free
+    // preview never calls OpenAI; only the paid report does, after checkout.
     function advance(current: number) {
       if (cancelled) return;
 
       if (current >= 100) {
         timeoutId = setTimeout(() => {
-          animationDone = true;
-          tryNavigate();
+          if (!cancelled) router.push("/result");
         }, 800);
         return;
       }
@@ -126,7 +71,6 @@ export default function LoadingPage() {
       timeoutId = setTimeout(() => advance(next), delay);
     }
 
-    personalizePreview();
     advance(0);
 
     return () => {

@@ -8,6 +8,7 @@ import { REPORT_CHAPTERS, buildPreviewResult } from "@/types/report";
 import type {
   FullReport,
   PreviewResult,
+  ReportChapterContent,
   ReportChapterKey,
 } from "@/types/report";
 
@@ -463,16 +464,140 @@ function MoodTag({ accent }: { accent: { hex: string; name: string } }) {
   );
 }
 
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="mb-2.5 block text-[11.5px] font-semibold text-[var(--plum-deep)]">
+      {children}
+    </span>
+  );
+}
+
+// The one-line "diagnosis" — a punchy verdict shown right under the
+// chapter title, before the reader commits to the long-form analysis.
+function DiagnosisLine({
+  text,
+  accent,
+}: {
+  text: string;
+  accent: { hex: string };
+}) {
+  return (
+    <div className="mt-5 flex items-start gap-2.5 rounded-md bg-[var(--plum-tint)] px-4 py-3.5">
+      <span
+        className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full"
+        style={{ backgroundColor: accent.hex }}
+        aria-hidden="true"
+      />
+      <p className="text-[16px] font-semibold leading-[1.5] text-[var(--ink)] break-keep">
+        {renderInlineMarkdown(text)}
+      </p>
+    </div>
+  );
+}
+
+function KeywordPills({ items }: { items: string[] }) {
+  return (
+    <div className="mt-4 flex flex-wrap gap-2">
+      {items.map((item) => (
+        <span
+          key={item}
+          className="rounded-full bg-[var(--plum-tint)] px-3.5 py-1.5 text-[13px] font-medium text-[var(--plum-deep)]"
+        >
+          {item}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+// The "3-line summary" card — a skimmable TL;DR before the reader dives
+// into the full detailed-analysis section below it.
+function SummaryCard({ lines }: { lines: string[] }) {
+  return (
+    <div className="mt-4 rounded-md border border-[var(--hairline)] bg-[var(--paper-raised)] p-5">
+      <ol className="flex flex-col gap-3">
+        {lines.map((line, index) => (
+          <li key={index} className="flex items-start gap-3">
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--plum)] text-[11px] font-bold text-white">
+              {index + 1}
+            </span>
+            <p className="text-[14.5px] leading-[1.6] text-[var(--ink)] break-keep">
+              {renderInlineMarkdown(line)}
+            </p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+function TipsList({
+  items,
+  accent,
+}: {
+  items: string[];
+  accent: { hex: string };
+}) {
+  return (
+    <ul className="flex flex-col gap-2.5">
+      {items.map((item, index) => (
+        <li key={index} className="flex items-start gap-2.5">
+          <span
+            className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
+            style={{ backgroundColor: accent.hex }}
+            aria-hidden="true"
+          >
+            ✓
+          </span>
+          <p className="text-[14.5px] leading-[1.6] text-[var(--ink)] break-keep">
+            {renderInlineMarkdown(item)}
+          </p>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function ChecklistBlock({
+  items,
+  accent,
+}: {
+  items: string[];
+  accent: { hex: string };
+}) {
+  return (
+    <div
+      className="rounded-md border border-dashed p-4"
+      style={{ borderColor: accent.hex }}
+    >
+      <ul className="flex flex-col gap-2.5">
+        {items.map((item, index) => (
+          <li key={index} className="flex items-center gap-2.5">
+            <span
+              className="h-4 w-4 shrink-0 rounded border-[1.5px]"
+              style={{ borderColor: accent.hex }}
+              aria-hidden="true"
+            />
+            <p className="text-[14px] leading-[1.5] text-[var(--ink)] break-keep">
+              {renderInlineMarkdown(item)}
+            </p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function ChapterCard({
   chapter,
-  body,
+  content,
   images,
   colorHint,
   typeValue,
   accent,
 }: {
   chapter: (typeof REPORT_CHAPTERS)[number];
-  body: string;
+  content: ReportChapterContent;
   images: PreviewResult["images"] | undefined;
   colorHint: PreviewResult["colorHint"] | undefined;
   typeValue?: string | null;
@@ -550,9 +675,36 @@ function ChapterCard({
             </div>
           )}
 
-          <div className={visual === "palette" || visual === "typeBadge" ? "mt-6" : "mt-5"}>
-            <ChapterBody text={body} />
+          {content.diagnosis && (
+            <DiagnosisLine text={content.diagnosis} accent={accent} />
+          )}
+
+          {content.keywords && content.keywords.length > 0 && (
+            <KeywordPills items={content.keywords} />
+          )}
+
+          {content.summary && content.summary.length > 0 && (
+            <SummaryCard lines={content.summary} />
+          )}
+
+          <div className="mt-7">
+            <SectionLabel>자세한 분석</SectionLabel>
+            <ChapterBody text={content.body} />
           </div>
+
+          {content.tips && content.tips.length > 0 && (
+            <div className="mt-7">
+              <SectionLabel>바로 적용 팁</SectionLabel>
+              <TipsList items={content.tips} accent={accent} />
+            </div>
+          )}
+
+          {content.checklist && content.checklist.length > 0 && (
+            <div className="mt-7">
+              <SectionLabel>체크리스트</SectionLabel>
+              <ChecklistBlock items={content.checklist} accent={accent} />
+            </div>
+          )}
         </div>
       </div>
     </Container>
@@ -840,7 +992,7 @@ export default function ReportPage() {
           <ChapterCard
             key={chapter.key}
             chapter={chapter}
-            body={chapterData.body}
+            content={chapterData}
             images={report.images}
             colorHint={report.colorHint}
             typeValue={typeValue}

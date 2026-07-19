@@ -87,54 +87,6 @@ export type PreviewResult = {
   animalType: AnimalTypeCandidate | null;
 };
 
-// The "멘트" fields an AI call is allowed to personalize per user answers +
-// photo. Everything else in PreviewResult (mood pick, palette, locked
-// sections, images) stays rule-based so the layout/blur treatment never
-// has to change.
-export type PreviewPersonalization = {
-  oneLineSummary: string;
-  tags: string[];
-  currentMood: string[];
-  upgradePoints: string[];
-  colorHint: {
-    summary: string;
-    description: string;
-  };
-  hints: {
-    styling: string;
-    hair: string;
-    makeup: string;
-  };
-  // Only requested from the AI when a photo was uploaded.
-  faceShapeType?: FaceShapeCandidate;
-  animalType?: AnimalTypeCandidate;
-};
-
-export function applyPreviewPersonalization(
-  base: PreviewResult,
-  patch: PreviewPersonalization,
-): PreviewResult {
-  return {
-    ...base,
-    oneLineSummary: patch.oneLineSummary,
-    tags: patch.tags,
-    currentMood: patch.currentMood,
-    upgradePoints: patch.upgradePoints,
-    faceShapeType: patch.faceShapeType ?? base.faceShapeType,
-    animalType: patch.animalType ?? base.animalType,
-    colorHint: {
-      ...base.colorHint,
-      summary: patch.colorHint.summary,
-      description: patch.colorHint.description,
-    },
-    hints: {
-      styling: { ...base.hints.styling, content: patch.hints.styling },
-      hair: { ...base.hints.hair, content: patch.hints.hair },
-      makeup: { ...base.hints.makeup, content: patch.hints.makeup },
-    },
-  };
-}
-
 // Per-mood reference photo, already prepared in public/mood/cards but not
 // wired up before now — every mood always rendered the same 청순 자연형
 // hero image regardless of the actual recommendation.
@@ -511,12 +463,25 @@ export const REPORT_CHAPTERS: {
   },
 ];
 
+// diagnosis/keywords/summary/tips/checklist are the premium-layout
+// fields added on top of the original long-form "body" — optional so
+// reports generated before this layout existed still render (renderer
+// falls back to showing just the body in that case).
+export type ReportChapterContent = {
+  body: string;
+  diagnosis?: string;
+  keywords?: string[];
+  summary?: string[];
+  tips?: string[];
+  checklist?: string[];
+};
+
 export type FullReport = {
   // Optional, not required — faceShapeAnalysis/animalTypeAnalysis only
   // exist when a photo was uploaded, and older cached reports (saved
   // before a given chapter/field existed) won't have every key either.
   // Renderers must check before reading a chapter.
-  [K in ReportChapterKey]?: { body: string };
+  [K in ReportChapterKey]?: ReportChapterContent;
 } & {
   // Reused as-is from the free preview (same rule-based mood images +
   // color palette) rather than re-derived or AI-generated, so the paid
@@ -802,8 +767,9 @@ export function buildPreviewResult(
     hints: SHARED_HINTS,
     lockedSections: SHARED_LOCKED_SECTIONS,
     images: imagesForMood(recommendedMood, profile.subMood),
-    // Photo-based — only /api/generate-preview (with a photo) can fill
-    // these in. The rule-based path has no photo to go on.
+    // The free preview never analyzes the photo (no OpenAI call), so it
+    // has no way to classify face shape/animal type — only the paid
+    // report (after checkout) fills these in.
     faceShapeType: null,
     animalType: null,
   };
