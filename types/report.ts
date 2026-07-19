@@ -340,8 +340,33 @@ export const REPORT_CHAPTERS: {
     ],
   },
   {
-    key: "gapAnalysis",
+    key: "faceShapeAnalysis",
     number: "03",
+    title: "사진상 얼굴형 분석",
+    points: [
+      `사진상으로 보이는 얼굴형 분류 (${FACE_SHAPE_CANDIDATES.join(" / ")} 중 하나)`,
+      "이 얼굴형에서 자주 느껴지는 인상",
+      "이 얼굴형과 잘 어울리는 헤어 라인 · 앞머리 방향",
+      "이 얼굴형과 잘 어울리는 메이크업 음영 · 블러셔 위치",
+      "이 얼굴형과 잘 어울리는 안경 · 귀걸이 방향",
+      "확정적인 진단이 아니라는 안내",
+    ],
+  },
+  {
+    key: "animalTypeAnalysis",
+    number: "04",
+    title: "사진상 동물상 분석",
+    points: [
+      `사진상으로 보이는 동물상 분류 (${ANIMAL_TYPE_CANDIDATES.join(" / ")} 중 하나)`,
+      "이 동물상이 주는 인상과 매력 포인트",
+      "이 동물상과 잘 어울리는 스타일링 방향",
+      "이 동물상과 잘 어울리는 헤어 · 메이크업 방향",
+      "확정적인 진단이 아니라는 안내",
+    ],
+  },
+  {
+    key: "gapAnalysis",
+    number: "05",
     title: "원하는 추구미와 현재 이미지의 차이",
     points: [
       "사용자가 원하는 추구미",
@@ -353,7 +378,7 @@ export const REPORT_CHAPTERS: {
   },
   {
     key: "recommendedMoodDetail",
-    number: "04",
+    number: "06",
     title: "추천 추구미 상세 해석",
     points: [
       "추천 추구미가 어떤 분위기인지",
@@ -365,7 +390,7 @@ export const REPORT_CHAPTERS: {
   },
   {
     key: "firstImpression",
-    number: "05",
+    number: "07",
     title: "이성이 봤을 때 첫인상 무드",
     points: [
       "사진상으로 전달될 수 있는 첫인상",
@@ -377,7 +402,7 @@ export const REPORT_CHAPTERS: {
   },
   {
     key: "stylingGuide",
-    number: "06",
+    number: "08",
     title: "스타일링 세부 가이드",
     points: [
       "추천 옷 색감",
@@ -391,7 +416,7 @@ export const REPORT_CHAPTERS: {
   },
   {
     key: "hairGuide",
-    number: "07",
+    number: "09",
     title: "헤어 스타일 방향",
     points: [
       "추천 헤어 길이",
@@ -405,7 +430,7 @@ export const REPORT_CHAPTERS: {
   },
   {
     key: "makeupGuide",
-    number: "08",
+    number: "10",
     title: "메이크업 방향",
     points: [
       "베이스 표현",
@@ -421,7 +446,7 @@ export const REPORT_CHAPTERS: {
   },
   {
     key: "colorMoodAnalysis",
-    number: "09",
+    number: "11",
     title: "사진상 컬러 무드 분석",
     points: [
       "사진 기준으로 보이는 컬러 흐름",
@@ -434,7 +459,7 @@ export const REPORT_CHAPTERS: {
   },
   {
     key: "colorPalette",
-    number: "10",
+    number: "12",
     title: "추천 컬러 팔레트",
     points: [
       "추천 컬러 5~7개",
@@ -447,7 +472,7 @@ export const REPORT_CHAPTERS: {
   },
   {
     key: "avoidStyles",
-    number: "11",
+    number: "13",
     title: "피하면 좋은 스타일 방향",
     points: [
       "추천 추구미와 멀어질 수 있는 색감",
@@ -459,7 +484,7 @@ export const REPORT_CHAPTERS: {
   },
   {
     key: "situationGuide",
-    number: "12",
+    number: "14",
     title: "상황별 이미지 전략",
     points: [
       "소개팅/데이트",
@@ -473,7 +498,7 @@ export const REPORT_CHAPTERS: {
   },
   {
     key: "finalChecklist",
-    number: "13",
+    number: "15",
     title: "최종 스타일 체크리스트",
     points: [
       "오늘 바로 바꿔볼 것",
@@ -482,31 +507,6 @@ export const REPORT_CHAPTERS: {
       "메이크업에서 바꿔볼 것",
       "사진 찍을 때 신경 쓸 것",
       "최종 한 줄 조언",
-    ],
-  },
-  {
-    key: "faceShapeAnalysis",
-    number: "14",
-    title: "사진상 얼굴형 분석",
-    points: [
-      `사진상으로 보이는 얼굴형 분류 (${FACE_SHAPE_CANDIDATES.join(" / ")} 중 하나)`,
-      "이 얼굴형에서 자주 느껴지는 인상",
-      "이 얼굴형과 잘 어울리는 헤어 라인 · 앞머리 방향",
-      "이 얼굴형과 잘 어울리는 메이크업 음영 · 블러셔 위치",
-      "이 얼굴형과 잘 어울리는 안경 · 귀걸이 방향",
-      "확정적인 진단이 아니라는 안내",
-    ],
-  },
-  {
-    key: "animalTypeAnalysis",
-    number: "15",
-    title: "사진상 동물상 분석",
-    points: [
-      `사진상으로 보이는 동물상 분류 (${ANIMAL_TYPE_CANDIDATES.join(" / ")} 중 하나)`,
-      "이 동물상이 주는 인상과 매력 포인트",
-      "이 동물상과 잘 어울리는 스타일링 방향",
-      "이 동물상과 잘 어울리는 헤어 · 메이크업 방향",
-      "확정적인 진단이 아니라는 안내",
     ],
   },
 ];

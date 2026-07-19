@@ -172,20 +172,232 @@ const CHAPTER_VISUALS: Record<ReportChapterKey, ChapterVisual> = {
   animalTypeAnalysis: "typeBadge",
 };
 
-function ChapterBody({ text }: { text: string }) {
-  const paragraphs = text
-    .split(/\n{2,}/)
-    .map((p) => p.trim())
+type ChapterBlock =
+  | { type: "heading"; content: string }
+  | { type: "paragraph"; content: string }
+  | { type: "keywords"; items: string[] }
+  | { type: "verdict"; content: string };
+
+// A "핵심 키워드" heading's paragraph reads as a short comma/dot-separated
+// list most of the time — but the AI doesn't always format it that
+// cleanly. Only treat it as a keyword row when it actually looks like
+// one (2+ short items); otherwise leave it as a normal paragraph rather
+// than mangling a real sentence into fake "tags".
+function splitToPills(text: string): string[] | null {
+  const candidates = text
+    .split(/[,、·/]|\s{2,}/)
+    .map((s) => s.trim())
     .filter(Boolean);
+  if (candidates.length >= 2 && candidates.every((c) => c.length > 0 && c.length <= 16)) {
+    return candidates;
+  }
+  return null;
+}
+
+// The AI often organizes a chapter's sub-topics with markdown-style
+// "### 소제목" lines. Nothing in the app used to parse that, so the raw
+// "###" showed up as literal text — this splits body text into heading
+// vs. paragraph blocks so headings can render as actual sub-labels, then
+// upgrades the "핵심 키워드" / "한 줄 총평" sections specifically into
+// pill tags / a quote card.
+function parseChapterBlocks(text: string): ChapterBlock[] {
+  const rawBlocks: ChapterBlock[] = [];
+  let paragraphLines: string[] = [];
+
+  function flushParagraph() {
+    const joined = paragraphLines.join(" ").trim();
+    if (joined) rawBlocks.push({ type: "paragraph", content: joined });
+    paragraphLines = [];
+  }
+
+  for (const rawLine of text.split("\n")) {
+    const line = rawLine.trim();
+    if (!line) {
+      flushParagraph();
+      continue;
+    }
+    const headingMatch = line.match(/^#{1,6}\s+(.+)$/);
+    if (headingMatch) {
+      flushParagraph();
+      rawBlocks.push({ type: "heading", content: headingMatch[1].trim() });
+      continue;
+    }
+    paragraphLines.push(line);
+  }
+  flushParagraph();
+
+  const blocks: ChapterBlock[] = [];
+  for (let i = 0; i < rawBlocks.length; i++) {
+    const block = rawBlocks[i];
+    const next = rawBlocks[i + 1];
+
+    if (block.type === "heading" && /키워드/.test(block.content) && next?.type === "paragraph") {
+      const pills = splitToPills(next.content);
+      if (pills) {
+        blocks.push(block, { type: "keywords", items: pills });
+        i++;
+        continue;
+      }
+    }
+
+    if (block.type === "heading" && /총평/.test(block.content) && next?.type === "paragraph") {
+      blocks.push({ type: "verdict", content: next.content });
+      i++;
+      continue;
+    }
+
+    blocks.push(block);
+  }
+
+  return blocks;
+}
+
+function ChapterBody({ text }: { text: string }) {
+  const blocks = parseChapterBlocks(text);
 
   return (
-    <div className="flex flex-col gap-4">
-      {paragraphs.map((paragraph, index) => (
-        <p key={index} className="text-[15px] leading-[1.9] text-gray-800">
-          {paragraph}
-        </p>
-      ))}
+    <div className="flex flex-col">
+      {blocks.map((block, index) => {
+        if (block.type === "heading") {
+          return (
+            <span
+              key={index}
+              className="mb-2.5 mt-8 block text-[11.5px] font-semibold uppercase tracking-[0.1em] text-[var(--plum-deep)] first:mt-0"
+              style={{ fontFamily: "'JetBrains Mono', monospace" }}
+            >
+              {block.content}
+            </span>
+          );
+        }
+        if (block.type === "keywords") {
+          return (
+            <div key={index} className="mb-6 flex flex-wrap gap-2">
+              {block.items.map((item) => (
+                <span
+                  key={item}
+                  className="rounded-full bg-[var(--plum-tint)] px-3.5 py-1.5 text-[13px] font-medium text-[var(--plum-deep)]"
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
+          );
+        }
+        if (block.type === "verdict") {
+          return (
+            <blockquote
+              key={index}
+              className="relative my-2 mb-7 rounded-sm border border-[var(--hairline)] bg-[var(--paper-raised)] px-7 py-6"
+            >
+              <span
+                className="mb-1.5 block text-[40px] leading-none text-[var(--plum)] opacity-65"
+                style={{ fontFamily: "'Noto Serif KR', serif" }}
+                aria-hidden="true"
+              >
+                &ldquo;
+              </span>
+              <p
+                className="text-[16.5px] font-medium leading-[1.7] text-[var(--ink)]"
+                style={{ fontFamily: "'Noto Serif KR', serif" }}
+              >
+                {block.content}
+              </p>
+              <cite
+                className="mt-3.5 block text-[11px] not-italic tracking-[0.04em] text-[var(--ink-soft)]"
+                style={{ fontFamily: "'JetBrains Mono', monospace" }}
+              >
+                — 한 줄 총평
+              </cite>
+            </blockquote>
+          );
+        }
+        return (
+          <p
+            key={index}
+            className="mb-5 text-[15.5px] leading-[1.85] text-[var(--ink)] last:mb-0"
+          >
+            {block.content}
+          </p>
+        );
+      })}
     </div>
+  );
+}
+
+// Ties each chapter's accent to a real color from this report's own
+// palette (chapter 11 — 사진상 컬러 무드 분석) instead of a fixed color,
+// so it stays correct for whichever mood/palette this particular user got.
+function getChapterAccent(
+  index: number,
+  palette: PreviewResult["colorHint"]["palette"] | undefined,
+): { hex: string; name: string } {
+  if (!palette || palette.length === 0) {
+    return { hex: "#6D4FC4", name: "플럼" };
+  }
+  const chip = palette[index % palette.length];
+  return { hex: chip.hex, name: chip.name };
+}
+
+function chapterAnchorId(key: ReportChapterKey) {
+  return `ch-${key}`;
+}
+
+function scrollToChapter(key: ReportChapterKey) {
+  const el = document.getElementById(chapterAnchorId(key));
+  if (!el) return;
+  const prefersReducedMotion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)",
+  ).matches;
+  el.scrollIntoView({
+    behavior: prefersReducedMotion ? "auto" : "smooth",
+    block: "start",
+  });
+}
+
+function TableOfContents({
+  chapters,
+}: {
+  chapters: (typeof REPORT_CHAPTERS)[number][];
+}) {
+  return (
+    <Container className="mt-14">
+      <h2
+        className="text-[22px] font-semibold text-[var(--ink)]"
+        style={{ fontFamily: "'Noto Serif KR', serif" }}
+      >
+        리포트 구성
+      </h2>
+      <p className="mb-6 mt-1.5 text-sm text-[var(--ink-soft)]">
+        전체 {chapters.length}개 챕터로 이어집니다. 원하는 챕터를 눌러 바로
+        이동할 수 있어요.
+      </p>
+      <nav className="border-t border-[var(--hairline)]" aria-label="리포트 챕터 목차">
+        {chapters.map((chapter) => (
+          <a
+            key={chapter.key}
+            href={`#${chapterAnchorId(chapter.key)}`}
+            onClick={(event) => {
+              event.preventDefault();
+              scrollToChapter(chapter.key);
+            }}
+            className="flex items-baseline gap-4 border-b border-[var(--hairline)] py-4 no-underline transition-colors hover:bg-[var(--plum-tint)]/40"
+          >
+            <span
+              className="min-w-[30px] text-[13px] text-[var(--plum)]"
+              style={{ fontFamily: "'JetBrains Mono', monospace" }}
+            >
+              {chapter.number}
+            </span>
+            <span className="flex-1 text-[15px] font-medium text-[var(--ink)]">
+              {chapter.title}
+            </span>
+            <span className="hidden text-xs text-[var(--ink-soft)] sm:block">
+              {chapter.points.slice(0, 2).join(" · ")}
+            </span>
+          </a>
+        ))}
+      </nav>
+    </Container>
   );
 }
 
@@ -195,7 +407,7 @@ function PaletteGrid({ palette }: { palette: PreviewResult["colorHint"]["palette
       {palette.map((chip) => (
         <div
           key={chip.name}
-          className="rounded-2xl border border-violet-100 bg-violet-50/40 p-3"
+          className="rounded-md border border-[var(--hairline)] bg-[var(--paper-raised)] p-3"
         >
           <div className="flex items-center gap-2">
             <span
@@ -203,18 +415,39 @@ function PaletteGrid({ palette }: { palette: PreviewResult["colorHint"]["palette
               style={{ backgroundColor: chip.hex }}
             />
             <div>
-              <p className="text-sm font-semibold text-black">{chip.name}</p>
-              <p className="text-[10px] uppercase tracking-wide text-gray-400">
+              <p className="text-sm font-semibold text-[var(--ink)]">
+                {chip.name}
+              </p>
+              <p
+                className="text-[10px] tracking-wide text-[var(--ink-soft)]"
+                style={{ fontFamily: "'JetBrains Mono', monospace" }}
+              >
                 {chip.hex}
               </p>
             </div>
           </div>
-          <p className="mt-2 text-xs leading-relaxed text-gray-500">
+          <p className="mt-2 text-xs leading-relaxed text-[var(--ink-soft)]">
             {chip.description}
           </p>
         </div>
       ))}
     </div>
+  );
+}
+
+function MoodTag({ accent }: { accent: { hex: string; name: string } }) {
+  return (
+    <span
+      className="mb-3.5 inline-flex items-center gap-1.5 text-[11px] tracking-[0.08em] text-[var(--ink-soft)]"
+      style={{ fontFamily: "'JetBrains Mono', monospace" }}
+    >
+      <span
+        className="h-2 w-2 rounded-full"
+        style={{ backgroundColor: accent.hex }}
+        aria-hidden="true"
+      />
+      MOOD — {accent.name}
+    </span>
   );
 }
 
@@ -224,12 +457,14 @@ function ChapterCard({
   images,
   colorHint,
   typeValue,
+  accent,
 }: {
   chapter: (typeof REPORT_CHAPTERS)[number];
   body: string;
   images: PreviewResult["images"] | undefined;
   colorHint: PreviewResult["colorHint"] | undefined;
   typeValue?: string | null;
+  accent: { hex: string; name: string };
 }) {
   const visual = CHAPTER_VISUALS[chapter.key];
   const imageSrc =
@@ -237,12 +472,16 @@ function ChapterCard({
   const isFinal = chapter.key === "finalChecklist";
 
   return (
-    <Container maxWidth="max-w-3xl" className="mt-8">
+    <Container
+      id={chapterAnchorId(chapter.key)}
+      maxWidth="max-w-3xl"
+      className="mt-8 scroll-mt-6"
+    >
       <div
-        className={`overflow-hidden rounded-3xl border shadow-sm ${
+        className={`overflow-hidden rounded-md border shadow-sm ${
           isFinal
-            ? "border-violet-200 bg-gradient-to-br from-violet-50 via-white to-violet-100 shadow-violet-100/60"
-            : "border-violet-100 bg-white shadow-violet-100/40"
+            ? "border-[var(--plum-tint)] bg-[var(--plum-tint)] shadow-none"
+            : "border-[var(--hairline)] bg-[var(--paper-raised)] shadow-none"
         }`}
       >
         {imageSrc && (
@@ -258,11 +497,21 @@ function ChapterCard({
           </div>
         )}
 
-        <div className="p-6">
-          <span className="inline-flex items-center rounded-full bg-violet-100 px-3 py-1 text-[11px] font-semibold tracking-[0.15em] text-violet-600">
+        <div
+          className="p-6 pl-[22px]"
+          style={{ borderLeft: `3px solid ${accent.hex}` }}
+        >
+          <MoodTag accent={accent} />
+          <span
+            className="block text-[12px] font-semibold tracking-[0.14em] text-[var(--plum)]"
+            style={{ fontFamily: "'JetBrains Mono', monospace" }}
+          >
             CHAPTER {chapter.number}
           </span>
-          <h2 className="mt-4 text-lg font-bold leading-snug text-black">
+          <h2
+            className="mt-2.5 text-[clamp(22px,3vw,26px)] font-semibold leading-[1.35] tracking-[-0.005em] text-[var(--ink)]"
+            style={{ fontFamily: "'Noto Serif KR', serif" }}
+          >
             {chapter.title}
           </h2>
 
@@ -273,20 +522,101 @@ function ChapterCard({
           )}
 
           {visual === "typeBadge" && typeValue && (
-            <div className="mt-5 rounded-2xl border border-violet-200 bg-violet-50/60 p-5 text-center">
-              <p className="text-xs font-semibold tracking-[0.15em] text-violet-500">
+            <div className="mt-5 rounded-md border border-[var(--hairline)] bg-[var(--plum-tint)] p-5 text-center">
+              <p
+                className="text-xs font-semibold tracking-[0.15em] text-[var(--plum-deep)]"
+                style={{ fontFamily: "'JetBrains Mono', monospace" }}
+              >
                 사진상 분석 결과
               </p>
-              <p className="mt-2 text-2xl font-extrabold text-violet-700">
+              <p
+                className="mt-2 text-2xl font-bold text-[var(--plum-deep)]"
+                style={{ fontFamily: "'Noto Serif KR', serif" }}
+              >
                 {typeValue}
               </p>
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-[var(--ink-soft)]">
                 에 가까운 인상으로 보여요
               </p>
             </div>
           )}
 
-          <div className={visual === "palette" || visual === "typeBadge" ? "mt-5" : "mt-4"}>
+          <div className={visual === "palette" || visual === "typeBadge" ? "mt-6" : "mt-5"}>
+            <ChapterBody text={body} />
+          </div>
+        </div>
+      </div>
+    </Container>
+  );
+}
+
+// Hair/makeup chapters get an editorial image+text split on desktop
+// instead of the stacked-card treatment — the photo stays pinned beside
+// the text as you scroll past it, with a caption identifying which
+// chapter it's illustrating.
+function SplitChapterCard({
+  chapter,
+  body,
+  imageSrc,
+  accent,
+  reverse,
+}: {
+  chapter: (typeof REPORT_CHAPTERS)[number];
+  body: string;
+  imageSrc: string;
+  accent: { hex: string; name: string };
+  reverse: boolean;
+}) {
+  return (
+    <Container
+      id={chapterAnchorId(chapter.key)}
+      maxWidth="max-w-4xl"
+      className="mt-8 scroll-mt-6"
+    >
+      <div
+        className={`grid grid-cols-1 items-start gap-8 md:gap-12 ${
+          reverse ? "md:grid-cols-[1.15fr_0.85fr]" : "md:grid-cols-[0.85fr_1.15fr]"
+        }`}
+      >
+        <figure
+          className={`m-0 md:sticky md:top-20 ${reverse ? "md:order-2" : ""}`}
+        >
+          <div className="relative aspect-[4/5] overflow-hidden rounded-sm">
+            <Image
+              src={imageSrc}
+              alt={chapter.title}
+              fill
+              sizes="(min-width: 900px) 420px, 100vw"
+              className="object-cover"
+            />
+          </div>
+          <figcaption
+            className="mt-2.5 flex justify-between text-[11px] text-[var(--ink-soft)]"
+            style={{ fontFamily: "'JetBrains Mono', monospace" }}
+          >
+            <span>REF. {chapter.number}</span>
+            <span>{chapter.title}</span>
+          </figcaption>
+        </figure>
+
+        <div
+          className="pl-[22px]"
+          style={{ borderLeft: `3px solid ${accent.hex}` }}
+        >
+          <MoodTag accent={accent} />
+          <span
+            className="block text-[12px] font-semibold tracking-[0.14em] text-[var(--plum)]"
+            style={{ fontFamily: "'JetBrains Mono', monospace" }}
+          >
+            CHAPTER {chapter.number}
+          </span>
+          <h2
+            className="mt-2.5 text-[clamp(22px,3vw,26px)] font-semibold leading-[1.35] tracking-[-0.005em] text-[var(--ink)]"
+            style={{ fontFamily: "'Noto Serif KR', serif" }}
+          >
+            {chapter.title}
+          </h2>
+          <div className="mt-5">
             <ChapterBody text={body} />
           </div>
         </div>
@@ -504,28 +834,68 @@ export default function ReportPage() {
     return <GeneratingState />;
   }
 
+  // faceShapeAnalysis/animalTypeAnalysis are skipped entirely when no
+  // photo was uploaded, and older cached reports may predate a given
+  // chapter — filter once and reuse for both the TOC and the chapter list.
+  const visibleChapters = REPORT_CHAPTERS.filter((c) => Boolean(report[c.key]));
+
   return (
-    <main className="min-h-screen bg-white pb-16 pt-10 text-black">
+    <main
+      className="min-h-screen pb-16 pt-10"
+      style={
+        {
+          "--ink": "#1C1B22",
+          "--ink-soft": "#4B4854",
+          "--paper": "#FAF9F6",
+          "--paper-raised": "#FFFFFF",
+          "--hairline": "#E7E2D9",
+          "--plum": "#6D4FC4",
+          "--plum-deep": "#4A3380",
+          "--plum-tint": "#F1EDFB",
+          backgroundColor: "var(--paper)",
+          color: "var(--ink)",
+          fontFamily:
+            "'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif",
+        } as React.CSSProperties
+      }
+    >
+      {/* eslint-disable-next-line @next/next/no-page-custom-font -- scoped to
+          this page only; the rest of the app doesn't use these fonts. */}
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      />
+      <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css"
+      />
+
       <Container className="text-center">
-        <p className="text-sm font-bold tracking-[0.3em] text-violet-600">
+        <p
+          className="text-[13px] font-semibold tracking-[0.14em] text-[var(--plum-deep)]"
+          style={{ fontFamily: "'JetBrains Mono', monospace" }}
+        >
           FACEMOOD
         </p>
-        <h1 className="mt-4 text-xl font-bold leading-snug text-black">
+        <h1
+          className="mt-4 text-2xl font-bold leading-snug text-[var(--ink)]"
+          style={{ fontFamily: "'Noto Serif KR', serif" }}
+        >
           상세 스타일 리포트
         </h1>
-        <p className="mt-3 text-sm leading-relaxed text-gray-500">
+        <p className="mt-3 text-sm leading-relaxed text-[var(--ink-soft)]">
           이미지 컨설팅 관점에서 정리한 스타일 분석 흐름이에요.
           <br />
           사진과 답변을 바탕으로 한 참고용 리포트입니다.
         </p>
       </Container>
 
-      {REPORT_CHAPTERS.map((chapter) => {
-        const chapterData = report[chapter.key];
-        // Not every chapter is guaranteed to exist: faceShapeAnalysis /
-        // animalTypeAnalysis are skipped entirely when no photo was
-        // uploaded, and older cached reports may predate a given chapter.
-        if (!chapterData) return null;
+      <TableOfContents chapters={visibleChapters} />
+
+      {visibleChapters.map((chapter, index) => {
+        const chapterData = report[chapter.key]!;
+        const visual = CHAPTER_VISUALS[chapter.key];
+        const accent = getChapterAccent(index, report.colorHint?.palette);
 
         const typeValue =
           chapter.key === "faceShapeAnalysis"
@@ -533,6 +903,22 @@ export default function ReportPage() {
             : chapter.key === "animalTypeAnalysis"
               ? report.animalType
               : undefined;
+
+        if (visual === "hair" || visual === "makeup") {
+          const imageSrc = visual === "hair" ? report.images?.hair : report.images?.makeup;
+          if (imageSrc) {
+            return (
+              <SplitChapterCard
+                key={chapter.key}
+                chapter={chapter}
+                body={chapterData.body}
+                imageSrc={imageSrc}
+                accent={accent}
+                reverse={visual === "makeup"}
+              />
+            );
+          }
+        }
 
         return (
           <ChapterCard
@@ -542,17 +928,33 @@ export default function ReportPage() {
             images={report.images}
             colorHint={report.colorHint}
             typeValue={typeValue}
+            accent={accent}
           />
         );
       })}
 
       <Container className="mt-10">
-        <p className="text-center text-xs leading-relaxed text-gray-400">
+        <p className="text-center text-xs leading-relaxed text-[var(--ink-soft)]">
           FACEMOOD는 외모 점수화 없이, 이미지 무드와 스타일 방향만
           분석합니다. 퍼스널컬러는 조명과 카메라 보정에 따라 달라질 수 있어
           확정 진단이 아닌 참고 의견으로 제공됩니다.
         </p>
       </Container>
+
+      <style jsx>{`
+        a:focus-visible,
+        button:focus-visible {
+          outline: 2px solid var(--plum);
+          outline-offset: 3px;
+          border-radius: 2px;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          * {
+            animation-duration: 0.001ms !important;
+            transition-duration: 0.001ms !important;
+          }
+        }
+      `}</style>
     </main>
   );
 }

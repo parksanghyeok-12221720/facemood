@@ -6,68 +6,10 @@ import Container from "@/app/components/Container";
 
 const MAX_PHOTOS = 3;
 
-function PhotoPolicyModal({ onClose }: { onClose: () => void }) {
-  return (
-    <div
-      className="fixed inset-0 z-[60] flex items-end justify-center bg-black/50 sm:items-center"
-      onClick={onClose}
-    >
-      <div
-        className="flex max-h-[85vh] w-full max-w-md flex-col rounded-t-3xl bg-neutral-900 sm:rounded-3xl"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
-          <h2 className="text-sm font-bold text-white">사진 처리방침</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-lg leading-none text-gray-400"
-            aria-label="닫기"
-          >
-            ✕
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-6 py-5 text-xs leading-relaxed text-gray-300">
-          <p>
-            업로드하신 사진은 추구미·컬러·스타일링·얼굴형·동물상 등 이미지
-            무드를 분석하는 AI 분석 목적으로만 사용됩니다.
-          </p>
-          <p className="mt-3">
-            사진은 분석을 위해 서버를 거쳐 AI 분석 모델로 전달되며, FACEMOOD
-            서버에 별도로 저장되지 않습니다. 분석이 끝난 뒤에도 서버에
-            남지 않고, 사용자의 기기(브라우저)에만 임시로 보관됩니다.
-          </p>
-          <p className="mt-3">
-            업로드한 사진은 외모 점수화나 등급 평가에 사용되지 않으며,
-            광고·마케팅 목적이나 제3자 제공 등 분석 외의 용도로는 사용되지
-            않습니다.
-          </p>
-          <p className="mt-3">
-            사진 업로드는 선택 사항입니다. 동의하지 않으시면 &ldquo;사진 없이
-            결과 보기&rdquo;로 답변 기반 분석만 진행하실 수 있어요.
-          </p>
-        </div>
-
-        <div className="border-t border-white/10 px-6 py-4">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex w-full items-center justify-center rounded-full bg-white px-8 py-3.5 text-sm font-semibold text-black"
-          >
-            확인했습니다
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function UploadPage() {
   const [photos, setPhotos] = useState<{ file: File; url: string }[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [photoConsent, setPhotoConsent] = useState(false);
-  const [showPhotoPolicy, setShowPhotoPolicy] = useState(false);
   const [consentError, setConsentError] = useState("");
 
   useEffect(() => {
@@ -269,14 +211,7 @@ export default function UploadPage() {
           />
           <label htmlFor="photo-consent" className="flex-1">
             (필수) 사진 처리방침에 동의합니다. 업로드한 사진은 이미지 분석
-            목적으로만 사용돼요.{" "}
-            <button
-              type="button"
-              onClick={() => setShowPhotoPolicy(true)}
-              className="font-semibold text-violet-300 underline underline-offset-2"
-            >
-              자세히 보기
-            </button>
+            목적으로만 사용되고 있습니다.
           </label>
         </div>
         {consentError && (
@@ -305,10 +240,6 @@ export default function UploadPage() {
           </p>
         </div>
       </Container>
-
-      {showPhotoPolicy && (
-        <PhotoPolicyModal onClose={() => setShowPhotoPolicy(false)} />
-      )}
     </main>
   );
 }
