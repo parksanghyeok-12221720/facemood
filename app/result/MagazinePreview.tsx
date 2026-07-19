@@ -165,30 +165,34 @@ function MagazineIntro() {
 // 3. 내 분위기를 만드는 5가지 — floating chips around a blurred mood image
 // ---------------------------------------------------------------------------
 
+// Each chip anchors from a fixed edge inset instead of a percentage +
+// -translate-x-1/2 center point — the latter clips near the container
+// edge once the chip's real rendered width is wider than the remaining
+// space (exactly what was happening on narrow screens before).
 const MOOD_FACTORS = [
   {
     label: "헤어의 흐름",
-    position: "left-[6%] top-[10%]",
+    position: "left-3 top-3",
     desc: "볼륨이 실리는 위치와 컬의 방향만 바뀌어도 인상의 온도가 완전히 달라져요.",
   },
   {
     label: "메이크업 강도",
-    position: "right-[6%] top-[8%]",
+    position: "right-3 top-3",
     desc: "음영과 채도의 세기가 &lsquo;또렷함&rsquo;과 &lsquo;여림&rsquo; 사이 어디쯤 위치할지를 결정해요.",
   },
   {
     label: "옷의 색감",
-    position: "left-[2%] top-[46%]",
+    position: "left-3 top-1/2 -translate-y-1/2",
     desc: "톤의 채도와 명도는 사진 속 분위기를 가장 빠르게 바꾸는 요소예요.",
   },
   {
     label: "실루엣",
-    position: "right-[4%] bottom-[26%]",
+    position: "right-3 bottom-3",
     desc: "핏의 라인이 곧게 떨어지는지, 부드럽게 흐르는지에 따라 무드가 갈려요.",
   },
   {
     label: "사진의 밝기",
-    position: "left-[16%] bottom-[6%]",
+    position: "left-1/2 bottom-3 -translate-x-1/2",
     desc: "같은 스타일링도 조명 온도에 따라 전혀 다른 인상으로 읽힐 수 있어요.",
   },
 ] as const;
@@ -213,9 +217,12 @@ function MoodFactorExplorer({ heroImage }: { heroImage: string }) {
             alt=""
             fill
             sizes="(min-width: 448px) 400px, 100vw"
-            className="object-cover opacity-90 blur-[2px]"
+            className="object-cover opacity-90 blur-[6px]"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/30" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-transparent to-black/35" />
+          <span className="absolute left-1/2 top-1/2 flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/85 text-[var(--ink)] shadow-sm">
+            <LockGlyph className="h-4 w-4" />
+          </span>
 
           {MOOD_FACTORS.map((factor, index) => (
             <button
@@ -223,7 +230,7 @@ function MoodFactorExplorer({ heroImage }: { heroImage: string }) {
               type="button"
               onClick={() => setSelected(index)}
               aria-pressed={selected === index}
-              className={`absolute -translate-x-1/2 -translate-y-1/2 rounded-full px-3.5 py-2 text-[12.5px] font-semibold shadow-sm backdrop-blur-sm transition-all ${factor.position} ${
+              className={`absolute max-w-[42%] rounded-full px-3.5 py-2 text-[12.5px] font-semibold shadow-sm backdrop-blur-sm transition-all ${factor.position} ${
                 selected === index
                   ? "scale-105 bg-[var(--ink)] text-white"
                   : "bg-white/85 text-[var(--ink)] hover:bg-white"
@@ -370,8 +377,12 @@ function TrendCarousel() {
                     alt={card.name}
                     fill
                     sizes="230px"
-                    className="object-cover"
+                    className="object-cover blur-[5px]"
                   />
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/25" />
+                  <span className="absolute right-2.5 top-2.5 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-[var(--ink)] shadow-sm">
+                    <LockGlyph className="h-3 w-3" />
+                  </span>
                 </div>
                 <div className="p-4">
                   <p
@@ -380,10 +391,10 @@ function TrendCarousel() {
                   >
                     {card.name}
                   </p>
-                  <p className="mt-1.5 text-[12px] leading-relaxed text-[var(--ink-soft)]">
+                  <p className="mt-1.5 select-none text-[12px] leading-relaxed text-[var(--ink-soft)] blur-[3px]">
                     {card.desc}
                   </p>
-                  <p className="mt-2 text-[11px] font-medium text-[var(--blush-deep)]">
+                  <p className="mt-2 select-none text-[11px] font-medium text-[var(--blush-deep)] blur-[3px]">
                     잘 맞는 사람 · {card.fit}
                   </p>
                   <div className="mt-3">
@@ -444,51 +455,41 @@ function MoodFormula({ previewResult }: { previewResult: PreviewResult }) {
           나의 추구미 완성 공식
         </h2>
 
-        <div className="mt-7 flex flex-wrap items-center justify-center gap-x-2.5 gap-y-4 rounded-[28px] border border-[var(--hairline)] bg-[var(--ivory)] px-5 py-8">
+        <div className="mt-7 flex flex-col items-center gap-2.5 rounded-[28px] border border-[var(--hairline)] bg-[var(--ivory)] px-5 py-8">
           {ingredients.map((ingredient, i) => (
-            <div key={ingredient.label} className="flex items-center gap-2.5">
-              <div className="flex flex-col items-center gap-1.5 rounded-2xl bg-white px-3.5 py-3 shadow-sm">
+            <div key={ingredient.label} className="contents">
+              <div className="flex w-full max-w-[280px] items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm">
                 {ingredient.swatch && (
                   <span
-                    className="h-4 w-4 rounded-full border border-black/5"
+                    className="h-6 w-6 shrink-0 rounded-full border border-black/5"
                     style={{ backgroundColor: ingredient.swatch }}
                     aria-hidden="true"
                   />
                 )}
-                <span className="text-[10.5px] font-semibold tracking-[0.04em] text-[var(--ink-soft)]">
+                <span className="text-[11px] font-semibold tracking-[0.02em] text-[var(--ink-soft)]">
                   {ingredient.label}
                 </span>
                 <span
-                  className="text-[13px] font-bold text-[var(--ink)]"
+                  className="ml-auto text-[13.5px] font-bold text-[var(--ink)]"
                   style={{ fontFamily: "'Noto Serif KR', serif" }}
                 >
                   {ingredient.value}
                 </span>
               </div>
-              {i < ingredients.length - 1 && (
-                <span
-                  className="text-[22px] font-bold text-[var(--lavender-deep)]"
-                  style={{ fontFamily: "'Noto Serif KR', serif" }}
-                  aria-hidden="true"
-                >
-                  +
-                </span>
-              )}
+              <span
+                className="text-[20px] font-bold text-[var(--lavender-deep)]"
+                style={{ fontFamily: "'Noto Serif KR', serif" }}
+                aria-hidden="true"
+              >
+                {i < ingredients.length - 1 ? "+" : "="}
+              </span>
             </div>
           ))}
-
-          <span
-            className="text-[22px] font-bold text-[var(--lavender-deep)]"
-            style={{ fontFamily: "'Noto Serif KR', serif" }}
-            aria-hidden="true"
-          >
-            =
-          </span>
 
           <button
             type="button"
             onClick={handleTap}
-            className={`relative flex flex-col items-center gap-1.5 overflow-hidden rounded-2xl bg-[var(--ink)] px-6 py-4 text-white shadow-lg ${
+            className={`relative flex w-full max-w-[280px] flex-col items-center gap-1.5 overflow-hidden rounded-2xl bg-[var(--ink)] px-6 py-4 text-white shadow-lg ${
               tapped ? "magazine-shake" : ""
             }`}
           >
@@ -616,7 +617,7 @@ function FlipCard({ front, back }: { front: string; back: string }) {
             {front}
           </p>
           <span className="text-[11px] font-medium text-[var(--lavender-deep)]">
-            눌러서 이유 보기 ↺
+            상세 리포트에서 공개 ↺
           </span>
         </div>
         <div
@@ -664,13 +665,20 @@ const MOOD_MISSIONS = [
   "상의 색 먼저 바꿔보기",
   "립 컬러 톤 낮춰보기",
   "머리 볼륨 위치 확인하기",
+  "액세서리 하나로 포인트 주기",
+  "사진 찍을 때 자연광 쪽으로 서보기",
 ];
 
 function TodayMissions() {
+  const [index, setIndex] = useState(0);
   const [checked, setChecked] = useState<boolean[]>(() => MOOD_MISSIONS.map(() => false));
 
-  function toggle(index: number) {
-    setChecked((prev) => prev.map((v, i) => (i === index ? !v : v)));
+  function go(delta: number) {
+    setIndex((prev) => (prev + delta + MOOD_MISSIONS.length) % MOOD_MISSIONS.length);
+  }
+
+  function toggle(i: number) {
+    setChecked((prev) => prev.map((v, idx) => (idx === i ? !v : v)));
   }
 
   return (
@@ -683,34 +691,66 @@ function TodayMissions() {
         >
           오늘 바로 해볼 수 있는
           <br />
-          3가지 무드 미션
+          5가지 무드 미션
         </h2>
 
-        <div className="mt-6 flex flex-col gap-3">
-          {MOOD_MISSIONS.map((mission, index) => (
-            <button
-              key={mission}
-              type="button"
-              onClick={() => toggle(index)}
-              aria-pressed={checked[index]}
-              className={`flex items-center gap-3.5 rounded-2xl border px-4 py-4 text-left transition-colors ${
+        <div className="mt-7 flex flex-col items-center gap-4 rounded-[28px] border border-[var(--hairline)] bg-[var(--ivory)] px-5 py-8">
+          <button
+            key={index}
+            type="button"
+            onClick={() => toggle(index)}
+            aria-pressed={checked[index]}
+            className={`magazine-fade-in flex w-full max-w-[280px] items-center gap-3.5 rounded-2xl border px-4 py-4 text-left transition-colors ${
+              checked[index]
+                ? "border-transparent bg-[var(--ink)] text-white"
+                : "border-[var(--hairline)] bg-white text-[var(--ink)]"
+            }`}
+          >
+            <span
+              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold transition-colors ${
                 checked[index]
-                  ? "border-transparent bg-[var(--ink)] text-white"
-                  : "border-[var(--hairline)] bg-white text-[var(--ink)]"
+                  ? "bg-white text-[var(--ink)]"
+                  : "bg-[var(--lavender)] text-[var(--lavender-deep)]"
               }`}
             >
-              <span
-                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[12px] font-bold transition-colors ${
-                  checked[index]
-                    ? "border-white bg-white text-[var(--ink)]"
-                    : "border-[var(--hairline)] text-transparent"
-                }`}
-              >
-                ✓
-              </span>
-              <span className="flex-1 text-[14px] font-medium">{mission}</span>
+              {checked[index] ? "✓" : String(index + 1).padStart(2, "0")}
+            </span>
+            <span className="flex-1 text-[14px] font-medium">
+              {MOOD_MISSIONS[index]}
+            </span>
+          </button>
+
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={() => go(-1)}
+              aria-label="이전 미션"
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--hairline)] bg-white text-[var(--ink)]"
+            >
+              ‹
             </button>
-          ))}
+            <div className="flex items-center gap-1.5">
+              {MOOD_MISSIONS.map((mission, i) => (
+                <button
+                  key={mission}
+                  type="button"
+                  onClick={() => setIndex(i)}
+                  aria-label={`${i + 1}번째 미션으로 이동`}
+                  className={`h-1.5 rounded-full transition-all ${
+                    i === index ? "w-5 bg-[var(--lavender-deep)]" : "w-1.5 bg-[var(--hairline)]"
+                  }`}
+                />
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => go(1)}
+              aria-label="다음 미션"
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--hairline)] bg-white text-[var(--ink)]"
+            >
+              ›
+            </button>
+          </div>
         </div>
         <p className="mt-3 text-center text-[12px] text-[var(--ink-soft)]">
           상세 리포트에서 내 맞춤 미션을 확인할 수 있어요.
