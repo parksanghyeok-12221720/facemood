@@ -252,6 +252,23 @@ function parseChapterBlocks(text: string): ChapterBlock[] {
   return blocks;
 }
 
+// The AI is told not to use markdown, but occasionally still wraps a
+// phrase in "**bold**" anyway — render those as actual emphasis instead
+// of leaking literal asterisks into the text.
+function renderInlineMarkdown(text: string): React.ReactNode {
+  const parts = text.split(/\*\*(.+?)\*\*/g);
+  if (parts.length === 1) return text;
+  return parts.map((part, i) =>
+    i % 2 === 1 ? (
+      <strong key={i} className="font-semibold text-[var(--ink)]">
+        {part}
+      </strong>
+    ) : (
+      part
+    ),
+  );
+}
+
 function ChapterBody({ text }: { text: string }) {
   const blocks = parseChapterBlocks(text);
 
@@ -262,10 +279,9 @@ function ChapterBody({ text }: { text: string }) {
           return (
             <span
               key={index}
-              className="mb-2.5 mt-8 block text-[11.5px] font-semibold uppercase tracking-[0.1em] text-[var(--plum-deep)] first:mt-0"
-              style={{ fontFamily: "'JetBrains Mono', monospace" }}
+              className="mb-2.5 mt-8 block text-[11.5px] font-semibold uppercase tracking-[0.08em] text-[var(--plum-deep)] first:mt-0"
             >
-              {block.content}
+              {renderInlineMarkdown(block.content)}
             </span>
           );
         }
@@ -300,11 +316,10 @@ function ChapterBody({ text }: { text: string }) {
                 className="text-[16.5px] font-medium leading-[1.7] text-[var(--ink)]"
                 style={{ fontFamily: "'Noto Serif KR', serif" }}
               >
-                {block.content}
+                {renderInlineMarkdown(block.content)}
               </p>
               <cite
                 className="mt-3.5 block text-[11px] not-italic tracking-[0.04em] text-[var(--ink-soft)]"
-                style={{ fontFamily: "'JetBrains Mono', monospace" }}
               >
                 — 한 줄 총평
               </cite>
@@ -316,7 +331,7 @@ function ChapterBody({ text }: { text: string }) {
             key={index}
             className="mb-5 text-[15.5px] leading-[1.85] text-[var(--ink)] last:mb-0"
           >
-            {block.content}
+            {renderInlineMarkdown(block.content)}
           </p>
         );
       })}
@@ -380,18 +395,17 @@ function TableOfContents({
               event.preventDefault();
               scrollToChapter(chapter.key);
             }}
-            className="flex items-baseline gap-4 border-b border-[var(--hairline)] py-4 no-underline transition-colors hover:bg-[var(--plum-tint)]/40"
+            className="flex flex-col gap-1 border-b border-[var(--hairline)] py-4 no-underline transition-colors hover:bg-[var(--plum-tint)]/40"
           >
-            <span
-              className="min-w-[30px] text-[13px] text-[var(--plum)]"
-              style={{ fontFamily: "'JetBrains Mono', monospace" }}
-            >
-              {chapter.number}
-            </span>
-            <span className="flex-1 text-[15px] font-medium text-[var(--ink)]">
-              {chapter.title}
-            </span>
-            <span className="hidden text-xs text-[var(--ink-soft)] sm:block">
+            <div className="flex items-baseline gap-3">
+              <span className="min-w-[26px] shrink-0 text-[13px] font-semibold text-[var(--plum)]">
+                {chapter.number}
+              </span>
+              <span className="flex-1 break-keep text-[15px] font-medium leading-snug text-[var(--ink)]">
+                {chapter.title}
+              </span>
+            </div>
+            <span className="break-keep pl-[38px] text-xs text-[var(--ink-soft)]">
               {chapter.points.slice(0, 2).join(" · ")}
             </span>
           </a>
@@ -420,7 +434,6 @@ function PaletteGrid({ palette }: { palette: PreviewResult["colorHint"]["palette
               </p>
               <p
                 className="text-[10px] tracking-wide text-[var(--ink-soft)]"
-                style={{ fontFamily: "'JetBrains Mono', monospace" }}
               >
                 {chip.hex}
               </p>
@@ -438,8 +451,7 @@ function PaletteGrid({ palette }: { palette: PreviewResult["colorHint"]["palette
 function MoodTag({ accent }: { accent: { hex: string; name: string } }) {
   return (
     <span
-      className="mb-3.5 inline-flex items-center gap-1.5 text-[11px] tracking-[0.08em] text-[var(--ink-soft)]"
-      style={{ fontFamily: "'JetBrains Mono', monospace" }}
+      className="mb-3.5 inline-flex items-center gap-1.5 text-[11px] font-medium tracking-[0.04em] text-[var(--ink-soft)]"
     >
       <span
         className="h-2 w-2 rounded-full"
@@ -485,15 +497,14 @@ function ChapterCard({
         }`}
       >
         {imageSrc && (
-          <div className="relative aspect-[16/9] w-full">
+          <div className="relative aspect-[4/5] w-full bg-[var(--plum-tint)] sm:aspect-[16/10]">
             <Image
               src={imageSrc}
               alt={chapter.title}
               fill
               sizes="(min-width: 768px) 768px, 100vw"
-              className="object-cover"
+              className="object-contain"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-black/0 to-black/0" />
           </div>
         )}
 
@@ -503,13 +514,12 @@ function ChapterCard({
         >
           <MoodTag accent={accent} />
           <span
-            className="block text-[12px] font-semibold tracking-[0.14em] text-[var(--plum)]"
-            style={{ fontFamily: "'JetBrains Mono', monospace" }}
+            className="block text-[12px] font-semibold tracking-[0.08em] text-[var(--plum)]"
           >
             CHAPTER {chapter.number}
           </span>
           <h2
-            className="mt-2.5 text-[clamp(22px,3vw,26px)] font-semibold leading-[1.35] tracking-[-0.005em] text-[var(--ink)]"
+            className="mt-2.5 text-[clamp(22px,3vw,26px)] font-semibold leading-[1.35] tracking-[-0.005em] text-[var(--ink)] break-keep"
             style={{ fontFamily: "'Noto Serif KR', serif" }}
           >
             {chapter.title}
@@ -524,8 +534,7 @@ function ChapterCard({
           {visual === "typeBadge" && typeValue && (
             <div className="mt-5 rounded-md border border-[var(--hairline)] bg-[var(--plum-tint)] p-5 text-center">
               <p
-                className="text-xs font-semibold tracking-[0.15em] text-[var(--plum-deep)]"
-                style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                className="text-xs font-semibold tracking-[0.08em] text-[var(--plum-deep)]"
               >
                 사진상 분석 결과
               </p>
@@ -542,81 +551,6 @@ function ChapterCard({
           )}
 
           <div className={visual === "palette" || visual === "typeBadge" ? "mt-6" : "mt-5"}>
-            <ChapterBody text={body} />
-          </div>
-        </div>
-      </div>
-    </Container>
-  );
-}
-
-// Hair/makeup chapters get an editorial image+text split on desktop
-// instead of the stacked-card treatment — the photo stays pinned beside
-// the text as you scroll past it, with a caption identifying which
-// chapter it's illustrating.
-function SplitChapterCard({
-  chapter,
-  body,
-  imageSrc,
-  accent,
-  reverse,
-}: {
-  chapter: (typeof REPORT_CHAPTERS)[number];
-  body: string;
-  imageSrc: string;
-  accent: { hex: string; name: string };
-  reverse: boolean;
-}) {
-  return (
-    <Container
-      id={chapterAnchorId(chapter.key)}
-      maxWidth="max-w-4xl"
-      className="mt-8 scroll-mt-6"
-    >
-      <div
-        className={`grid grid-cols-1 items-start gap-8 md:gap-12 ${
-          reverse ? "md:grid-cols-[1.15fr_0.85fr]" : "md:grid-cols-[0.85fr_1.15fr]"
-        }`}
-      >
-        <figure
-          className={`m-0 md:sticky md:top-20 ${reverse ? "md:order-2" : ""}`}
-        >
-          <div className="relative aspect-[4/5] overflow-hidden rounded-sm">
-            <Image
-              src={imageSrc}
-              alt={chapter.title}
-              fill
-              sizes="(min-width: 900px) 420px, 100vw"
-              className="object-cover"
-            />
-          </div>
-          <figcaption
-            className="mt-2.5 flex justify-between text-[11px] text-[var(--ink-soft)]"
-            style={{ fontFamily: "'JetBrains Mono', monospace" }}
-          >
-            <span>REF. {chapter.number}</span>
-            <span>{chapter.title}</span>
-          </figcaption>
-        </figure>
-
-        <div
-          className="pl-[22px]"
-          style={{ borderLeft: `3px solid ${accent.hex}` }}
-        >
-          <MoodTag accent={accent} />
-          <span
-            className="block text-[12px] font-semibold tracking-[0.14em] text-[var(--plum)]"
-            style={{ fontFamily: "'JetBrains Mono', monospace" }}
-          >
-            CHAPTER {chapter.number}
-          </span>
-          <h2
-            className="mt-2.5 text-[clamp(22px,3vw,26px)] font-semibold leading-[1.35] tracking-[-0.005em] text-[var(--ink)]"
-            style={{ fontFamily: "'Noto Serif KR', serif" }}
-          >
-            {chapter.title}
-          </h2>
-          <div className="mt-5">
             <ChapterBody text={body} />
           </div>
         </div>
@@ -863,7 +797,7 @@ export default function ReportPage() {
           this page only; the rest of the app doesn't use these fonts. */}
       <link
         rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&display=swap"
       />
       <link
         rel="stylesheet"
@@ -873,7 +807,6 @@ export default function ReportPage() {
       <Container className="text-center">
         <p
           className="text-[13px] font-semibold tracking-[0.14em] text-[var(--plum-deep)]"
-          style={{ fontFamily: "'JetBrains Mono', monospace" }}
         >
           FACEMOOD
         </p>
@@ -894,7 +827,6 @@ export default function ReportPage() {
 
       {visibleChapters.map((chapter, index) => {
         const chapterData = report[chapter.key]!;
-        const visual = CHAPTER_VISUALS[chapter.key];
         const accent = getChapterAccent(index, report.colorHint?.palette);
 
         const typeValue =
@@ -903,22 +835,6 @@ export default function ReportPage() {
             : chapter.key === "animalTypeAnalysis"
               ? report.animalType
               : undefined;
-
-        if (visual === "hair" || visual === "makeup") {
-          const imageSrc = visual === "hair" ? report.images?.hair : report.images?.makeup;
-          if (imageSrc) {
-            return (
-              <SplitChapterCard
-                key={chapter.key}
-                chapter={chapter}
-                body={chapterData.body}
-                imageSrc={imageSrc}
-                accent={accent}
-                reverse={visual === "makeup"}
-              />
-            );
-          }
-        }
 
         return (
           <ChapterCard

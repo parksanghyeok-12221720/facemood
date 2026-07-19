@@ -6,10 +6,72 @@ import Container from "@/app/components/Container";
 
 const MAX_PHOTOS = 3;
 
+function PhotoPolicyModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-end justify-center bg-black/50 sm:items-center"
+      onClick={onClose}
+    >
+      <div
+        className="flex max-h-[85vh] w-full max-w-md flex-col rounded-t-3xl bg-neutral-900 sm:rounded-3xl"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
+          <h2 className="text-sm font-bold text-white">사진 처리방침</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-lg leading-none text-gray-400"
+            aria-label="닫기"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-6 py-5 text-xs leading-relaxed text-gray-300">
+          <p>
+            업로드한 사진은 FACEMOOD 이미지 무드 분석 리포트 생성을 위해서만
+            사용됩니다.
+          </p>
+          <p className="mt-3">
+            사진은 얼굴 분위기, 헤어, 메이크업, 컬러 방향을 분석하기 위한
+            참고 자료로 활용되며, 외모 점수, 외모 등급, 신원 확인,
+            생체인증, 마케팅 목적으로 사용되지 않습니다.
+          </p>
+          <p className="mt-3">
+            사진은 리포트 생성 과정에서 AI 분석 시스템을 통해 처리될 수
+            있습니다.
+          </p>
+          <p className="mt-3">
+            업로드한 사진은 리포트 생성 후 자동 삭제되며, 서비스 오류 대응이
+            필요한 경우에 한해 최대 7일간 보관 후 삭제될 수 있습니다.
+          </p>
+          <p className="mt-3">
+            사진을 업로드하지 않아도 설문 답변을 기반으로 분석을 진행할 수
+            있으며, 사진을 업로드하면 더 자세한 이미지 무드 분석이
+            가능합니다.
+          </p>
+        </div>
+
+        <div className="border-t border-white/10 px-6 py-4">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex w-full items-center justify-center rounded-full bg-white px-8 py-3.5 text-sm font-semibold text-black"
+          >
+            확인했습니다
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function UploadPage() {
   const [photos, setPhotos] = useState<{ file: File; url: string }[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [photoConsent, setPhotoConsent] = useState(false);
+  const [showPhotoPolicy, setShowPhotoPolicy] = useState(false);
   const [consentError, setConsentError] = useState("");
 
   useEffect(() => {
@@ -97,6 +159,11 @@ export default function UploadPage() {
       const imageDataUrl = await readFileAsDataUrl(photos[0].file);
 
       localStorage.setItem("facemood_answers", savedAnswers ?? "{}");
+      // Starting a fresh run — clear any report generated for a previous
+      // set of answers so /result and /report always regenerate from what
+      // was just submitted instead of silently reusing stale content.
+      localStorage.removeItem("facemood_preview_result");
+      localStorage.removeItem("facemood_full_report");
 
       try {
         localStorage.setItem("facemood_uploaded_image", imageDataUrl);
@@ -127,6 +194,11 @@ export default function UploadPage() {
       const savedAnswers = localStorage.getItem("facemood_test_answers");
       localStorage.setItem("facemood_answers", savedAnswers ?? "{}");
       localStorage.removeItem("facemood_uploaded_image");
+      // Starting a fresh run — clear any report generated for a previous
+      // set of answers so /result and /report always regenerate from what
+      // was just submitted instead of silently reusing stale content.
+      localStorage.removeItem("facemood_preview_result");
+      localStorage.removeItem("facemood_full_report");
       await createReportRecord(parseAnswers(savedAnswers));
       window.location.href = "/loading";
     } catch (error) {
@@ -211,7 +283,14 @@ export default function UploadPage() {
           />
           <label htmlFor="photo-consent" className="flex-1">
             (필수) 사진 처리방침에 동의합니다. 업로드한 사진은 이미지 분석
-            목적으로만 사용되고 있습니다.
+            목적으로만 사용되고 있습니다.{" "}
+            <button
+              type="button"
+              onClick={() => setShowPhotoPolicy(true)}
+              className="font-semibold text-violet-300 underline underline-offset-2"
+            >
+              자세히 보기
+            </button>
           </label>
         </div>
         {consentError && (
@@ -240,6 +319,10 @@ export default function UploadPage() {
           </p>
         </div>
       </Container>
+
+      {showPhotoPolicy && (
+        <PhotoPolicyModal onClose={() => setShowPhotoPolicy(false)} />
+      )}
     </main>
   );
 }
