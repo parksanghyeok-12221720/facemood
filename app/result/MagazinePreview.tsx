@@ -165,34 +165,25 @@ function MagazineIntro() {
 // 3. 내 분위기를 만드는 5가지 — floating chips around a blurred mood image
 // ---------------------------------------------------------------------------
 
-// Each chip anchors from a fixed edge inset instead of a percentage +
-// -translate-x-1/2 center point — the latter clips near the container
-// edge once the chip's real rendered width is wider than the remaining
-// space (exactly what was happening on narrow screens before).
 const MOOD_FACTORS = [
   {
     label: "헤어의 흐름",
-    position: "left-3 top-3",
     desc: "볼륨이 실리는 위치와 컬의 방향만 바뀌어도 인상의 온도가 완전히 달라져요.",
   },
   {
     label: "메이크업 강도",
-    position: "right-3 top-3",
     desc: "음영과 채도의 세기가 &lsquo;또렷함&rsquo;과 &lsquo;여림&rsquo; 사이 어디쯤 위치할지를 결정해요.",
   },
   {
     label: "옷의 색감",
-    position: "left-3 top-1/2 -translate-y-1/2",
     desc: "톤의 채도와 명도는 사진 속 분위기를 가장 빠르게 바꾸는 요소예요.",
   },
   {
     label: "실루엣",
-    position: "right-3 bottom-3",
     desc: "핏의 라인이 곧게 떨어지는지, 부드럽게 흐르는지에 따라 무드가 갈려요.",
   },
   {
     label: "사진의 밝기",
-    position: "left-1/2 bottom-3 -translate-x-1/2",
     desc: "같은 스타일링도 조명 온도에 따라 전혀 다른 인상으로 읽힐 수 있어요.",
   },
 ] as const;
@@ -223,23 +214,33 @@ function MoodFactorExplorer({ heroImage }: { heroImage: string }) {
           <span className="absolute left-1/2 top-1/2 flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/85 text-[var(--ink)] shadow-sm">
             <LockGlyph className="h-4 w-4" />
           </span>
-
-          {MOOD_FACTORS.map((factor, index) => (
-            <button
-              key={factor.label}
-              type="button"
-              onClick={() => setSelected(index)}
-              aria-pressed={selected === index}
-              className={`absolute max-w-[42%] rounded-full px-3.5 py-2 text-[12.5px] font-semibold shadow-sm backdrop-blur-sm transition-all ${factor.position} ${
-                selected === index
-                  ? "scale-105 bg-[var(--ink)] text-white"
-                  : "bg-white/85 text-[var(--ink)] hover:bg-white"
-              }`}
-            >
-              {factor.label}
-            </button>
-          ))}
         </div>
+
+        <ol className="mt-4 flex flex-col gap-2">
+          {MOOD_FACTORS.map((factor, index) => (
+            <li key={factor.label}>
+              <button
+                type="button"
+                onClick={() => setSelected(index)}
+                aria-pressed={selected === index}
+                className={`flex w-full items-center gap-3 rounded-full px-4 py-2.5 text-left text-[13px] font-semibold transition-colors ${
+                  selected === index
+                    ? "bg-[var(--ink)] text-white"
+                    : "bg-white text-[var(--ink)] hover:bg-[var(--ivory)]"
+                }`}
+              >
+                <span
+                  className={`text-[11px] font-bold ${
+                    selected === index ? "text-white/60" : "text-[var(--lavender-deep)]"
+                  }`}
+                >
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                {factor.label}
+              </button>
+            </li>
+          ))}
+        </ol>
 
         <div
           key={selected}

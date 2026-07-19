@@ -574,7 +574,7 @@ export default function ResultPage() {
         <h2 className="mt-1.5 text-[18px] font-extrabold text-[var(--ink)]">
           오늘 바로 해볼 수 있는 3가지
         </h2>
-        <div className="mt-5 -mx-6 flex snap-x snap-mandatory gap-3 overflow-x-auto px-6 pb-1">
+        <div className="mt-5 -mx-6 flex snap-x snap-mandatory gap-3 overflow-x-auto px-6 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {previewResult.missions.map((mission, index) => (
             <div
               key={mission}
@@ -855,13 +855,7 @@ export default function ResultPage() {
             ))}
           </ul>
 
-          <Link
-            href="/checkout"
-            className="mt-5 flex w-full items-center justify-center rounded-full bg-gradient-to-r from-[var(--rose)] to-[var(--lavender-deep)] px-8 py-4 text-[14px] font-semibold text-white"
-          >
-            상세 리포트 보기
-          </Link>
-          <p className="mt-3 text-center text-[11px] leading-relaxed text-white/45">
+          <p className="mt-5 text-center text-[11px] leading-relaxed text-white/45">
             무료 미리보기는 방향만, 상세 리포트는 실행까지 보여드려요.
           </p>
         </div>
