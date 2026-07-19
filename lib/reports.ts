@@ -103,6 +103,70 @@ export function setCheckoutPassword(
   return result.changes > 0;
 }
 
+export type PaidReportSummary = {
+  id: string;
+  name: string | null;
+  phone: string | null;
+  amount: number | null;
+  recommendedMood: string | null;
+  paidAt: string | null;
+  reportSentAt: string | null;
+  createdAt: string;
+};
+
+type PaidReportRow = {
+  id: string;
+  answers: string;
+  preview_result: string | null;
+  amount: number | null;
+  phone: string | null;
+  paid_at: string | null;
+  report_sent_at: string | null;
+  created_at: string;
+};
+
+export function listPaidReports(): PaidReportSummary[] {
+  const rows = db
+    .prepare(
+      `SELECT id, answers, preview_result, amount, phone, paid_at, report_sent_at, created_at
+       FROM reports WHERE paid = 1 ORDER BY paid_at DESC`,
+    )
+    .all() as PaidReportRow[];
+
+  return rows.map((row) => {
+    let name: string | null = null;
+    try {
+      const answers = JSON.parse(row.answers) as Record<string, unknown>;
+      if (typeof answers.name === "string" && answers.name.trim()) {
+        name = answers.name.trim();
+      }
+    } catch {
+      // Malformed/legacy answers JSON — just show no name instead of failing.
+    }
+
+    let recommendedMood: string | null = null;
+    try {
+      if (row.preview_result) {
+        const preview = JSON.parse(row.preview_result) as { recommendedMood?: string };
+        recommendedMood = preview.recommendedMood ?? null;
+      }
+    } catch {
+      // Same as above — degrade gracefully.
+    }
+
+    return {
+      id: row.id,
+      name,
+      phone: row.phone,
+      amount: row.amount,
+      recommendedMood,
+      paidAt: row.paid_at,
+      reportSentAt: row.report_sent_at,
+      createdAt: row.created_at,
+    };
+  });
+}
+
 export function markReportSent(id: string): void {
   db.prepare(
     `UPDATE reports SET report_sent_at = datetime('now') WHERE id = ?`,
