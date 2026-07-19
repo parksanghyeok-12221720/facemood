@@ -10,7 +10,7 @@ import {
   useSyncExternalStore,
 } from "react";
 import Container from "@/app/components/Container";
-import MagazinePreview from "@/app/result/MagazinePreview";
+import { MagazineHero, MagazineBody } from "@/app/result/MagazinePreview";
 import {
   buildPreviewResult,
   mockPreviewResult,
@@ -311,7 +311,7 @@ export default function ResultPage() {
         } as React.CSSProperties
       }
     >
-      <MagazinePreview previewResult={previewResult} />
+      <MagazineHero previewResult={previewResult} />
 
       {/* Header */}
       <Container className="flex items-center justify-between" maxWidth="max-w-md">
@@ -756,6 +756,8 @@ export default function ResultPage() {
           ))}
         </div>
       </Container>
+
+      <MagazineBody previewResult={previewResult} />
 
       {/* Analysis criteria */}
       <Container className="mt-12">

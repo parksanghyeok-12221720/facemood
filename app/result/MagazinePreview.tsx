@@ -864,37 +864,53 @@ function MagazineBottomCTA() {
 }
 
 // ---------------------------------------------------------------------------
-// Assembly
+// Assembly — split into two pieces so the page can render the hero at the
+// very top, then the rest of the magazine body further down (currently
+// placed right before the "HOW WE ANALYZE" section).
 // ---------------------------------------------------------------------------
 
-export default function MagazinePreview({
+const MAGAZINE_CSS_VARS = {
+  "--ink": "#241E2B",
+  "--ink-soft": "#786D82",
+  "--ivory": "#FBF6EF",
+  "--blush": "#F7D9DF",
+  "--blush-deep": "#DB7E93",
+  "--lavender": "#E7DFF6",
+  "--lavender-deep": "#8F72D6",
+  "--hairline": "#EFE6ED",
+} as React.CSSProperties;
+
+function MagazineFont() {
+  return (
+    // eslint-disable-next-line @next/next/no-page-custom-font -- scoped to this preview section only.
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;600;700&display=swap"
+    />
+  );
+}
+
+export function MagazineHero({
   previewResult,
 }: {
   previewResult: PreviewResult;
 }) {
   return (
-    <div
-      style={
-        {
-          "--ink": "#241E2B",
-          "--ink-soft": "#786D82",
-          "--ivory": "#FBF6EF",
-          "--blush": "#F7D9DF",
-          "--blush-deep": "#DB7E93",
-          "--lavender": "#E7DFF6",
-          "--lavender-deep": "#8F72D6",
-          "--hairline": "#EFE6ED",
-        } as React.CSSProperties
-      }
-    >
-      {/* eslint-disable-next-line @next/next/no-page-custom-font -- scoped
-          to this preview section only. */}
-      <link
-        rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;600;700&display=swap"
-      />
-
+    <div style={MAGAZINE_CSS_VARS}>
+      <MagazineFont />
       <MoodFilmHero heroImage={previewResult.images.hero} />
+    </div>
+  );
+}
+
+export function MagazineBody({
+  previewResult,
+}: {
+  previewResult: PreviewResult;
+}) {
+  return (
+    <div style={MAGAZINE_CSS_VARS}>
+      <MagazineFont />
       <MagazineIntro />
       <MoodFactorExplorer heroImage={previewResult.images.hero} />
       <MagazineQuote>
