@@ -88,48 +88,24 @@ function LockChip({ children }: { children: React.ReactNode }) {
 // 1. Mood film hero
 // ---------------------------------------------------------------------------
 
-function MoodFilmHero({ heroImage }: { heroImage: string }) {
-  const [videoFailed, setVideoFailed] = useState(false);
-
+function MoodFilmHero() {
   return (
-    <section className="relative w-full overflow-hidden" style={{ aspectRatio: "3 / 4" }}>
-      {!videoFailed && (
-        // No video asset ships with the project yet — this quietly falls
-        // back to the image below the moment the source 404s, so dropping
-        // a real clip in at this path later "just works" with no code change.
-        <video
-          className="absolute inset-0 h-full w-full object-cover"
-          autoPlay
-          muted
-          loop
-          playsInline
-          poster={heroImage}
-          onError={() => setVideoFailed(true)}
-        >
-          <source src="/mood/hero-loop.mp4" type="video/mp4" />
-        </video>
-      )}
-      {videoFailed && (
-        <Image src={heroImage} alt="" fill priority sizes="100vw" className="object-cover" />
-      )}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-black/10" />
-      <div className="absolute inset-x-0 bottom-0 px-6 pb-10 pt-16">
-        <span className="text-[11px] font-semibold tracking-[0.2em] text-white/70">
-          FACEMOOD · PREVIEW FILM
-        </span>
-        <h1
-          className="mt-3 text-[26px] font-bold leading-[1.35] text-white break-keep"
-          style={{ fontFamily: "'Noto Serif KR', serif" }}
-        >
-          2n년째 몰랐던 나의 추구미,
-          <br />
-          이제는 분위기로 찾을 시간
-        </h1>
-        <p className="mt-3 text-[13.5px] leading-relaxed text-white/80">
-          사진과 답변을 바탕으로 내 분위기가 어떤 방식으로 분석되는지 미리
-          확인해보세요.
-        </p>
-      </div>
+    <section className="flex flex-col items-center bg-gradient-to-b from-[var(--blush)] via-[var(--ivory)] to-[var(--lavender)] px-6 py-20 text-center">
+      <span className="text-[11px] font-semibold tracking-[0.2em] text-[var(--lavender-deep)]">
+        FACEMOOD · PREVIEW FILM
+      </span>
+      <h1
+        className="mt-4 text-[26px] font-bold leading-[1.35] text-[var(--ink)] break-keep"
+        style={{ fontFamily: "'Noto Serif KR', serif" }}
+      >
+        2n년째 몰랐던 나의 추구미,
+        <br />
+        이제는 분위기로 찾을 시간
+      </h1>
+      <p className="mt-3 max-w-xs text-[13.5px] leading-relaxed text-[var(--ink-soft)]">
+        사진과 답변을 바탕으로 내 분위기가 어떤 방식으로 분석되는지 미리
+        확인해보세요.
+      </p>
     </section>
   );
 }
@@ -891,15 +867,11 @@ function MagazineFont() {
   );
 }
 
-export function MagazineHero({
-  previewResult,
-}: {
-  previewResult: PreviewResult;
-}) {
+export function MagazineHero() {
   return (
     <div style={MAGAZINE_CSS_VARS}>
       <MagazineFont />
-      <MoodFilmHero heroImage={previewResult.images.hero} />
+      <MoodFilmHero />
     </div>
   );
 }

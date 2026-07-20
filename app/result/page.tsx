@@ -216,6 +216,65 @@ function FirstImpressionCounter() {
   );
 }
 
+// Single-card stepper instead of a native horizontal scroll list — the
+// scroll container's scrollbar was hidden for looks, but that left no
+// visible way to tell there was a 3rd card to reach.
+function MissionCarousel({ missions }: { missions: string[] }) {
+  const [index, setIndex] = useState(0);
+
+  function go(delta: number) {
+    setIndex((prev) => (prev + delta + missions.length) % missions.length);
+  }
+
+  return (
+    <div className="mt-5 flex flex-col items-center gap-4">
+      <div
+        key={index}
+        className="w-full rounded-2xl border border-[var(--hairline)] bg-white p-5"
+      >
+        <span className="text-[22px] font-extrabold text-[var(--rose-tint)]">
+          {String(index + 1).padStart(2, "0")}
+        </span>
+        <p className="mt-2 text-[14px] leading-relaxed text-[var(--ink)]">
+          {missions[index]}
+        </p>
+      </div>
+
+      <div className="flex items-center gap-4">
+        <button
+          type="button"
+          onClick={() => go(-1)}
+          aria-label="이전 미션"
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--hairline)] bg-white text-[var(--ink)]"
+        >
+          ‹
+        </button>
+        <div className="flex items-center gap-1.5">
+          {missions.map((mission, i) => (
+            <button
+              key={mission}
+              type="button"
+              onClick={() => setIndex(i)}
+              aria-label={`${i + 1}번째 미션으로 이동`}
+              className={`h-1.5 rounded-full transition-all ${
+                i === index ? "w-5 bg-[var(--rose-deep)]" : "w-1.5 bg-[var(--hairline)]"
+              }`}
+            />
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={() => go(1)}
+          aria-label="다음 미션"
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--hairline)] bg-white text-[var(--ink)]"
+        >
+          ›
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function EmptyResultState() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-white px-6 text-center text-black">
@@ -311,7 +370,7 @@ export default function ResultPage() {
         } as React.CSSProperties
       }
     >
-      <MagazineHero previewResult={previewResult} />
+      <MagazineHero />
 
       {/* Header */}
       <Container className="flex items-center justify-between" maxWidth="max-w-md">
@@ -348,11 +407,14 @@ export default function ResultPage() {
             fill
             priority
             sizes="(min-width: 448px) 448px, 100vw"
-            className="object-cover"
+            className="object-cover blur-[10px]"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/20 to-black/70" />
           <span className="absolute right-4 top-4 rounded-full bg-white px-3 py-1.5 text-[11px] font-semibold text-[var(--ink)] shadow-sm">
             무료 결과
+          </span>
+          <span className="absolute left-1/2 top-1/2 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[var(--ink)] shadow-sm">
+            <LockIcon />
           </span>
           <p className="absolute inset-x-4 bottom-4 text-[11px] font-semibold tracking-[0.08em] text-white/85">
             PHOTO 01 · TODAY&apos;S MOOD CUT
@@ -368,7 +430,7 @@ export default function ResultPage() {
           </span>
           <h2 className="mt-4 text-[19px] font-extrabold leading-[1.5] text-[var(--ink)] break-keep">
             당신에게는{" "}
-            <mark className="rounded bg-[var(--rose-tint)] px-1.5 py-0.5 text-[var(--ink)]">
+            <mark className="select-none rounded bg-[var(--rose-tint)] px-1.5 py-0.5 text-[var(--ink)] blur-[5px]">
               &lsquo;{previewResult.recommendedMood}&rsquo;
             </mark>{" "}
             무드가 잘 어울릴 가능성이 높아요
@@ -385,7 +447,7 @@ export default function ResultPage() {
             {previewResult.tags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-full bg-[var(--rose-tint)] px-3 py-1 text-[11.5px] font-medium text-[var(--rose-deep)]"
+                className="select-none rounded-full bg-[var(--rose-tint)] px-3 py-1 text-[11.5px] font-medium text-[var(--rose-deep)] blur-[4px]"
               >
                 {tag}
               </span>
@@ -401,7 +463,9 @@ export default function ResultPage() {
                 <div className="flex-1">
                   <div className="flex items-center justify-between text-[13px]">
                     <span
-                      className={index === 0 ? "font-bold text-[var(--ink)]" : "text-[var(--ink-soft)]"}
+                      className={`select-none blur-[5px] ${
+                        index === 0 ? "font-bold text-[var(--ink)]" : "text-[var(--ink-soft)]"
+                      }`}
                     >
                       {item.mood}
                     </span>
@@ -426,6 +490,10 @@ export default function ResultPage() {
                 </div>
               </div>
             ))}
+          </div>
+          <div className="mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[var(--ink)]/[0.05] px-4 py-2.5 text-[12px] font-medium text-[var(--ink-soft)]">
+            <LockIcon />
+            정확한 싱크로율은 상세 리포트에서 확인할 수 있어요
           </div>
         </div>
         <p className="mt-3 text-center text-[11px] leading-relaxed text-[var(--ink-soft)]">
@@ -493,7 +561,7 @@ export default function ResultPage() {
         </p>
 
         <div className="mt-5 rounded-[24px] bg-[var(--lavender)] p-6">
-          <p className="whitespace-pre-line text-[14.5px] leading-relaxed text-[var(--ink)]">
+          <p className="select-none whitespace-pre-line text-[14.5px] leading-relaxed text-[var(--ink)] blur-[4px]">
             {previewResult.colorHint.summary} {previewResult.colorHint.description}
           </p>
         </div>
@@ -511,7 +579,7 @@ export default function ResultPage() {
               <p className="mt-2.5 text-[13.5px] font-bold text-[var(--ink)]">
                 {chip.name}
               </p>
-              <p className="mt-1 text-[11.5px] leading-relaxed text-[var(--ink-soft)]">
+              <p className="mt-1 select-none text-[11.5px] leading-relaxed text-[var(--ink-soft)] blur-[3px]">
                 {chip.description}
               </p>
             </div>
@@ -574,21 +642,7 @@ export default function ResultPage() {
         <h2 className="mt-1.5 text-[18px] font-extrabold text-[var(--ink)]">
           오늘 바로 해볼 수 있는 3가지
         </h2>
-        <div className="mt-5 -mx-6 flex snap-x snap-mandatory gap-3 overflow-x-auto px-6 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {previewResult.missions.map((mission, index) => (
-            <div
-              key={mission}
-              className="w-[190px] shrink-0 snap-start rounded-2xl border border-[var(--hairline)] bg-white p-4"
-            >
-              <span className="text-[22px] font-extrabold text-[var(--rose-tint)]">
-                {String(index + 1).padStart(2, "0")}
-              </span>
-              <p className="mt-2 text-[13px] leading-relaxed text-[var(--ink)]">
-                {mission}
-              </p>
-            </div>
-          ))}
-        </div>
+        <MissionCarousel missions={previewResult.missions} />
       </Container>
 
       {/* Preview locked — styling / hair / makeup */}
@@ -622,7 +676,7 @@ export default function ResultPage() {
                     fill
                     sizes="(min-width: 448px) 448px, 100vw"
                     loading="eager"
-                    className="object-cover"
+                    className="object-cover blur-[8px]"
                   />
                   <div className="absolute inset-0 bg-gradient-to-br from-black/10 via-[var(--ink)]/30 to-black/60" />
                   <span className="absolute inset-0 flex items-center justify-center text-[12px] font-medium text-white/85">

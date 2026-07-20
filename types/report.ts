@@ -12,12 +12,12 @@ export const MOOD_CANDIDATES = [
 export type MoodCandidate = (typeof MOOD_CANDIDATES)[number];
 
 export const FACE_SHAPE_CANDIDATES = [
-  "긴 형",
-  "둥근형",
-  "육각형",
+  "계란형",
+  "원형",
+  "역삼각형",
   "땅콩형",
   "하트형",
-  "마름모형",
+  "다이아몬드형",
 ] as const;
 
 export type FaceShapeCandidate = (typeof FACE_SHAPE_CANDIDATES)[number];
@@ -29,12 +29,36 @@ export const ANIMAL_TYPE_CANDIDATES = [
   "고양이상",
   "다람쥐상",
   "곰돌이상",
-  "범상",
+  "호랑이상",
   "여우상",
   "수달상",
 ] as const;
 
 export type AnimalTypeCandidate = (typeof ANIMAL_TYPE_CANDIDATES)[number];
+
+// Reference images for the paid report's 얼굴형/동물상 chapters — drop a
+// file at each path below (any of these missing just means that chapter
+// renders without an image, same as before).
+export const FACE_SHAPE_IMAGES: Record<FaceShapeCandidate, string> = {
+  계란형: "/mood/faceshape/계란형.png",
+  원형: "/mood/faceshape/원형.png",
+  역삼각형: "/mood/faceshape/역삼각형.png",
+  땅콩형: "/mood/faceshape/땅콩형.png",
+  하트형: "/mood/faceshape/하트형.png",
+  다이아몬드형: "/mood/faceshape/다이아몬드형.png",
+};
+
+export const ANIMAL_TYPE_IMAGES: Record<AnimalTypeCandidate, string> = {
+  강아지상: "/mood/animaltype/강아지상.png",
+  사슴상: "/mood/animaltype/사슴상.png",
+  토끼상: "/mood/animaltype/토끼상.png",
+  고양이상: "/mood/animaltype/고양이상.png",
+  다람쥐상: "/mood/animaltype/다람쥐상.png",
+  곰돌이상: "/mood/animaltype/곰돌이상.png",
+  호랑이상: "/mood/animaltype/호랑이상.png",
+  여우상: "/mood/animaltype/여우상.png",
+  수달상: "/mood/animaltype/수달상.png",
+};
 
 export type PreviewResult = {
   recommendedMood: string;
@@ -76,6 +100,11 @@ export type PreviewResult = {
   lockedSections: string[];
   images: {
     hero: string;
+    // Every "st" reference photo available for this mood — the paid
+    // report cycles through these across its several hero-style chapters
+    // instead of repeating the same single photo. Optional so reports
+    // cached before this existed still render (falls back to `hero`).
+    heroGallery?: string[];
     hair: string;
     makeup: string;
   };
@@ -87,18 +116,50 @@ export type PreviewResult = {
   animalType: AnimalTypeCandidate | null;
 };
 
-// Per-mood reference photo, already prepared in public/mood/cards but not
-// wired up before now — every mood always rendered the same 청순 자연형
-// hero image regardless of the actual recommendation.
-const MOOD_HERO_IMAGE: Record<MoodCandidate, string> = {
-  "청순 자연형": "/mood/cards/청순자연st.png",
-  "고급 도시형": "/mood/cards/고급도시st.png",
-  "차분 시크형": "/mood/cards/차분시크st.png",
-  "러블리 여리형": "/mood/cards/러블리 여리st.png",
-  "힙 트렌디형": "/mood/cards/힙 트렌디st.png",
-  "러블리 힙형": "/mood/cards/러블리 힙st.png",
-  "청순 에겐형": "/mood/cards/청순 에겐st.png",
-  "일본 여주형": "/mood/cards/일본여주st.png",
+// Every reference photo prepared per mood in public/mood/cards. Moods
+// with only one photo on disk just get a single-item list — the report
+// still renders fine, it just can't vary that mood's hero image.
+const MOOD_HERO_GALLERY: Record<MoodCandidate, string[]> = {
+  "청순 자연형": ["/mood/cards/청순자연st.png"],
+  "고급 도시형": [
+    "/mood/cards/고급도시st.png",
+    "/mood/cards/고급도시st2.png",
+    "/mood/cards/고급도시st3.png",
+    "/mood/cards/고급도시st4.png",
+    "/mood/cards/고급도시st5.png",
+  ],
+  "차분 시크형": ["/mood/cards/차분시크st.png"],
+  "러블리 여리형": [
+    "/mood/cards/러블리 여리st.png",
+    "/mood/cards/러블리 여리st2.png",
+    "/mood/cards/러블리 여리st3.png",
+    "/mood/cards/러블리 여리st4.png",
+    "/mood/cards/러블리 여리st5.png",
+  ],
+  "힙 트렌디형": [
+    "/mood/cards/힙 트렌디st.png",
+    "/mood/cards/힙 트렌디st2.png",
+    "/mood/cards/힙 트렌디st3.png",
+    "/mood/cards/힙 트렌디st4.png",
+  ],
+  "러블리 힙형": [
+    "/mood/cards/러블리 힙st.png",
+    "/mood/cards/러블리 힙st2.png",
+    "/mood/cards/러블리 힙st3.png",
+    "/mood/cards/러블리 힙st4.png",
+    "/mood/cards/러블리 힙st5.png",
+  ],
+  "청순 에겐형": [
+    "/mood/cards/청순 에겐st.png",
+    "/mood/cards/청순 에겐st2.png",
+    "/mood/cards/청순 에겐st3.png",
+  ],
+  "일본 여주형": [
+    "/mood/cards/일본여주st.png",
+    "/mood/cards/일본여주st2.png",
+    "/mood/cards/일본여주st3.png",
+    "/mood/cards/일본여주st4.png",
+  ],
 };
 
 const HAIR_IMAGES = [
@@ -142,8 +203,10 @@ function imagesForMood(
   const moodCount = MOOD_CANDIDATES.length;
   const combinedIndex =
     MOOD_CANDIDATES.indexOf(mood) * moodCount + MOOD_CANDIDATES.indexOf(subMood);
+  const heroGallery = MOOD_HERO_GALLERY[mood];
   return {
-    hero: MOOD_HERO_IMAGE[mood],
+    hero: heroGallery[0],
+    heroGallery,
     hair: HAIR_IMAGES[combinedIndex % HAIR_IMAGES.length],
     makeup: MAKEUP_IMAGES[combinedIndex % MAKEUP_IMAGES.length],
   };

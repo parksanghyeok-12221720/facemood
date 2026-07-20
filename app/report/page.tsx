@@ -4,7 +4,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Container from "@/app/components/Container";
-import { REPORT_CHAPTERS, buildPreviewResult } from "@/types/report";
+import {
+  ANIMAL_TYPE_IMAGES,
+  FACE_SHAPE_IMAGES,
+  REPORT_CHAPTERS,
+  buildPreviewResult,
+} from "@/types/report";
 import type {
   FullReport,
   PreviewResult,
@@ -595,6 +600,7 @@ function ChapterCard({
   colorHint,
   typeValue,
   accent,
+  heroPickIndex,
 }: {
   chapter: (typeof REPORT_CHAPTERS)[number];
   content: ReportChapterContent;
@@ -602,10 +608,28 @@ function ChapterCard({
   colorHint: PreviewResult["colorHint"] | undefined;
   typeValue?: string | null;
   accent: { hex: string; name: string };
+  heroPickIndex: number;
 }) {
   const visual = CHAPTER_VISUALS[chapter.key];
+  // Several chapters share the "hero" visual — cycle through every "st"
+  // photo prepared for this mood instead of repeating the same one, so
+  // the report doesn't look like it recycled a single stock shot.
+  const heroGallery = images?.heroGallery;
+  const heroImage =
+    heroGallery && heroGallery.length > 0
+      ? heroGallery[heroPickIndex % heroGallery.length]
+      : images?.hero;
   const imageSrc =
-    visual === "hero" ? images?.hero : visual === "hair" ? images?.hair : visual === "makeup" ? images?.makeup : null;
+    visual === "hero" ? heroImage : visual === "hair" ? images?.hair : visual === "makeup" ? images?.makeup : null;
+  // 얼굴형/동물상 챕터는 별도 배너 이미지 대신 "사진상 분석 결과" 배지
+  // 안에 작은 원형 이미지로 넣어서, 카드 상단에 따로 떠 있지 않고
+  // 텍스트와 한 덩어리로 보이게 한다.
+  const typeImageSrc =
+    visual === "typeBadge" && typeValue
+      ? chapter.key === "faceShapeAnalysis"
+        ? FACE_SHAPE_IMAGES[typeValue as keyof typeof FACE_SHAPE_IMAGES]
+        : ANIMAL_TYPE_IMAGES[typeValue as keyof typeof ANIMAL_TYPE_IMAGES]
+      : null;
   const isFinal = chapter.key === "finalChecklist";
 
   return (
@@ -663,6 +687,17 @@ function ChapterCard({
               >
                 사진상 분석 결과
               </p>
+              {typeImageSrc && (
+                <div className="relative mx-auto mt-3 h-24 w-24 overflow-hidden rounded-full border-4 border-white shadow-md">
+                  <Image
+                    src={typeImageSrc}
+                    alt={typeValue}
+                    fill
+                    sizes="96px"
+                    className="object-cover"
+                  />
+                </div>
+              )}
               <p
                 className="mt-2 text-2xl font-bold text-[var(--plum-deep)]"
                 style={{ fontFamily: "'Noto Serif KR', serif" }}
@@ -977,29 +1012,39 @@ export default function ReportPage() {
 
       <TableOfContents chapters={visibleChapters} />
 
-      {visibleChapters.map((chapter, index) => {
-        const chapterData = report[chapter.key]!;
-        const accent = getChapterAccent(index, report.colorHint?.palette);
+      {(() => {
+        // Assigns each "hero"-visual chapter its own position in the mood's
+        // photo gallery (0, 1, 2, ...) so ChapterCard can cycle through
+        // them instead of every one of these chapters showing photo #1.
+        let heroCounter = 0;
+        return visibleChapters.map((chapter, index) => {
+          const chapterData = report[chapter.key]!;
+          const accent = getChapterAccent(index, report.colorHint?.palette);
 
-        const typeValue =
-          chapter.key === "faceShapeAnalysis"
-            ? report.faceShapeType
-            : chapter.key === "animalTypeAnalysis"
-              ? report.animalType
-              : undefined;
+          const typeValue =
+            chapter.key === "faceShapeAnalysis"
+              ? report.faceShapeType
+              : chapter.key === "animalTypeAnalysis"
+                ? report.animalType
+                : undefined;
 
-        return (
-          <ChapterCard
-            key={chapter.key}
-            chapter={chapter}
-            content={chapterData}
-            images={report.images}
-            colorHint={report.colorHint}
-            typeValue={typeValue}
-            accent={accent}
-          />
-        );
-      })}
+          const heroPickIndex =
+            CHAPTER_VISUALS[chapter.key] === "hero" ? heroCounter++ : 0;
+
+          return (
+            <ChapterCard
+              key={chapter.key}
+              chapter={chapter}
+              content={chapterData}
+              images={report.images}
+              colorHint={report.colorHint}
+              typeValue={typeValue}
+              accent={accent}
+              heroPickIndex={heroPickIndex}
+            />
+          );
+        });
+      })()}
 
       <Container className="mt-10">
         <p className="text-center text-xs leading-relaxed text-[var(--ink-soft)]">
