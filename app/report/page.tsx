@@ -7,11 +7,15 @@ import Container from "@/app/components/Container";
 import {
   ANIMAL_TYPE_IMAGES,
   FACE_SHAPE_IMAGES,
+  HAIR_STYLE_IMAGES,
+  MAKEUP_STYLE_IMAGES,
   REPORT_CHAPTERS,
   buildPreviewResult,
 } from "@/types/report";
 import type {
   FullReport,
+  HairStyleCandidate,
+  MakeupStyleCandidate,
   PreviewResult,
   ReportChapterContent,
   ReportChapterKey,
@@ -599,6 +603,7 @@ function ChapterCard({
   images,
   colorHint,
   typeValue,
+  styleTypeValue,
   accent,
   heroPickIndex,
 }: {
@@ -607,6 +612,7 @@ function ChapterCard({
   images: PreviewResult["images"] | undefined;
   colorHint: PreviewResult["colorHint"] | undefined;
   typeValue?: string | null;
+  styleTypeValue?: HairStyleCandidate | MakeupStyleCandidate | null;
   accent: { hex: string; name: string };
   heroPickIndex: number;
 }) {
@@ -619,8 +625,21 @@ function ChapterCard({
     heroGallery && heroGallery.length > 0
       ? heroGallery[heroPickIndex % heroGallery.length]
       : images?.hero;
+  // Hair/makeup photos are picked to match what the chapter's body text
+  // actually recommends (via the AI-chosen styleTypeValue) rather than a
+  // mood-indexed photo unrelated to that chapter's content. Falls back to
+  // the old mood-indexed image for reports generated before this existed.
   const imageSrc =
-    visual === "hero" ? heroImage : visual === "hair" ? images?.hair : visual === "makeup" ? images?.makeup : null;
+    visual === "hero"
+      ? heroImage
+      : visual === "hair"
+        ? (styleTypeValue && HAIR_STYLE_IMAGES[styleTypeValue as HairStyleCandidate]) ||
+          images?.hair
+        : visual === "makeup"
+          ? (styleTypeValue &&
+              MAKEUP_STYLE_IMAGES[styleTypeValue as MakeupStyleCandidate]) ||
+            images?.makeup
+          : null;
   // 얼굴형/동물상 챕터는 별도 배너 이미지 대신 "사진상 분석 결과" 배지
   // 안에 작은 원형 이미지로 넣어서, 카드 상단에 따로 떠 있지 않고
   // 텍스트와 한 덩어리로 보이게 한다.
@@ -646,13 +665,24 @@ function ChapterCard({
         }`}
       >
         {imageSrc && (
-          <div className="relative aspect-[4/5] w-full bg-[var(--plum-tint)] sm:aspect-[16/10]">
+          <div className="relative aspect-[4/5] w-full overflow-hidden bg-[var(--plum-tint)] sm:aspect-[16/10]">
+            {/* Blurred, enlarged copy of the same photo fills the space
+                the sharp photo's own aspect ratio leaves empty, instead of
+                showing flat lavender bars beside it. */}
+            <Image
+              src={imageSrc}
+              alt=""
+              aria-hidden="true"
+              fill
+              sizes="(min-width: 768px) 768px, 100vw"
+              className="scale-110 object-cover opacity-40 blur-2xl"
+            />
             <Image
               src={imageSrc}
               alt={chapter.title}
               fill
               sizes="(min-width: 768px) 768px, 100vw"
-              className="object-contain"
+              className="relative object-contain"
             />
           </div>
         )}
@@ -1028,6 +1058,13 @@ export default function ReportPage() {
                 ? report.animalType
                 : undefined;
 
+          const styleTypeValue =
+            chapter.key === "hairGuide"
+              ? report.hairStyleType
+              : chapter.key === "makeupGuide"
+                ? report.makeupStyleType
+                : undefined;
+
           const heroPickIndex =
             CHAPTER_VISUALS[chapter.key] === "hero" ? heroCounter++ : 0;
 
@@ -1039,6 +1076,7 @@ export default function ReportPage() {
               images={report.images}
               colorHint={report.colorHint}
               typeValue={typeValue}
+              styleTypeValue={styleTypeValue}
               accent={accent}
               heroPickIndex={heroPickIndex}
             />

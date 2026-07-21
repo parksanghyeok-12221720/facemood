@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ANONYMOUS, loadTossPayments } from "@tosspayments/tosspayments-sdk";
+import type { TossPaymentsWidgets } from "@tosspayments/tosspayments-sdk";
 import Container from "@/app/components/Container";
 import { TEST_AMOUNT_KRW, isTestPhone } from "@/lib/testPayment";
 
@@ -234,6 +235,71 @@ export default function CheckoutPage() {
   const [showRefundPolicy, setShowRefundPolicy] = useState(false);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [widgetsReady, setWidgetsReady] = useState(false);
+  const [tossAgreementOk, setTossAgreementOk] = useState(false);
+
+  const widgetsRef = useRef<TossPaymentsWidgets | null>(null);
+  const phone = `${phonePrefix}-${phoneMiddle}-${phoneLast}`;
+  const chargeAmount = isTestPhone(phone) ? TEST_AMOUNT_KRW : REPORT_PRICE_KRW;
+
+  // Renders Toss's payment-method and agreement widgets inline as soon as
+  // the page loads, using the default price — the widget object stays in
+  // widgetsRef so startCheckout() can call requestPayment() on it later.
+  useEffect(() => {
+    let cancelled = false;
+
+    async function init() {
+      const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
+      if (!clientKey) {
+        setError("결제 설정이 누락되었습니다. 잠시 후 다시 시도해주세요.");
+        return;
+      }
+
+      try {
+        const tossPayments = await loadTossPayments(clientKey);
+        const widgets = tossPayments.widgets({ customerKey: ANONYMOUS });
+        if (cancelled) return;
+
+        await widgets.setAmount({ currency: "KRW", value: REPORT_PRICE_KRW });
+        await widgets.renderPaymentMethods({ selector: "#toss-payment-method" });
+        const agreementWidget = await widgets.renderAgreement({
+          selector: "#toss-agreement",
+        });
+        if (cancelled) return;
+
+        agreementWidget.on("agreementStatusChange", (status) => {
+          console.log("[toss-debug] agreementStatusChange", status);
+          setTossAgreementOk(status.agreedRequiredTerms);
+        });
+
+        widgetsRef.current = widgets;
+        setWidgetsReady(true);
+        console.log("[toss-debug] widgetsReady = true");
+      } catch (err) {
+        if (!cancelled) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "결제 위젯을 불러오는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
+          );
+        }
+      }
+    }
+
+    init();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // The test-phone discount (see lib/testPayment.ts) changes the amount
+  // after the widget already rendered with the default price — keep the
+  // widget's configured amount in sync whenever that phone number is typed.
+  useEffect(() => {
+    widgetsRef.current
+      ?.setAmount({ currency: "KRW", value: chargeAmount })
+      .catch(() => {});
+  }, [chargeAmount]);
 
   function validate(): string | null {
     if (phoneMiddle.length < 3 || phoneLast.length !== 4) {
@@ -248,6 +314,9 @@ export default function CheckoutPage() {
     if (!refundAgreed) {
       return "취소·환불 규정 처리방침에 동의해주세요.";
     }
+    if (!tossAgreementOk) {
+      return "결제 위젯의 필수 약관에 동의해주세요.";
+    }
     return null;
   }
 
@@ -260,6 +329,12 @@ export default function CheckoutPage() {
       return;
     }
 
+    const widgets = widgetsRef.current;
+    if (!widgets) {
+      setError("결제 위젯이 아직 준비되지 않았습니다. 잠시 후 다시 시도해주세요.");
+      return;
+    }
+
     const reportId = localStorage.getItem(REPORT_ID_KEY);
     if (!reportId) {
       setError(
@@ -268,36 +343,20 @@ export default function CheckoutPage() {
       return;
     }
 
-    const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
-    if (!clientKey) {
-      setError("결제 설정이 누락되었습니다. 잠시 후 다시 시도해주세요.");
-      return;
-    }
-
     setError("");
     setIsSubmitting(true);
 
     try {
-      const phone = `${phonePrefix}-${phoneMiddle}-${phoneLast}`;
-      const chargeAmount = isTestPhone(phone) ? TEST_AMOUNT_KRW : REPORT_PRICE_KRW;
-
       // Read back on the success page after Toss redirects here — the
       // payment is only confirmed (and this password/phone saved)
       // server-side once Toss verifies the charge.
       sessionStorage.setItem(PENDING_PASSWORD_KEY, password);
       sessionStorage.setItem(PENDING_PHONE_KEY, phone);
 
-      const tossPayments = await loadTossPayments(clientKey);
-      const payment = tossPayments.payment({ customerKey: ANONYMOUS });
-
-      // method: "CARD" with the default flowMode opens Toss's own
-      // integrated payment window, where the buyer picks card, 카카오페이,
-      // 네이버페이, etc. themselves — Toss owns the method selection UI.
-      await payment.requestPayment({
-        method: "CARD",
-        amount: { currency: "KRW", value: chargeAmount },
+      await widgets.requestPayment({
         orderId: reportId,
         orderName: "FACEMOOD 상세 리포트",
+        customerMobilePhone: `${phonePrefix}${phoneMiddle}${phoneLast}`,
         successUrl: `${window.location.origin}/checkout/success`,
         failUrl: `${window.location.origin}/checkout/fail`,
       });
@@ -306,7 +365,7 @@ export default function CheckoutPage() {
       const message =
         err instanceof Error
           ? err.message
-          : "결제창을 여는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
+          : "결제 요청 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
       setError(message);
       setIsSubmitting(false);
     }
@@ -449,6 +508,22 @@ export default function CheckoutPage() {
           />
         </section>
 
+        {/* Payment method — rendered inline by the Toss widget SDK */}
+        <section className="mt-8">
+          <p className="text-xs font-semibold tracking-[0.2em] text-violet-500">
+            결제 수단
+          </p>
+          <div className="mt-3 overflow-hidden rounded-2xl border border-violet-100 bg-white">
+            {!widgetsReady && !error && (
+              <p className="p-5 text-center text-xs text-gray-400">
+                결제 수단을 불러오는 중...
+              </p>
+            )}
+            <div id="toss-payment-method" />
+          </div>
+          <div id="toss-agreement" className="mt-3" />
+        </section>
+
         {/* Agreement */}
         <section className="mt-8 flex flex-col gap-3">
           <label className="flex items-start gap-2.5 text-xs leading-relaxed text-gray-600">
@@ -491,15 +566,21 @@ export default function CheckoutPage() {
           <button
             type="button"
             onClick={startCheckout}
-            disabled={!agreed || !refundAgreed || isSubmitting}
+            disabled={
+              !agreed ||
+              !refundAgreed ||
+              !widgetsReady ||
+              !tossAgreementOk ||
+              isSubmitting
+            }
             className="flex w-full items-center justify-center rounded-full bg-black px-8 py-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
             {isSubmitting
-              ? "결제창 여는 중..."
+              ? "결제 요청 중..."
               : `${REPORT_PRICE_KRW.toLocaleString()}원 결제하기`}
           </button>
           <p className="mt-3 text-center text-xs text-gray-400">
-            토스페이먼츠 결제창에서 원하는 결제수단을 선택할 수 있습니다.
+            위에서 원하는 결제수단을 선택한 뒤 결제를 진행해주세요.
           </p>
         </section>
       </Container>

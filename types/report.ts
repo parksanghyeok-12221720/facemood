@@ -60,6 +60,62 @@ export const ANIMAL_TYPE_IMAGES: Record<AnimalTypeCandidate, string> = {
   수달상: "/mood/animaltype/수달상.png",
 };
 
+export const HAIR_STYLE_CANDIDATES = [
+  "샌드펌",
+  "시스루뱅",
+  "히피펌",
+  "뱅드 보브",
+  "S컬(지지컬)",
+  "러블리 보브",
+  "박스 보브",
+  "슬릭 보브",
+  "시스루 뱅 보브",
+  "클라우드 보브",
+  "텍스처 웨이브",
+  "허쉬컷",
+] as const;
+
+export type HairStyleCandidate = (typeof HAIR_STYLE_CANDIDATES)[number];
+
+// AI picks one of the names above for the hairGuide chapter's "type" field
+// so the photo shown actually matches what the body text recommends,
+// instead of a mood-indexed photo unrelated to that chapter's content.
+export const HAIR_STYLE_IMAGES: Record<HairStyleCandidate, string> = {
+  샌드펌: "/mood/hair/hair_샌드펌.png",
+  시스루뱅: "/mood/hair/hair_시스루.png",
+  히피펌: "/mood/hair/hair_히피펌.png",
+  "뱅드 보브": "/mood/hair/hair_ 뱅드 보브.png",
+  "S컬(지지컬)": "/mood/hair/hair_S컬(지지컬).png",
+  "러블리 보브": "/mood/hair/hair_러블리보브.png",
+  "박스 보브": "/mood/hair/hair_박스 보브.png",
+  "슬릭 보브": "/mood/hair/hair_슬릭 보브.png",
+  "시스루 뱅 보브": "/mood/hair/hair_시스루 뱅 보브.png",
+  "클라우드 보브": "/mood/hair/hair_클라우드 보브.png",
+  "텍스처 웨이브": "/mood/hair/hair_텍스처 웨이브.png",
+  허쉬컷: "/mood/hair/hair_허쉬컷.png",
+};
+
+export const MAKEUP_STYLE_CANDIDATES = [
+  "글로우 베이스",
+  "라이트 레이어링 파운데이션",
+  "절제된 컨투어",
+  "은은한 스모키",
+  "실버 포인트",
+  "고스트 래시",
+] as const;
+
+export type MakeupStyleCandidate = (typeof MAKEUP_STYLE_CANDIDATES)[number];
+
+export const MAKEUP_STYLE_IMAGES: Record<MakeupStyleCandidate, string> = {
+  "글로우 베이스": "/mood/makeup/makeup_굴로우베이스.png",
+  "라이트 레이어링 파운데이션":
+    "/mood/makeup/션makeup_라이트 레이어링 파운데이.png",
+  "절제된 컨투어": "/mood/makeup/makeup_절제된 컨투어.png",
+  "은은한 스모키": "/mood/makeup/makeup_ 은은한 스모키.png",
+  "실버 포인트": "/mood/makeup/makeup_실버포인트.png",
+  "고스트 래시": "/mood/makeup/makeup_고스트 래시.png",
+};
+
 export type PreviewResult = {
   recommendedMood: string;
   subMood: string;
@@ -553,6 +609,8 @@ export type FullReport = {
   colorHint: PreviewResult["colorHint"];
   faceShapeType?: FaceShapeCandidate | null;
   animalType?: AnimalTypeCandidate | null;
+  hairStyleType?: HairStyleCandidate | null;
+  makeupStyleType?: MakeupStyleCandidate | null;
 };
 
 // ---------------------------------------------------------------------------
