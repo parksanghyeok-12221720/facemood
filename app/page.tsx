@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import AnalysisCounter from "@/app/components/AnalysisCounter";
 import Container from "@/app/components/Container";
 
 const floatingTags: {
@@ -87,6 +88,7 @@ export default function Home() {
           >
             분석 시작하기
           </Link>
+          <AnalysisCounter />
         </div>
       </Container>
     </main>

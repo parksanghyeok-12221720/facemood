@@ -10,6 +10,7 @@ import {
   useSyncExternalStore,
 } from "react";
 import Container from "@/app/components/Container";
+import DiscountCountdown from "@/app/components/DiscountCountdown";
 import { MagazineHero, MagazineBody } from "@/app/result/MagazinePreview";
 import {
   buildPreviewResult,
@@ -919,6 +920,7 @@ export default function ResultPage() {
           scrolling through the preview. */}
       <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--hairline)] bg-white/95 pb-[max(env(safe-area-inset-bottom),1rem)] pt-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] backdrop-blur">
         <Container>
+          <DiscountCountdown />
           <Link
             href="/checkout"
             className="flex w-full items-center justify-center rounded-full bg-[var(--ink)] px-8 py-4 text-sm font-semibold text-white"

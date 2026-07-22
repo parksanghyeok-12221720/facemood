@@ -105,12 +105,49 @@ export default function UploadPage() {
     });
   }
 
-  function readFileAsDataUrl(file: File): Promise<string> {
+  // Resizes to a max 1280px edge and re-encodes as JPEG before the photo
+  // ever touches localStorage or the OpenAI vision call. Raw phone photos
+  // (often 5-12MB) silently blew past localStorage's ~5-10MB quota — the
+  // save was wrapped in a try/catch so it failed quietly, meaning the photo
+  // never made it into the report generation call at all. A resized JPEG
+  // is a few hundred KB, comfortably fits, and costs less in vision tokens
+  // too since GPT-4o bills by image tile count.
+  function resizeImageToDataUrl(
+    file: File,
+    maxDimension = 1280,
+    quality = 0.85,
+  ): Promise<string> {
     return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = () => reject(reader.error);
-      reader.readAsDataURL(file);
+      const objectUrl = URL.createObjectURL(file);
+      const img = new window.Image();
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        let { width, height } = img;
+        if (width > maxDimension || height > maxDimension) {
+          if (width >= height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          reject(new Error("이미지를 처리할 수 없습니다."));
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error("이미지를 불러올 수 없습니다."));
+      };
+      img.src = objectUrl;
     });
   }
 
@@ -156,7 +193,7 @@ export default function UploadPage() {
 
     try {
       const savedAnswers = localStorage.getItem("facemood_test_answers");
-      const imageDataUrl = await readFileAsDataUrl(photos[0].file);
+      const imageDataUrl = await resizeImageToDataUrl(photos[0].file);
 
       localStorage.setItem("facemood_answers", savedAnswers ?? "{}");
       // Starting a fresh run — clear any report generated for a previous

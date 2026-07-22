@@ -393,6 +393,17 @@ async function expandChapterBody(
 // stored on the chapter itself.
 type RawChapterResult = ReportChapterContent & { type?: string };
 
+// Only these chapters actually analyze the photo (mood, face shape, animal
+// type, color) — attaching it to every chapter call cost extra vision
+// tokens on chapters (styling copy, checklists, etc.) that never looked at
+// the image anyway.
+const VISION_CHAPTER_KEYS: ReportChapterKey[] = [
+  "currentImageMood",
+  "faceShapeAnalysis",
+  "animalTypeAnalysis",
+  "colorMoodAnalysis",
+];
+
 async function generateChapterGroup(
   client: OpenAI,
   group: ReportChapterKey[],
@@ -400,18 +411,21 @@ async function generateChapterGroup(
   previewResult: PreviewResult | null,
   imageDataUrl: string | null,
 ): Promise<Partial<Record<ReportChapterKey, RawChapterResult>>> {
+  const attachImage =
+    !!imageDataUrl && group.some((key) => VISION_CHAPTER_KEYS.includes(key));
+
   const userContent: (
     | { type: "text"; text: string }
     | { type: "image_url"; image_url: { url: string } }
   )[] = [
     {
       type: "text",
-      text: buildUserPrompt(answers, previewResult, !!imageDataUrl, group),
+      text: buildUserPrompt(answers, previewResult, attachImage, group),
     },
   ];
 
-  if (imageDataUrl) {
-    userContent.push({ type: "image_url", image_url: { url: imageDataUrl } });
+  if (attachImage) {
+    userContent.push({ type: "image_url", image_url: { url: imageDataUrl! } });
   }
 
   const completion = await withRetry(() =>

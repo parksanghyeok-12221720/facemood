@@ -236,7 +236,6 @@ export default function CheckoutPage() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [widgetsReady, setWidgetsReady] = useState(false);
-  const [tossAgreementOk, setTossAgreementOk] = useState(false);
 
   const widgetsRef = useRef<TossPaymentsWidgets | null>(null);
   const phone = `${phonePrefix}-${phoneMiddle}-${phoneLast}`;
@@ -262,19 +261,17 @@ export default function CheckoutPage() {
 
         await widgets.setAmount({ currency: "KRW", value: REPORT_PRICE_KRW });
         await widgets.renderPaymentMethods({ selector: "#toss-payment-method" });
-        const agreementWidget = await widgets.renderAgreement({
-          selector: "#toss-agreement",
-        });
+        // Toss's own required-agreement checkbox defaults to checked, and
+        // doesn't expose a way to read its initial state (only an event for
+        // *changes*) — so instead of gating the button on that, this just
+        // renders it and lets requestPayment() below enforce it, throwing
+        // NeedAgreementWithRequiredTermsError (caught in startCheckout) on
+        // the rare case someone actually unchecks it.
+        await widgets.renderAgreement({ selector: "#toss-agreement" });
         if (cancelled) return;
-
-        agreementWidget.on("agreementStatusChange", (status) => {
-          console.log("[toss-debug] agreementStatusChange", status);
-          setTossAgreementOk(status.agreedRequiredTerms);
-        });
 
         widgetsRef.current = widgets;
         setWidgetsReady(true);
-        console.log("[toss-debug] widgetsReady = true");
       } catch (err) {
         if (!cancelled) {
           setError(
@@ -313,9 +310,6 @@ export default function CheckoutPage() {
     }
     if (!refundAgreed) {
       return "취소·환불 규정 처리방침에 동의해주세요.";
-    }
-    if (!tossAgreementOk) {
-      return "결제 위젯의 필수 약관에 동의해주세요.";
     }
     return null;
   }
@@ -566,13 +560,7 @@ export default function CheckoutPage() {
           <button
             type="button"
             onClick={startCheckout}
-            disabled={
-              !agreed ||
-              !refundAgreed ||
-              !widgetsReady ||
-              !tossAgreementOk ||
-              isSubmitting
-            }
+            disabled={!agreed || !refundAgreed || !widgetsReady || isSubmitting}
             className="flex w-full items-center justify-center rounded-full bg-black px-8 py-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
             {isSubmitting
