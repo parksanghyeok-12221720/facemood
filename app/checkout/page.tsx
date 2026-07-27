@@ -241,6 +241,13 @@ export default function CheckoutPage() {
   const phone = `${phonePrefix}-${phoneMiddle}-${phoneLast}`;
   const chargeAmount = isTestPhone(phone) ? TEST_AMOUNT_KRW : REPORT_PRICE_KRW;
 
+  useEffect(() => {
+    window.fbq?.("track", "InitiateCheckout", {
+      value: REPORT_PRICE_KRW,
+      currency: "KRW",
+    });
+  }, []);
+
   // Renders Toss's payment-method and agreement widgets inline as soon as
   // the page loads, using the default price — the widget object stays in
   // widgetsRef so startCheckout() can call requestPayment() on it later.

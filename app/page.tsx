@@ -1,6 +1,6 @@
 import Image from "next/image";
-import Link from "next/link";
 import AnalysisCounter from "@/app/components/AnalysisCounter";
+import AnalysisStartLink from "@/app/components/AnalysisStartLink";
 import Container from "@/app/components/Container";
 
 const floatingTags: {
@@ -82,12 +82,7 @@ export default function Home() {
         </p>
 
         <div className="mt-14 w-full">
-          <Link
-            href="/detail"
-            className="flex w-full items-center justify-center rounded-full bg-black px-8 py-4 text-sm font-semibold text-white"
-          >
-            분석 시작하기
-          </Link>
+          <AnalysisStartLink />
           <AnalysisCounter />
         </div>
       </Container>

@@ -212,6 +212,7 @@ export default function UploadPage() {
 
       await createReportRecord(parseAnswers(savedAnswers));
 
+      window.fbq?.("track", "Lead");
       window.location.href = "/loading";
     } catch (error) {
       const message =
@@ -237,6 +238,7 @@ export default function UploadPage() {
       localStorage.removeItem("facemood_preview_result");
       localStorage.removeItem("facemood_full_report");
       await createReportRecord(parseAnswers(savedAnswers));
+      window.fbq?.("track", "Lead");
       window.location.href = "/loading";
     } catch (error) {
       const message =
