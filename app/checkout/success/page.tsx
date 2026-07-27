@@ -61,6 +61,10 @@ export default function CheckoutSuccessPage() {
 
         sessionStorage.removeItem(PENDING_PASSWORD_KEY);
         sessionStorage.removeItem(PENDING_PHONE_KEY);
+        window.fbq?.("track", "Purchase", {
+          value: Number(amount),
+          currency: "KRW",
+        });
         if (!cancelled) {
           window.location.href = `/report?id=${orderId}`;
         }
