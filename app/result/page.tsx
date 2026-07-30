@@ -13,8 +13,11 @@ import Container from "@/app/components/Container";
 import DiscountCountdown from "@/app/components/DiscountCountdown";
 import { MagazineHero, MagazineBody } from "@/app/result/MagazinePreview";
 import {
+  MOOD_CHARACTER_IMAGES,
+  MOOD_CHARACTER_NAMES,
   buildPreviewResult,
   mockPreviewResult,
+  type MoodCandidate,
   type PreviewResult,
 } from "@/types/report";
 
@@ -510,6 +513,28 @@ export default function ResultPage() {
           외모 점수나 절대적인 평가는 아닙니다.
         </p>
       </Container>
+
+      {/* Character card reveal — shown fully, not blurred like the mood
+          name above. Skips rendering entirely for moods without card art yet. */}
+      {MOOD_CHARACTER_IMAGES[previewResult.recommendedMood as MoodCandidate] && (
+        <Container className="mt-8 text-center">
+          <h2 className="text-xl font-extrabold leading-[1.4] text-[var(--ink)]">
+            당신의 캐릭터는
+            <br />
+            &lsquo;{MOOD_CHARACTER_NAMES[previewResult.recommendedMood as MoodCandidate]}
+            &rsquo;이에요
+          </h2>
+          <div className="relative mt-5 aspect-[2/3] w-full overflow-hidden rounded-[28px] shadow-[0_18px_40px_-24px_rgba(120,90,130,0.35)]">
+            <Image
+              src={MOOD_CHARACTER_IMAGES[previewResult.recommendedMood as MoodCandidate]!}
+              alt="당신의 캐릭터"
+              fill
+              sizes="(min-width: 448px) 448px, 100vw"
+              className="object-cover"
+            />
+          </div>
+        </Container>
+      )}
 
       {/* Current vs target mood */}
       <Container className="mt-10">

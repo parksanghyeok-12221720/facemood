@@ -11,6 +11,22 @@ export const MOOD_CANDIDATES = [
 
 export type MoodCandidate = (typeof MOOD_CANDIDATES)[number];
 
+// Fantasy-character card art for the preview page's "당신의 캐릭터는 ~예요"
+// reveal — partial on purpose, only moods with finished card art get a
+// character (others just skip that section instead of showing a broken
+// image). Drop the file at each path below when it's ready.
+export const MOOD_CHARACTER_NAMES: Partial<Record<MoodCandidate, string>> = {
+  "청순 자연형": "달의 정령",
+  "고급 도시형": "황금 백조",
+  "차분 시크형": "그림자 고양이",
+};
+
+export const MOOD_CHARACTER_IMAGES: Partial<Record<MoodCandidate, string>> = {
+  "청순 자연형": "/mood/character/청순자연형.png",
+  "고급 도시형": "/mood/character/고급도시형.png",
+  "차분 시크형": "/mood/character/차분시크형.png",
+};
+
 export const FACE_SHAPE_CANDIDATES = [
   "계란형",
   "원형",
