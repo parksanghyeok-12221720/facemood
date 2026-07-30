@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import Container from "@/app/components/Container";
 import PccsColorChart from "@/app/components/PccsColorChart";
-import { credentials } from "@/app/data/credentials";
 import { reviews } from "@/app/data/reviews";
 import { trendContents } from "@/app/data/trendContent";
 
@@ -30,10 +29,23 @@ const makeupPhotos: Photo[] = [
 
 const hairPhotos: Photo[] = [
   { src: "/mood/hair/hair1.png", keyword: "#레이어드컷" },
-  { src: "/mood/hair/hair_시스루.png", keyword: "#시스루뱅" },
-  { src: "/mood/hair/hair2.png", keyword: "#윤기헤어" },
   { src: "/mood/hair/hair_샌드펌.png", keyword: "#샌드펌" },
+  { src: "/mood/hair/hair_시스루 뱅 보브.png", keyword: "#시스루뱅보브" },
   { src: "/mood/hair/hair_히피펌.png", keyword: "#히피펌" },
+  { src: "/mood/hair/hair_박스 보브.png", keyword: "#박스보브" },
+  { src: "/mood/hair/hair2.png", keyword: "#윤기헤어" },
+  { src: "/mood/hair/hair_텍스처 웨이브.png", keyword: "#텍스처웨이브" },
+  { src: "/mood/hair/hair_중단발 레이어드.png", keyword: "#중단발레이어드" },
+  { src: "/mood/hair/hair_슬릭 보브.png", keyword: "#슬릭보브" },
+  { src: "/mood/hair/hair_허쉬컷.png", keyword: "#허쉬컷" },
+  { src: "/mood/hair/hair_ 뱅드 보브.png", keyword: "#뱅드보브" },
+  { src: "/mood/hair/hair_숏컷.png", keyword: "#숏컷" },
+  { src: "/mood/hair/hair_러블리보브.png", keyword: "#러블리보브" },
+  { src: "/mood/hair/hair_중단발 레이어드2.png", keyword: "#롱레이어드컷" },
+  { src: "/mood/hair/hair_S컬(지지컬).png", keyword: "#지지컬" },
+  { src: "/mood/hair/hair_시스루.png", keyword: "#시스루뱅" },
+  { src: "/mood/hair/hair_클라우드 보브.png", keyword: "#클라우드보브" },
+  { src: "/mood/hair/hair_중단발 허쉬컷.png", keyword: "#중단발허쉬컷" },
 ];
 
 const moodCardPhotos: Record<string, string> = {
@@ -496,38 +508,6 @@ export default function DetailPage() {
             </p>
           </div>
         )}
-      </Container>
-
-      {/* Credentials */}
-      <Container maxWidth="max-w-3xl" className="mt-14">
-        <span className="inline-flex items-center rounded-full bg-violet-100 px-3 py-1 text-[11px] font-semibold tracking-[0.15em] text-violet-600">
-          CREDENTIALS
-        </span>
-        <h2 className="mt-4 text-lg font-bold leading-snug text-black">
-          전문성을 갖춘 팀이 함께해요
-        </h2>
-        <p className="mt-2 text-xs leading-relaxed text-gray-500">
-          메이크업, 헤어, 퍼스널컬러 관련 자격과 이력을 소개합니다.
-        </p>
-
-        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {credentials.map((item) => (
-            <div
-              key={item.category}
-              className="rounded-2xl border border-dashed border-violet-200 bg-violet-50/30 p-5"
-            >
-              <span className="inline-flex items-center rounded-full bg-violet-100 px-3 py-1 text-[11px] font-semibold text-violet-600">
-                {item.label}
-              </span>
-              <p className="mt-3 text-sm font-semibold text-black">
-                {item.title || "내용을 입력해주세요"}
-              </p>
-              <p className="mt-1 text-xs leading-relaxed text-gray-400">
-                {item.description || "준비 중입니다."}
-              </p>
-            </div>
-          ))}
-        </div>
       </Container>
 
       {/* Reviews */}
