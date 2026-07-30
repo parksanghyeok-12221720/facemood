@@ -14,7 +14,6 @@ import DiscountCountdown from "@/app/components/DiscountCountdown";
 import { MagazineHero, MagazineBody } from "@/app/result/MagazinePreview";
 import {
   MOOD_CHARACTER_IMAGES,
-  MOOD_CHARACTER_NAMES,
   buildPreviewResult,
   mockPreviewResult,
   type MoodCandidate,
@@ -520,9 +519,6 @@ export default function ResultPage() {
         <Container className="mt-8 text-center">
           <h2 className="text-xl font-extrabold leading-[1.4] text-[var(--ink)]">
             당신의 캐릭터는
-            <br />
-            &lsquo;{MOOD_CHARACTER_NAMES[previewResult.recommendedMood as MoodCandidate]}
-            &rsquo;이에요
           </h2>
           <div className="relative mt-5 aspect-[2/3] w-full overflow-hidden rounded-[28px] shadow-[0_18px_40px_-24px_rgba(120,90,130,0.35)]">
             <Image
