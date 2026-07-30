@@ -19,13 +19,30 @@ function formatDate(value: string | null): string {
   // it as already-local.
   const date = new Date(value.includes("T") ? value : `${value.replace(" ", "T")}Z`);
   if (Number.isNaN(date.getTime())) return value;
+  // "ko-KR" only controls formatting (order, 오전/오후) — without an
+  // explicit timeZone this still renders in the server OS's local time
+  // (UTC on the AWS box), which read 9 hours behind actual KST.
   return date.toLocaleString("ko-KR", {
+    timeZone: "Asia/Seoul",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function formatBodyInfo(
+  age: string | null,
+  height: string | null,
+  weight: string | null,
+): string {
+  const parts = [
+    age ? `${age}세` : null,
+    height ? `${height}cm` : null,
+    weight ? `${weight}kg` : null,
+  ].filter(Boolean);
+  return parts.length > 0 ? parts.join(" · ") : "-";
 }
 
 function formatShortDate(value: string): string {
@@ -123,11 +140,12 @@ export default async function AdminPage() {
         <RevenueChart daily={revenue.daily} />
 
         <div className="mt-6 overflow-x-auto rounded-2xl border border-white/10">
-          <table className="w-full min-w-[560px] text-left text-sm">
+          <table className="w-full min-w-[680px] text-left text-sm">
             <thead>
               <tr className="border-b border-white/10 text-xs text-gray-500">
                 <th className="px-4 py-3 font-medium">이름</th>
                 <th className="px-4 py-3 font-medium">연락처</th>
+                <th className="px-4 py-3 font-medium">나이/키/몸무게</th>
                 <th className="px-4 py-3 font-medium">결제 금액</th>
                 <th className="px-4 py-3 font-medium">결제 일시</th>
                 <th className="px-4 py-3 font-medium">리포트 발송</th>
@@ -136,7 +154,7 @@ export default async function AdminPage() {
             <tbody>
               {paidReports.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
                     아직 결제 내역이 없습니다.
                   </td>
                 </tr>
@@ -145,6 +163,9 @@ export default async function AdminPage() {
                 <tr key={report.id} className="border-b border-white/5 last:border-0">
                   <td className="px-4 py-3 text-white">{report.name ?? "-"}</td>
                   <td className="px-4 py-3 text-gray-300">{report.phone ?? "-"}</td>
+                  <td className="px-4 py-3 text-gray-300">
+                    {formatBodyInfo(report.age, report.height, report.weight)}
+                  </td>
                   <td className="px-4 py-3 text-gray-300">
                     {formatAmount(report.amount)}
                   </td>

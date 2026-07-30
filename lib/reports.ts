@@ -106,6 +106,9 @@ export function setCheckoutPassword(
 export type PaidReportSummary = {
   id: string;
   name: string | null;
+  age: string | null;
+  height: string | null;
+  weight: string | null;
   phone: string | null;
   amount: number | null;
   paidAt: string | null;
@@ -131,13 +134,25 @@ export function listPaidReports(): PaidReportSummary[] {
     )
     .all() as PaidReportRow[];
 
+  const readField = (
+    answers: Record<string, unknown>,
+    key: string,
+  ): string | null => {
+    const value = answers[key];
+    return typeof value === "string" && value.trim() ? value.trim() : null;
+  };
+
   return rows.map((row) => {
     let name: string | null = null;
+    let age: string | null = null;
+    let height: string | null = null;
+    let weight: string | null = null;
     try {
       const answers = JSON.parse(row.answers) as Record<string, unknown>;
-      if (typeof answers.name === "string" && answers.name.trim()) {
-        name = answers.name.trim();
-      }
+      name = readField(answers, "name");
+      age = readField(answers, "age");
+      height = readField(answers, "height");
+      weight = readField(answers, "weight");
     } catch {
       // Malformed/legacy answers JSON — just show no name instead of failing.
     }
@@ -145,6 +160,9 @@ export function listPaidReports(): PaidReportSummary[] {
     return {
       id: row.id,
       name,
+      age,
+      height,
+      weight,
       phone: row.phone,
       amount: row.amount,
       paidAt: row.paid_at,
