@@ -397,6 +397,14 @@ export default function ResultPage() {
           <br />
           어울리는 추구미 방향을 간단히 정리했어요.
         </p>
+
+        <p className="mt-5 text-base leading-relaxed text-[var(--ink-soft)]">
+          지금 내 이미지와 추구미의 싱크로율은{" "}
+          <span className="text-2xl font-extrabold text-[var(--rose-deep)]">
+            {sortedMoodSync[0].score}%
+          </span>
+          예요
+        </p>
       </Container>
 
       {/* Hero mood photo */}
