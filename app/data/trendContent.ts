@@ -14,6 +14,29 @@ export type TrendTabContent = {
   footerNote?: string;
 };
 
+// Short dated log of what's currently trending — newest entry first.
+// Refreshed periodically from trend research; keep entries short (1-2
+// sentences) since this renders as a compact feed, not full articles.
+export type TrendUpdate = {
+  date: string;
+  note: string;
+};
+
+export const trendUpdates: TrendUpdate[] = [
+  {
+    date: "2026.08",
+    note: "헤어는 길이보다 자연스럽게 흐르는 '컬'이 핵심 키워드로 떠올랐어요. 컬러 멜팅, 사이드뱅도 함께 주목받고 있어요.",
+  },
+  {
+    date: "2026.08",
+    note: "'뉴트럴 메이크업이 기본값'이라는 공식이 깨지고, 더 개인화되고 과감한 컬러가 늘고 있어요. 베이스는 '글로우(속광)'가 핵심이에요.",
+  },
+  {
+    date: "2026.08",
+    note: "퍼스널컬러는 웜/쿨 이분법보다 얼굴형·피부톤 조화를 함께 보는 방향으로 세분화되고 있어요.",
+  },
+];
+
 export const trendContents: Record<TrendTabKey, TrendTabContent> = {
   all: {
     label: "전체",

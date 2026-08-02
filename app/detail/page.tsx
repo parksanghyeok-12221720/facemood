@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import Container from "@/app/components/Container";
 import PccsColorChart from "@/app/components/PccsColorChart";
 import { reviews } from "@/app/data/reviews";
-import { trendContents } from "@/app/data/trendContent";
+import { trendContents, trendUpdates } from "@/app/data/trendContent";
 import { REPORT_CHAPTERS } from "@/types/report";
 
 type Photo = { src: string; keyword: string };
@@ -134,13 +134,21 @@ const chapters = [
   { key: "hair", label: "헤어", id: "section-hair" },
 ];
 
-function MarqueeRow({ photos, animationKey }: { photos: Photo[]; animationKey: string }) {
+function MarqueeRow({
+  photos,
+  animationKey,
+  durationSeconds = 28,
+}: {
+  photos: Photo[];
+  animationKey: string;
+  durationSeconds?: number;
+}) {
   return (
     <div className="marquee-fade -mx-6 overflow-hidden px-6">
       <div
         key={animationKey}
         className="animate-marquee flex w-max gap-3"
-        style={{ animationDuration: "28s" }}
+        style={{ animationDuration: `${durationSeconds}s` }}
       >
         {[...photos, ...photos].map((photo, index) => (
           <div
@@ -313,9 +321,15 @@ export default function DetailPage() {
         </div>
       </Container>
 
-      {/* Intro mood photo marquee */}
+      {/* Intro mood photo marquee — this row has far more photos (54) than
+          hair/makeup (11-17), so it needs a proportionally longer duration
+          to scroll at the same visual speed instead of rushing by. */}
       <div className="mx-auto mt-10 w-full max-w-3xl">
-        <MarqueeRow photos={moodPhotos} animationKey="intro" />
+        <MarqueeRow
+          photos={moodPhotos}
+          animationKey="intro"
+          durationSeconds={moodPhotos.length * (28 / 17)}
+        />
       </div>
 
       {/* Trend Note overview */}
@@ -332,6 +346,19 @@ export default function DetailPage() {
           최근 뷰티/스타일 키워드와 이미지 무드 흐름을 바탕으로 주기적으로
           업데이트됩니다.
         </p>
+
+        <div className="mt-4 flex flex-col gap-2.5 rounded-2xl border border-violet-100 bg-white p-4 shadow-sm shadow-violet-100/60">
+          {trendUpdates.map((update, index) => (
+            <div key={`${update.date}-${index}`} className="flex gap-3">
+              <span className="mt-0.5 shrink-0 text-[10.5px] font-semibold tabular-nums text-violet-400">
+                {update.date}
+              </span>
+              <p className="text-xs leading-relaxed text-gray-600">
+                {update.note}
+              </p>
+            </div>
+          ))}
+        </div>
 
         <h2 className="mt-6 whitespace-pre-line text-lg font-bold leading-snug text-black">
           {overview.title}
