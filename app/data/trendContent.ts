@@ -14,26 +14,34 @@ export type TrendTabContent = {
   footerNote?: string;
 };
 
-// Short dated log of what's currently trending — newest entry first.
-// Refreshed periodically from trend research; keep entries short (1-2
-// sentences) since this renders as a compact feed, not full articles.
+// Dated log of what's currently trending — newest entry first. Renders as
+// a one-card-at-a-time slider: `keyword` is the short headline always
+// visible, `detail` only shows once "자세히 보기" is tapped. Refreshed
+// periodically from trend research.
 export type TrendUpdate = {
   date: string;
-  note: string;
+  keyword: string;
+  detail: string;
 };
 
 export const trendUpdates: TrendUpdate[] = [
   {
     date: "2026.08",
-    note: "헤어는 길이보다 자연스럽게 흐르는 '컬'이 핵심 키워드로 떠올랐어요. 컬러 멜팅, 사이드뱅도 함께 주목받고 있어요.",
+    keyword: "컬 헤어 & 컬러 멜팅",
+    detail:
+      "2026년 헤어 트렌드는 길이보다 '컬'이 핵심이에요. 인위적이지 않은 자연스러운 웨이브·컬리 헤어가 그 어느 때보다 사랑받고 있고, 뿌리부터 끝까지 톤 변화를 자연스럽게 표현하는 '컬러 멜팅' 염색 기법도 함께 주목받고 있어요. 앞머리는 커튼처럼 양옆으로 갈라지는 '사이드뱅'이 대세이고, 긴 생머리보다는 결 살린 레이어드의 '중단발 꾸안꾸' 스타일도 다시 유행하고 있어요.",
   },
   {
     date: "2026.08",
-    note: "'뉴트럴 메이크업이 기본값'이라는 공식이 깨지고, 더 개인화되고 과감한 컬러가 늘고 있어요. 베이스는 '글로우(속광)'가 핵심이에요.",
+    keyword: "글로우 메이크업",
+    detail:
+      "'뉴트럴 메이크업이 기본값'이라는 공식이 깨지고 있어요. 개인적이고 예술적인 접근이 중요해지면서, 무조건 뉴트럴하게 가기보다 원하는 분위기에 따라 과감한 컬러도 자유롭게 쓰는 방향으로 바뀌고 있어요. 베이스 메이크업의 핵심 키워드는 '글로우' — 피부 본연의 수분감과 윤기를 살린 '속에서 차오르는 듯한 건강한 빛'이 중심이고, 여름에는 가벼운 피부 표현 위에 컬러풀한 포인트를 얹는 방식이 인기예요.",
   },
   {
     date: "2026.08",
-    note: "퍼스널컬러는 웜/쿨 이분법보다 얼굴형·피부톤 조화를 함께 보는 방향으로 세분화되고 있어요.",
+    keyword: "퍼스널컬러 세분화",
+    detail:
+      "퍼스널컬러 진단이 단순 웜톤/쿨톤 이분법에서 벗어나고 있어요. 개인 맞춤형 아름다움에 초점을 맞추면서, 얼굴형에 대한 과학적 이해와 퍼스널컬러 이론을 함께 고려한 스타일링이 강조되는 추세예요. 염색도 단순히 색만 바꾸는 게 아니라, 피부 톤과의 조화를 통해 얼굴에 생기를 더하는 역할까지 고려해서 선택하는 방향으로 가고 있어요.",
   },
 ];
 

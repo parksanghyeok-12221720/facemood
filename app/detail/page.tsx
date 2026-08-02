@@ -7,6 +7,7 @@ import Container from "@/app/components/Container";
 import PccsColorChart from "@/app/components/PccsColorChart";
 import { reviews } from "@/app/data/reviews";
 import { trendContents, trendUpdates } from "@/app/data/trendContent";
+import type { TrendUpdate } from "@/app/data/trendContent";
 import { REPORT_CHAPTERS } from "@/types/report";
 
 type Photo = { src: string; keyword: string };
@@ -172,6 +173,79 @@ function MarqueeRow({
             </div>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function TrendUpdateCarousel({ updates }: { updates: TrendUpdate[] }) {
+  const [index, setIndex] = useState(0);
+  const [expanded, setExpanded] = useState(false);
+  const current = updates[index];
+
+  function go(delta: number) {
+    setIndex((prev) => (prev + delta + updates.length) % updates.length);
+    setExpanded(false);
+  }
+
+  return (
+    <div className="mt-4 flex flex-col items-center gap-3">
+      <div className="w-full rounded-2xl border border-violet-100 bg-white p-4 shadow-sm shadow-violet-100/60">
+        <span className="text-[10.5px] font-semibold tabular-nums text-violet-400">
+          {current.date}
+        </span>
+        <p className="mt-1 text-base font-bold text-black">
+          {current.keyword}
+        </p>
+
+        {expanded ? (
+          <p className="mt-2 text-xs leading-relaxed text-gray-600">
+            {current.detail}
+          </p>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setExpanded(true)}
+            className="mt-2 text-xs font-semibold text-violet-500 underline underline-offset-2"
+          >
+            자세히 보기
+          </button>
+        )}
+      </div>
+
+      <div className="flex items-center gap-4">
+        <button
+          type="button"
+          onClick={() => go(-1)}
+          aria-label="이전 트렌드"
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-violet-100 bg-white text-black"
+        >
+          ‹
+        </button>
+        <div className="flex items-center gap-1.5">
+          {updates.map((update, i) => (
+            <button
+              key={`${update.date}-${i}`}
+              type="button"
+              onClick={() => {
+                setIndex(i);
+                setExpanded(false);
+              }}
+              aria-label={`${i + 1}번째 트렌드로 이동`}
+              className={`h-1.5 rounded-full transition-all ${
+                i === index ? "w-5 bg-violet-500" : "w-1.5 bg-violet-100"
+              }`}
+            />
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={() => go(1)}
+          aria-label="다음 트렌드"
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-violet-100 bg-white text-black"
+        >
+          ›
+        </button>
       </div>
     </div>
   );
@@ -347,18 +421,7 @@ export default function DetailPage() {
           업데이트됩니다.
         </p>
 
-        <div className="mt-4 flex flex-col gap-2.5 rounded-2xl border border-violet-100 bg-white p-4 shadow-sm shadow-violet-100/60">
-          {trendUpdates.map((update, index) => (
-            <div key={`${update.date}-${index}`} className="flex gap-3">
-              <span className="mt-0.5 shrink-0 text-[10.5px] font-semibold tabular-nums text-violet-400">
-                {update.date}
-              </span>
-              <p className="text-xs leading-relaxed text-gray-600">
-                {update.note}
-              </p>
-            </div>
-          ))}
-        </div>
+        <TrendUpdateCarousel updates={trendUpdates} />
 
         <h2 className="mt-6 whitespace-pre-line text-lg font-bold leading-snug text-black">
           {overview.title}
