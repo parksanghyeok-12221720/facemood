@@ -957,12 +957,12 @@ export default function ResultPage() {
           CHOOSE YOUR PLAN
         </span>
         <h2 className="mt-2 text-[19px] font-extrabold leading-snug text-[var(--ink)]">
-          베이직과 프리미엄 중 골라보세요
+          Basic과 Premium 중 골라보세요
         </h2>
 
         <div className="mt-5 rounded-[24px] border-2 border-[var(--hairline)] bg-white p-5">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-bold text-[var(--ink)]">베이직</p>
+            <p className="text-sm font-bold text-[var(--ink)]">Basic</p>
             <p className="text-sm font-extrabold text-[var(--ink)]">
               {BASIC_PRICE_KRW.toLocaleString()}원
             </p>
@@ -988,14 +988,14 @@ export default function ResultPage() {
               <span className="inline-flex items-center rounded-full bg-[var(--rose-deep)] px-2.5 py-1 text-[10px] font-bold text-white">
                 BEST
               </span>
-              <p className="text-sm font-bold text-[var(--ink)]">프리미엄</p>
+              <p className="text-sm font-bold text-[var(--ink)]">Premium</p>
             </div>
             <p className="text-sm font-extrabold text-[var(--ink)]">
               {PREMIUM_PRICE_KRW.toLocaleString()}원
             </p>
           </div>
           <p className="mt-1 text-[11px] text-[var(--ink-soft)]">
-            베이직 전체 포함 + {premiumOnlyChapters.length}개 챕터 추가, 총{" "}
+            Basic 전체 포함 + {premiumOnlyChapters.length}개 챕터 추가, 총{" "}
             {basicChapters.length + premiumOnlyChapters.length}개 챕터
           </p>
           <ul className="mt-3 flex flex-wrap gap-1.5">

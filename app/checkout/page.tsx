@@ -15,14 +15,20 @@ type Tier = "basic" | "premium";
 
 const BASIC_PRICE_KRW = 34900;
 const PREMIUM_PRICE_KRW = 49900;
-const ORIGINAL_PRICE_KRW = 79800;
+const BASIC_ORIGINAL_PRICE_KRW = 79800;
+const PREMIUM_ORIGINAL_PRICE_KRW = 129800;
 const BASIC_DISCOUNT_PERCENT = Math.round(
-  ((ORIGINAL_PRICE_KRW - BASIC_PRICE_KRW) / ORIGINAL_PRICE_KRW) * 100,
+  ((BASIC_ORIGINAL_PRICE_KRW - BASIC_PRICE_KRW) / BASIC_ORIGINAL_PRICE_KRW) * 100,
+);
+// Kept noticeably higher than the Basic discount — Premium is meant to
+// look like the better deal of the two.
+const PREMIUM_DISCOUNT_PERCENT = Math.round(
+  ((PREMIUM_ORIGINAL_PRICE_KRW - PREMIUM_PRICE_KRW) / PREMIUM_ORIGINAL_PRICE_KRW) * 100,
 );
 
 const TIER_LABEL: Record<Tier, string> = {
-  basic: "베이직",
-  premium: "프리미엄",
+  basic: "Basic",
+  premium: "Premium",
 };
 
 const phonePrefixOptions = ["010", "011", "016", "017", "018", "019"];
@@ -411,7 +417,8 @@ export default function CheckoutPage() {
             런칭 기념 얼리버드 할인
           </p>
           <span className="mt-3 inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold">
-            베이직 오늘 결제 시 {BASIC_DISCOUNT_PERCENT}% 할인
+            오늘 결제 시{" "}
+            {tier === "premium" ? PREMIUM_DISCOUNT_PERCENT : BASIC_DISCOUNT_PERCENT}% 할인
           </span>
         </div>
 
@@ -498,7 +505,7 @@ export default function CheckoutPage() {
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-black">베이직</span>
+                <span className="text-sm font-bold text-black">Basic</span>
                 {tier === "basic" && (
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-500 text-[10px] font-bold text-white">
                     ✓
@@ -534,9 +541,9 @@ export default function CheckoutPage() {
                   </span>
                 )}
               </div>
-              <p className="mt-3 text-sm font-bold text-black">프리미엄</p>
+              <p className="mt-3 text-sm font-bold text-black">Premium</p>
               <p className="mt-1 text-xs text-gray-500">
-                베이직 전체 포함 + 동물상 · 액세서리 · 향수 · 상황별 전략 등
+                Basic 전체 포함 + 동물상 · 액세서리 · 향수 · 상황별 전략 등
                 전체 17개 챕터 상세 분석
               </p>
               <p className="mt-3 text-xl font-extrabold text-black">
@@ -548,26 +555,17 @@ export default function CheckoutPage() {
 
         {/* Price breakdown */}
         <section className="mt-8 rounded-2xl border border-violet-100 bg-white p-5">
-          {tier === "basic" ? (
-            <>
-              <PriceRow
-                label="기준 가격"
-                value={`${ORIGINAL_PRICE_KRW.toLocaleString()}원`}
-                strike
-              />
-              <PriceRow
-                label="얼리버드 특별 할인"
-                value={`-${BASIC_DISCOUNT_PERCENT}%`}
-                tone="accent"
-              />
-              <div className="my-2 border-t border-violet-100" />
-            </>
-          ) : (
-            <>
-              <PriceRow label="상품" value="프리미엄 리포트" />
-              <div className="my-2 border-t border-violet-100" />
-            </>
-          )}
+          <PriceRow
+            label="기준 가격"
+            value={`${(tier === "basic" ? BASIC_ORIGINAL_PRICE_KRW : PREMIUM_ORIGINAL_PRICE_KRW).toLocaleString()}원`}
+            strike
+          />
+          <PriceRow
+            label="얼리버드 특별 할인"
+            value={`-${tier === "basic" ? BASIC_DISCOUNT_PERCENT : PREMIUM_DISCOUNT_PERCENT}%`}
+            tone="accent"
+          />
+          <div className="my-2 border-t border-violet-100" />
           <PriceRow
             label="최종 결제금액"
             value={`${tierPrice.toLocaleString()}원`}

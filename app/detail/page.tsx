@@ -547,13 +547,13 @@ export default function DetailPage() {
           상세 리포트 목차
         </h2>
         <p className="mt-2 text-xs leading-relaxed text-gray-500">
-          베이직과 프리미엄, 두 가지 상품으로 나뉘어 있어요. 프리미엄은
-          베이직 내용을 전부 포함해요.
+          Basic과 Premium, 두 가지 상품으로 나뉘어 있어요. Premium은
+          Basic 내용을 전부 포함해요.
         </p>
 
         <div className="mt-6 rounded-2xl border-2 border-violet-100 bg-white p-6 shadow-sm shadow-violet-100/60">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-bold text-black">베이직</p>
+            <p className="text-sm font-bold text-black">Basic</p>
             <p className="text-sm font-extrabold text-black">
               {BASIC_PRICE_KRW.toLocaleString()}원
             </p>
@@ -579,13 +579,13 @@ export default function DetailPage() {
               <span className="inline-flex items-center rounded-full bg-violet-600 px-2.5 py-1 text-[10px] font-bold text-white">
                 BEST
               </span>
-              <p className="text-sm font-bold text-black">프리미엄</p>
+              <p className="text-sm font-bold text-black">Premium</p>
             </div>
             <p className="text-sm font-extrabold text-black">
               {PREMIUM_PRICE_KRW.toLocaleString()}원
             </p>
           </div>
-          <p className="mt-2 text-xs text-gray-500">베이직 8개 챕터 전체 포함 +</p>
+          <p className="mt-2 text-xs text-gray-500">Basic 8개 챕터 전체 포함 +</p>
           <ol className="mt-3 flex flex-col gap-3">
             {premiumOnlyChapters.map((chapter) => (
               <li
