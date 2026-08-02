@@ -77,19 +77,77 @@ type FetchState =
   | { status: "error"; message: string }
   | { status: "done"; report: FullReport };
 
+// Rough stages of what generate-report is actually doing, in the order
+// those chapters tend to finish — purely cosmetic (there's no real
+// progress channel from the server), but rotating through them keeps
+// people reading instead of staring at a static spinner and bailing.
+const GENERATING_STAGES = [
+  "사진 속 이미지 무드를 분석하고 있어요",
+  "어울리는 추구미 방향을 정리하고 있어요",
+  "얼굴형·동물상 분석을 진행하고 있어요",
+  "컬러 팔레트를 만들고 있어요",
+  "헤어 스타일 방향을 정리하고 있어요",
+  "메이크업 방향을 잡고 있어요",
+  "스타일링 가이드를 정리하고 있어요",
+  "리포트를 최종 정리하고 있어요",
+];
+
 function GeneratingState() {
+  const [stageIndex, setStageIndex] = useState(0);
+  const [progress, setProgress] = useState(4);
+
+  useEffect(() => {
+    // Rotates roughly once every ~13s and creeps the bar toward 92%
+    // (never claims 100% until the real content actually swaps in) —
+    // paced for the typical ~100s generation time without promising an
+    // exact number that won't match reality.
+    const stageTimer = setInterval(() => {
+      setStageIndex((i) => Math.min(i + 1, GENERATING_STAGES.length - 1));
+    }, 13000);
+    const progressTimer = setInterval(() => {
+      setProgress((p) => (p < 92 ? p + 1 : p));
+    }, 1300);
+    return () => {
+      clearInterval(stageTimer);
+      clearInterval(progressTimer);
+    };
+  }, []);
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-white px-6 text-center text-black">
-      <div className="h-10 w-10 animate-spin rounded-full border-2 border-violet-200 border-t-violet-500" />
-      <p className="mt-5 text-sm font-semibold text-black">
-        상세 리포트를 작성 중입니다...
-      </p>
-      <p className="mt-2 text-xs text-gray-400">
-        사진과 답변을 바탕으로 스타일 방향을 정리하고 있어요. 잠시만
-        기다려주세요.
-        <br />
-        (3~5분 정도 소요될 수 있습니다.)
-      </p>
+      <Container maxWidth="max-w-sm" className="flex flex-col items-center">
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-violet-200 border-t-violet-500" />
+
+        <div className="mt-6 w-full">
+          <div className="h-2 w-full overflow-hidden rounded-full bg-violet-100">
+            <div
+              className="h-full rounded-full bg-violet-500 transition-all duration-700 ease-out"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <p className="mt-2 text-xs font-semibold text-violet-500">
+            {progress}%
+          </p>
+        </div>
+
+        <p className="mt-5 text-sm font-semibold text-black">
+          {GENERATING_STAGES[stageIndex]}
+        </p>
+        <p className="mt-1 text-xs text-gray-400">보통 1~2분 정도 걸려요.</p>
+
+        <div className="mt-5 w-full rounded-2xl border border-red-100 bg-red-50 px-4 py-3">
+          <p className="text-xs font-bold text-red-500">
+            ⚠️ 화면을 나가지 마세요
+          </p>
+          <p className="mt-1 text-[11px] leading-relaxed text-red-400">
+            지금 창을 닫거나 다른 화면으로 이동하면 생성이 중단되고
+            <br />
+            지금까지 진행된 내용이 사라져요. 완성될 때까지 이 화면을
+            <br />
+            유지해주세요.
+          </p>
+        </div>
+      </Container>
     </main>
   );
 }
