@@ -362,7 +362,7 @@ async function expandChapterBody(
 
   const completion = await withRetry(() =>
     client.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-5.4-nano",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         {
@@ -379,7 +379,7 @@ async function expandChapterBody(
           ].join("\n"),
         },
       ],
-      max_tokens: 3000,
+      max_completion_tokens: 3000,
     }),
   );
 
@@ -430,12 +430,12 @@ async function generateChapterGroup(
 
   const completion = await withRetry(() =>
     client.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-5.4-nano",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: userContent },
       ],
-      max_tokens: 4000,
+      max_completion_tokens: 4000,
       response_format: {
         type: "json_schema",
         json_schema: {
