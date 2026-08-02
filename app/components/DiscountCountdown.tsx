@@ -4,6 +4,11 @@ import { useEffect, useState } from "react";
 
 const COUNTDOWN_KEY = "facemood_discount_deadline";
 const DURATION_MS = 30 * 60 * 1000;
+const REPORT_PRICE_KRW = 34900;
+const ORIGINAL_PRICE_KRW = 79800;
+const DISCOUNT_PERCENT = Math.round(
+  ((ORIGINAL_PRICE_KRW - REPORT_PRICE_KRW) / ORIGINAL_PRICE_KRW) * 100,
+);
 
 // The deadline is pinned to sessionStorage on first read so navigating
 // around the site (or refreshing) keeps counting down from the same
@@ -40,11 +45,13 @@ export default function DiscountCountdown() {
   const seconds = String(totalSeconds % 60).padStart(2, "0");
 
   return (
-    <div className="mb-2.5 flex items-center justify-center gap-2 rounded-xl bg-[var(--rose-tint)]/70 px-3 py-2 backdrop-blur">
-      <span className="text-xs font-bold text-[var(--rose-deep)]">
-        첫 방문 특별할인
+    <div className="mb-4 flex animate-pulse items-center justify-center gap-2 rounded-full bg-gradient-to-r from-rose-600 to-red-500 px-4 py-2.5 shadow-md shadow-rose-500/40">
+      <span className="text-xs font-extrabold tracking-tight text-white">
+        🔥 첫 방문 특별할인{" "}
+        <span className="text-base font-black">{DISCOUNT_PERCENT}%</span>{" "}
+        할인
       </span>
-      <span className="rounded-md bg-[var(--dark)] px-1.5 py-0.5 font-mono text-xs font-bold tabular-nums text-white">
+      <span className="rounded-md bg-white px-1.5 py-0.5 font-mono text-xs font-extrabold tabular-nums text-rose-600">
         {minutes}:{seconds}
       </span>
     </div>
