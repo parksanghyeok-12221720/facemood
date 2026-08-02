@@ -60,9 +60,9 @@ function RevenueChart({ daily }: { daily: DailyRevenuePoint[] }) {
       <p className="text-xs text-gray-500">최근 {daily.length}일 매출</p>
       <div className="mt-4 flex h-36 items-end gap-[3px]">
         {daily.map((point) => (
-          <div key={point.date} className="group relative flex-1">
+          <div key={point.date} className="group relative h-full flex-1">
             <div
-              className="w-full rounded-t bg-violet-500/70 transition-colors group-hover:bg-violet-400"
+              className="absolute bottom-0 w-full rounded-t bg-violet-500/70 transition-colors group-hover:bg-violet-400"
               style={{ height: `${(point.total / max) * 100}%`, minHeight: point.total > 0 ? 2 : 0 }}
             />
             <span className="sr-only">
