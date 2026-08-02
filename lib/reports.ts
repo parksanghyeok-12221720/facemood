@@ -3,6 +3,8 @@ import bcrypt from "bcryptjs";
 import db from "@/lib/db";
 import type { PreviewResult, FullReport } from "@/types/report";
 
+export type ReportTier = "basic" | "premium";
+
 export type ReportRecord = {
   id: string;
   answers: Record<string, unknown>;
@@ -12,6 +14,7 @@ export type ReportRecord = {
   paymentKey: string | null;
   phone: string | null;
   reportSentAt: string | null;
+  tier: ReportTier | null;
   createdAt: string;
 };
 
@@ -28,6 +31,7 @@ type ReportRow = {
   amount: number | null;
   phone: string | null;
   report_sent_at: string | null;
+  tier: string | null;
   created_at: string;
 };
 
@@ -41,6 +45,7 @@ function rowToRecord(row: ReportRow): ReportRecord {
     paymentKey: row.payment_key,
     phone: row.phone,
     reportSentAt: row.report_sent_at,
+    tier: row.tier === "premium" ? "premium" : row.tier === "basic" ? "basic" : null,
     createdAt: row.created_at,
   };
 }
@@ -83,13 +88,14 @@ export function setCheckoutPassword(
   password: string,
   payment: { paymentKey: string; orderId: string; amount: number },
   phone?: string | null,
+  tier?: ReportTier | null,
 ): boolean {
   const passwordHash = bcrypt.hashSync(password, 10);
   const result = db
     .prepare(
       `UPDATE reports
        SET password_hash = ?, paid = 1, paid_at = datetime('now'),
-           payment_key = ?, order_id = ?, amount = ?, phone = ?
+           payment_key = ?, order_id = ?, amount = ?, phone = ?, tier = ?
        WHERE id = ?`,
     )
     .run(
@@ -98,6 +104,7 @@ export function setCheckoutPassword(
       payment.orderId,
       payment.amount,
       phone ?? null,
+      tier ?? null,
       id,
     );
   return result.changes > 0;
@@ -111,6 +118,7 @@ export type PaidReportSummary = {
   weight: string | null;
   phone: string | null;
   amount: number | null;
+  tier: ReportTier | null;
   paidAt: string | null;
   reportSentAt: string | null;
   createdAt: string;
@@ -121,6 +129,7 @@ type PaidReportRow = {
   answers: string;
   amount: number | null;
   phone: string | null;
+  tier: string | null;
   paid_at: string | null;
   report_sent_at: string | null;
   created_at: string;
@@ -129,7 +138,7 @@ type PaidReportRow = {
 export function listPaidReports(): PaidReportSummary[] {
   const rows = db
     .prepare(
-      `SELECT id, answers, amount, phone, paid_at, report_sent_at, created_at
+      `SELECT id, answers, amount, phone, tier, paid_at, report_sent_at, created_at
        FROM reports WHERE paid = 1 ORDER BY paid_at DESC`,
     )
     .all() as PaidReportRow[];
@@ -165,6 +174,7 @@ export function listPaidReports(): PaidReportSummary[] {
       weight,
       phone: row.phone,
       amount: row.amount,
+      tier: row.tier === "premium" ? "premium" : row.tier === "basic" ? "basic" : null,
       paidAt: row.paid_at,
       reportSentAt: row.report_sent_at,
       createdAt: row.created_at,

@@ -9,10 +9,21 @@ import { TEST_AMOUNT_KRW, isTestPhone } from "@/lib/testPayment";
 const REPORT_ID_KEY = "facemood_report_id";
 const PENDING_PASSWORD_KEY = "facemood_pending_password";
 const PENDING_PHONE_KEY = "facemood_pending_phone";
-const REPORT_PRICE_KRW = 34900;
+const PENDING_TIER_KEY = "facemood_pending_tier";
+
+type Tier = "basic" | "premium";
+
+const BASIC_PRICE_KRW = 34900;
+const PREMIUM_PRICE_KRW = 49900;
 const ORIGINAL_PRICE_KRW = 79800;
-const DISCOUNT_KRW = ORIGINAL_PRICE_KRW - REPORT_PRICE_KRW;
-const DISCOUNT_PERCENT = Math.round((DISCOUNT_KRW / ORIGINAL_PRICE_KRW) * 100);
+const BASIC_DISCOUNT_PERCENT = Math.round(
+  ((ORIGINAL_PRICE_KRW - BASIC_PRICE_KRW) / ORIGINAL_PRICE_KRW) * 100,
+);
+
+const TIER_LABEL: Record<Tier, string> = {
+  basic: "베이직",
+  premium: "프리미엄",
+};
 
 const phonePrefixOptions = ["010", "011", "016", "017", "018", "019"];
 
@@ -226,6 +237,7 @@ function PriceRow({
 }
 
 export default function CheckoutPage() {
+  const [tier, setTier] = useState<Tier>("premium");
   const [phonePrefix, setPhonePrefix] = useState("010");
   const [phoneMiddle, setPhoneMiddle] = useState("");
   const [phoneLast, setPhoneLast] = useState("");
@@ -239,18 +251,23 @@ export default function CheckoutPage() {
 
   const widgetsRef = useRef<TossPaymentsWidgets | null>(null);
   const phone = `${phonePrefix}-${phoneMiddle}-${phoneLast}`;
-  const chargeAmount = isTestPhone(phone) ? TEST_AMOUNT_KRW : REPORT_PRICE_KRW;
+  const tierPrice = tier === "premium" ? PREMIUM_PRICE_KRW : BASIC_PRICE_KRW;
+  const chargeAmount = isTestPhone(phone) ? TEST_AMOUNT_KRW : tierPrice;
 
   useEffect(() => {
     window.fbq?.("track", "InitiateCheckout", {
-      value: REPORT_PRICE_KRW,
+      value: tierPrice,
       currency: "KRW",
     });
+    // Only meant to fire once per page load, not every time the tier
+    // toggle changes — deliberately omits tierPrice from deps.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Renders Toss's payment-method and agreement widgets inline as soon as
   // the page loads, using the default price — the widget object stays in
   // widgetsRef so startCheckout() can call requestPayment() on it later.
+  // The tier-sync effect below keeps the amount current after this.
   useEffect(() => {
     let cancelled = false;
 
@@ -266,7 +283,7 @@ export default function CheckoutPage() {
         const widgets = tossPayments.widgets({ customerKey: ANONYMOUS });
         if (cancelled) return;
 
-        await widgets.setAmount({ currency: "KRW", value: REPORT_PRICE_KRW });
+        await widgets.setAmount({ currency: "KRW", value: PREMIUM_PRICE_KRW });
         await widgets.renderPaymentMethods({ selector: "#toss-payment-method" });
         // Toss's own required-agreement checkbox defaults to checked, and
         // doesn't expose a way to read its initial state (only an event for
@@ -296,9 +313,9 @@ export default function CheckoutPage() {
     };
   }, []);
 
-  // The test-phone discount (see lib/testPayment.ts) changes the amount
-  // after the widget already rendered with the default price — keep the
-  // widget's configured amount in sync whenever that phone number is typed.
+  // The widget renders once with the default (premium) price — keep its
+  // configured amount in sync whenever the selected tier changes, or the
+  // test-phone discount (see lib/testPayment.ts) kicks in.
   useEffect(() => {
     widgetsRef.current
       ?.setAmount({ currency: "KRW", value: chargeAmount })
@@ -349,14 +366,15 @@ export default function CheckoutPage() {
 
     try {
       // Read back on the success page after Toss redirects here — the
-      // payment is only confirmed (and this password/phone saved)
+      // payment is only confirmed (and this password/phone/tier saved)
       // server-side once Toss verifies the charge.
       sessionStorage.setItem(PENDING_PASSWORD_KEY, password);
       sessionStorage.setItem(PENDING_PHONE_KEY, phone);
+      sessionStorage.setItem(PENDING_TIER_KEY, tier);
 
       await widgets.requestPayment({
         orderId: reportId,
-        orderName: "FACEMOOD 상세 리포트",
+        orderName: `FACEMOOD ${TIER_LABEL[tier]} 리포트`,
         customerMobilePhone: `${phonePrefix}${phoneMiddle}${phoneLast}`,
         successUrl: `${window.location.origin}/checkout/success`,
         failUrl: `${window.location.origin}/checkout/fail`,
@@ -393,7 +411,7 @@ export default function CheckoutPage() {
             런칭 기념 얼리버드 할인
           </p>
           <span className="mt-3 inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold">
-            오늘 결제 시 {DISCOUNT_PERCENT}% 할인
+            베이직 오늘 결제 시 {BASIC_DISCOUNT_PERCENT}% 할인
           </span>
         </div>
 
@@ -468,43 +486,91 @@ export default function CheckoutPage() {
           <p className="text-xs font-semibold tracking-[0.2em] text-violet-500">
             상품 선택
           </p>
-          <div className="mt-3 rounded-2xl border-2 border-violet-500 bg-violet-50/50 p-5">
-            <div className="flex items-center justify-between">
-              <span className="inline-flex items-center rounded-full bg-violet-600 px-2.5 py-1 text-[10px] font-bold text-white">
-                BEST
-              </span>
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-500 text-[10px] font-bold text-white">
-                ✓
-              </span>
-            </div>
-            <p className="mt-3 text-sm font-bold text-black">
-              FACEMOOD 상세 리포트
-            </p>
-            <p className="mt-1 text-xs text-gray-500">
-              컬러 · 헤어 · 메이크업 · 스타일링 전 영역 상세 분석
-            </p>
-            <p className="mt-3 text-xl font-extrabold text-black">
-              {REPORT_PRICE_KRW.toLocaleString()}원
-            </p>
+          <div className="mt-3 flex flex-col gap-3">
+            <button
+              type="button"
+              onClick={() => setTier("basic")}
+              disabled={isSubmitting}
+              className={`rounded-2xl border-2 p-5 text-left transition-colors ${
+                tier === "basic"
+                  ? "border-violet-500 bg-violet-50/50"
+                  : "border-violet-100 bg-white"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-bold text-black">베이직</span>
+                {tier === "basic" && (
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-500 text-[10px] font-bold text-white">
+                    ✓
+                  </span>
+                )}
+              </div>
+              <p className="mt-1 text-xs text-gray-500">
+                추구미 · 얼굴형 · 헤어 · 메이크업 · 컬러 팔레트 등 핵심 8개
+                챕터
+              </p>
+              <p className="mt-3 text-xl font-extrabold text-black">
+                {BASIC_PRICE_KRW.toLocaleString()}원
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setTier("premium")}
+              disabled={isSubmitting}
+              className={`rounded-2xl border-2 p-5 text-left transition-colors ${
+                tier === "premium"
+                  ? "border-violet-500 bg-violet-50/50"
+                  : "border-violet-100 bg-white"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center rounded-full bg-violet-600 px-2.5 py-1 text-[10px] font-bold text-white">
+                  BEST
+                </span>
+                {tier === "premium" && (
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-500 text-[10px] font-bold text-white">
+                    ✓
+                  </span>
+                )}
+              </div>
+              <p className="mt-3 text-sm font-bold text-black">프리미엄</p>
+              <p className="mt-1 text-xs text-gray-500">
+                베이직 전체 포함 + 동물상 · 액세서리 · 향수 · 상황별 전략 등
+                전체 17개 챕터 상세 분석
+              </p>
+              <p className="mt-3 text-xl font-extrabold text-black">
+                {PREMIUM_PRICE_KRW.toLocaleString()}원
+              </p>
+            </button>
           </div>
         </section>
 
         {/* Price breakdown */}
         <section className="mt-8 rounded-2xl border border-violet-100 bg-white p-5">
-          <PriceRow
-            label="기준 가격"
-            value={`${ORIGINAL_PRICE_KRW.toLocaleString()}원`}
-            strike
-          />
-          <PriceRow
-            label="얼리버드 특별 할인"
-            value={`-${DISCOUNT_PERCENT}% -${DISCOUNT_KRW.toLocaleString()}원`}
-            tone="accent"
-          />
-          <div className="my-2 border-t border-violet-100" />
+          {tier === "basic" ? (
+            <>
+              <PriceRow
+                label="기준 가격"
+                value={`${ORIGINAL_PRICE_KRW.toLocaleString()}원`}
+                strike
+              />
+              <PriceRow
+                label="얼리버드 특별 할인"
+                value={`-${BASIC_DISCOUNT_PERCENT}%`}
+                tone="accent"
+              />
+              <div className="my-2 border-t border-violet-100" />
+            </>
+          ) : (
+            <>
+              <PriceRow label="상품" value="프리미엄 리포트" />
+              <div className="my-2 border-t border-violet-100" />
+            </>
+          )}
           <PriceRow
             label="최종 결제금액"
-            value={`${REPORT_PRICE_KRW.toLocaleString()}원`}
+            value={`${tierPrice.toLocaleString()}원`}
             tone="bold"
           />
         </section>
@@ -572,7 +638,7 @@ export default function CheckoutPage() {
           >
             {isSubmitting
               ? "결제 요청 중..."
-              : `${REPORT_PRICE_KRW.toLocaleString()}원 결제하기`}
+              : `${tierPrice.toLocaleString()}원 결제하기`}
           </button>
           <p className="mt-3 text-center text-xs text-gray-400">
             위에서 원하는 결제수단을 선택한 뒤 결제를 진행해주세요.

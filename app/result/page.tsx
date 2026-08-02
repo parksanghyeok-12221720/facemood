@@ -14,6 +14,7 @@ import DiscountCountdown from "@/app/components/DiscountCountdown";
 import { MagazineHero, MagazineBody } from "@/app/result/MagazinePreview";
 import {
   MOOD_CHARACTER_IMAGES,
+  REPORT_CHAPTERS,
   buildPreviewResult,
   mockPreviewResult,
   type MoodCandidate,
@@ -134,6 +135,11 @@ const answerFactors = [
   "메이크업 습관",
   "분석 목적",
 ];
+
+const BASIC_PRICE_KRW = 34900;
+const PREMIUM_PRICE_KRW = 49900;
+const basicChapters = REPORT_CHAPTERS.filter((c) => c.tier === "basic");
+const premiumOnlyChapters = REPORT_CHAPTERS.filter((c) => c.tier === "premium");
 
 const detailChecklist = [
   "추천 추구미 상세 해석",
@@ -942,6 +948,66 @@ export default function ResultPage() {
           <p className="mt-5 text-center text-[11px] leading-relaxed text-white/45">
             무료 미리보기는 방향만, 상세 리포트는 실행까지 보여드려요.
           </p>
+        </div>
+      </Container>
+
+      {/* Basic / Premium plan comparison */}
+      <Container className="mt-8">
+        <span className="text-[11px] font-semibold tracking-[0.2em] text-[var(--rose)]">
+          CHOOSE YOUR PLAN
+        </span>
+        <h2 className="mt-2 text-[19px] font-extrabold leading-snug text-[var(--ink)]">
+          베이직과 프리미엄 중 골라보세요
+        </h2>
+
+        <div className="mt-5 rounded-[24px] border-2 border-[var(--hairline)] bg-white p-5">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-bold text-[var(--ink)]">베이직</p>
+            <p className="text-sm font-extrabold text-[var(--ink)]">
+              {BASIC_PRICE_KRW.toLocaleString()}원
+            </p>
+          </div>
+          <p className="mt-1 text-[11px] text-[var(--ink-soft)]">
+            핵심 {basicChapters.length}개 챕터
+          </p>
+          <ul className="mt-3 flex flex-wrap gap-1.5">
+            {basicChapters.map((chapter) => (
+              <li
+                key={chapter.key}
+                className="rounded-full bg-[var(--rose-tint)] px-2.5 py-1 text-[10.5px] font-medium text-[var(--rose-deep)]"
+              >
+                {chapter.title}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="mt-3 rounded-[24px] border-2 border-[var(--rose)] bg-[var(--rose-tint)]/30 p-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center rounded-full bg-[var(--rose-deep)] px-2.5 py-1 text-[10px] font-bold text-white">
+                BEST
+              </span>
+              <p className="text-sm font-bold text-[var(--ink)]">프리미엄</p>
+            </div>
+            <p className="text-sm font-extrabold text-[var(--ink)]">
+              {PREMIUM_PRICE_KRW.toLocaleString()}원
+            </p>
+          </div>
+          <p className="mt-1 text-[11px] text-[var(--ink-soft)]">
+            베이직 전체 포함 + {premiumOnlyChapters.length}개 챕터 추가, 총{" "}
+            {basicChapters.length + premiumOnlyChapters.length}개 챕터
+          </p>
+          <ul className="mt-3 flex flex-wrap gap-1.5">
+            {premiumOnlyChapters.map((chapter) => (
+              <li
+                key={chapter.key}
+                className="rounded-full bg-white px-2.5 py-1 text-[10.5px] font-medium text-[var(--rose-deep)]"
+              >
+                {chapter.title}
+              </li>
+            ))}
+          </ul>
         </div>
       </Container>
 

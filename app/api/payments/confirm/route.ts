@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getReport, setCheckoutPassword } from "@/lib/reports";
-import { confirmTossPayment, REPORT_PRICE_KRW } from "@/lib/payment";
+import type { ReportTier } from "@/lib/reports";
+import { BASIC_PRICE_KRW, PREMIUM_PRICE_KRW, confirmTossPayment } from "@/lib/payment";
 import { TEST_AMOUNT_KRW, isTestPhone } from "@/lib/testPayment";
 
 export const runtime = "nodejs";
@@ -15,6 +16,7 @@ export async function POST(request: NextRequest) {
     amount?: number;
     password?: string;
     phone?: string;
+    tier?: string;
   };
   try {
     body = await request.json();
@@ -26,6 +28,7 @@ export async function POST(request: NextRequest) {
   }
 
   const { paymentKey, orderId, amount, password, phone } = body;
+  const tier: ReportTier = body.tier === "basic" ? "basic" : "premium";
 
   if (!paymentKey || !orderId || typeof amount !== "number" || !password) {
     return NextResponse.json(
@@ -56,12 +59,16 @@ export async function POST(request: NextRequest) {
   }
 
   // Never trust the client-sent amount for the actual charge — verify it
-  // matches our fixed price before even asking Toss to confirm. The one
-  // exception is the internal test phone number, which is allowed to
-  // charge TEST_AMOUNT_KRW instead so the real Toss flow can be tested
-  // end-to-end without paying full price.
+  // matches the selected tier's fixed price before even asking Toss to
+  // confirm. The one exception is the internal test phone number, which
+  // is allowed to charge TEST_AMOUNT_KRW instead (regardless of tier) so
+  // the real Toss flow can be tested end-to-end without paying full price.
   const expectedAmount =
-    phone && isTestPhone(phone) ? TEST_AMOUNT_KRW : REPORT_PRICE_KRW;
+    phone && isTestPhone(phone)
+      ? TEST_AMOUNT_KRW
+      : tier === "basic"
+        ? BASIC_PRICE_KRW
+        : PREMIUM_PRICE_KRW;
   if (amount !== expectedAmount) {
     return NextResponse.json(
       { error: "결제 금액이 올바르지 않습니다." },
@@ -79,6 +86,7 @@ export async function POST(request: NextRequest) {
     password,
     { paymentKey, orderId, amount },
     phone ?? null,
+    tier,
   );
 
   return NextResponse.json({ ok: true });

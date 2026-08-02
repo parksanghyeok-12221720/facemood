@@ -26,6 +26,7 @@ const ANSWERS_KEY = "facemood_answers";
 const IMAGE_KEY = "facemood_uploaded_image";
 const PREVIEW_RESULT_KEY = "facemood_preview_result";
 const REPORT_ID_KEY = "facemood_report_id";
+const REPORT_TIER_KEY = "facemood_report_tier";
 
 function subscribeToFullReport(callback: () => void) {
   window.addEventListener("storage", callback);
@@ -238,6 +239,8 @@ const CHAPTER_VISUALS: Record<ReportChapterKey, ChapterVisual> = {
   finalChecklist: "none",
   faceShapeAnalysis: "typeBadge",
   animalTypeAnalysis: "typeBadge",
+  accessoryGuide: "none",
+  perfumeGuide: "none",
 };
 
 type ChapterBlock =
@@ -838,11 +841,12 @@ async function requestFullReport(
   answers: Record<string, unknown>,
   imageDataUrl: string | null,
   previewResult: PreviewResult | null,
+  tier: "basic" | "premium",
 ): Promise<FullReport> {
   const response = await fetch("/api/generate-report", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ answers, imageDataUrl, previewResult }),
+    body: JSON.stringify({ answers, imageDataUrl, previewResult, tier }),
   });
   const data = await response.json();
   if (!response.ok) {
@@ -912,12 +916,15 @@ export default function ReportPage() {
       const imageDataUrl = localStorage.getItem(IMAGE_KEY);
       const previewRaw = localStorage.getItem(PREVIEW_RESULT_KEY);
       const reportId = localStorage.getItem(REPORT_ID_KEY) ?? idParam;
+      const tier =
+        localStorage.getItem(REPORT_TIER_KEY) === "basic" ? "basic" : "premium";
 
       try {
         const report = await requestFullReport(
           JSON.parse(answersRaw) as Record<string, unknown>,
           imageDataUrl,
           previewRaw ? (JSON.parse(previewRaw) as PreviewResult) : null,
+          tier,
         );
 
         localStorage.setItem(FULL_REPORT_KEY, JSON.stringify(report));
@@ -997,6 +1004,7 @@ export default function ReportPage() {
         data.answers ?? {},
         null,
         data.previewResult ?? null,
+        data.tier === "basic" ? "basic" : "premium",
       );
       localStorage.setItem(FULL_REPORT_KEY, JSON.stringify(report));
       persistFullReportToServer(idParam, report);

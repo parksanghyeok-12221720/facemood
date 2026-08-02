@@ -18,6 +18,7 @@ import type {
   PreviewResult,
   ReportChapterContent,
   ReportChapterKey,
+  ReportTierName,
 } from "@/types/report";
 
 export const runtime = "nodejs";
@@ -36,12 +37,18 @@ export const runtime = "nodejs";
 // when several chapters share a single completion, so each chapter gets
 // its own call (run in parallel) and its own full attention/token budget.
 // faceShapeAnalysis/animalTypeAnalysis need an actual photo, so they're
-// dropped entirely when the user skipped the photo step.
-function getChapterGroups(hasImage: boolean): ReportChapterKey[][] {
+// dropped entirely when the user skipped the photo step. Basic-tier
+// purchases only ever generate the 8 basic chapters — premium-only
+// chapters are never requested from OpenAI for them.
+function getChapterGroups(
+  hasImage: boolean,
+  tier: ReportTierName,
+): ReportChapterKey[][] {
   return REPORT_CHAPTERS.filter(
     (c) =>
-      hasImage ||
-      (c.key !== "faceShapeAnalysis" && c.key !== "animalTypeAnalysis"),
+      (tier === "premium" || c.tier === "basic") &&
+      (hasImage ||
+        (c.key !== "faceShapeAnalysis" && c.key !== "animalTypeAnalysis")),
   ).map((c) => [c.key]);
 }
 
@@ -481,6 +488,7 @@ export async function POST(request: NextRequest) {
     answers?: Record<string, unknown>;
     imageDataUrl?: string | null;
     previewResult?: PreviewResult | null;
+    tier?: ReportTierName;
   };
 
   try {
@@ -495,11 +503,16 @@ export async function POST(request: NextRequest) {
   const answers = body.answers ?? {};
   const imageDataUrl = body.imageDataUrl ?? null;
   const previewResult = body.previewResult ?? null;
+  // Defaults to premium (the superset) rather than basic — the only case
+  // this matters is an in-flight session from just before this tier split
+  // shipped, and it's safer to over-deliver than silently drop chapters
+  // someone already paid for.
+  const tier: ReportTierName = body.tier === "basic" ? "basic" : "premium";
 
   const client = new OpenAI({ apiKey });
 
   try {
-    const groups = getChapterGroups(!!imageDataUrl);
+    const groups = getChapterGroups(!!imageDataUrl, tier);
     const groupResults = await mapWithConcurrency(
       groups,
       CHAPTER_CONCURRENCY,

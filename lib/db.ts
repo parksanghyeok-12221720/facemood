@@ -46,6 +46,7 @@ for (const [column, ddl] of [
   ["amount", "ALTER TABLE reports ADD COLUMN amount INTEGER"],
   ["phone", "ALTER TABLE reports ADD COLUMN phone TEXT"],
   ["report_sent_at", "ALTER TABLE reports ADD COLUMN report_sent_at TEXT"],
+  ["tier", "ALTER TABLE reports ADD COLUMN tier TEXT"],
 ] as const) {
   if (!existingColumns.has(column)) {
     db.exec(ddl);

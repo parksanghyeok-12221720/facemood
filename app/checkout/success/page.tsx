@@ -6,6 +6,8 @@ import Container from "@/app/components/Container";
 
 const PENDING_PASSWORD_KEY = "facemood_pending_password";
 const PENDING_PHONE_KEY = "facemood_pending_phone";
+const PENDING_TIER_KEY = "facemood_pending_tier";
+const REPORT_TIER_KEY = "facemood_report_tier";
 
 type ConfirmState =
   | { status: "confirming" }
@@ -30,6 +32,8 @@ export default function CheckoutSuccessPage() {
       const amount = params.get("amount");
       const password = sessionStorage.getItem(PENDING_PASSWORD_KEY);
       const phone = sessionStorage.getItem(PENDING_PHONE_KEY);
+      const tier =
+        sessionStorage.getItem(PENDING_TIER_KEY) === "basic" ? "basic" : "premium";
 
       if (!paymentKey || !orderId || !amount || !password) {
         if (!cancelled) {
@@ -51,6 +55,7 @@ export default function CheckoutSuccessPage() {
             amount: Number(amount),
             password,
             phone,
+            tier,
           }),
         });
         const data = await response.json();
@@ -61,6 +66,8 @@ export default function CheckoutSuccessPage() {
 
         sessionStorage.removeItem(PENDING_PASSWORD_KEY);
         sessionStorage.removeItem(PENDING_PHONE_KEY);
+        sessionStorage.removeItem(PENDING_TIER_KEY);
+        localStorage.setItem(REPORT_TIER_KEY, tier);
         window.fbq?.("track", "Purchase", {
           value: Number(amount),
           currency: "KRW",

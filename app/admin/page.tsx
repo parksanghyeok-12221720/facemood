@@ -146,6 +146,7 @@ export default async function AdminPage() {
                 <th className="px-4 py-3 font-medium">이름</th>
                 <th className="px-4 py-3 font-medium">연락처</th>
                 <th className="px-4 py-3 font-medium">나이/키/몸무게</th>
+                <th className="px-4 py-3 font-medium">상품</th>
                 <th className="px-4 py-3 font-medium">결제 금액</th>
                 <th className="px-4 py-3 font-medium">결제 일시</th>
                 <th className="px-4 py-3 font-medium">리포트 발송</th>
@@ -154,7 +155,7 @@ export default async function AdminPage() {
             <tbody>
               {paidReports.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
                     아직 결제 내역이 없습니다.
                   </td>
                 </tr>
@@ -165,6 +166,19 @@ export default async function AdminPage() {
                   <td className="px-4 py-3 text-gray-300">{report.phone ?? "-"}</td>
                   <td className="px-4 py-3 text-gray-300">
                     {formatBodyInfo(report.age, report.height, report.weight)}
+                  </td>
+                  <td className="px-4 py-3">
+                    {report.tier === "premium" ? (
+                      <span className="rounded-full bg-violet-500/20 px-2 py-0.5 text-[11px] font-semibold text-violet-300">
+                        프리미엄
+                      </span>
+                    ) : report.tier === "basic" ? (
+                      <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-gray-300">
+                        베이직
+                      </span>
+                    ) : (
+                      <span className="text-gray-500">-</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-gray-300">
                     {formatAmount(report.amount)}

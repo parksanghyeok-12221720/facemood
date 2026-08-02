@@ -7,6 +7,7 @@ import Container from "@/app/components/Container";
 import PccsColorChart from "@/app/components/PccsColorChart";
 import { reviews } from "@/app/data/reviews";
 import { trendContents } from "@/app/data/trendContent";
+import { REPORT_CHAPTERS } from "@/types/report";
 
 type Photo = { src: string; keyword: string };
 
@@ -61,20 +62,10 @@ const moodCardPhotos: Record<string, string> = {
   "일본 여주st": "/mood/cards/일본여주st.png",
 };
 
-const reportContents = [
-  "나에게 어울리는 추구미 최종 요약",
-  "현재 이미지 무드 분석",
-  "원하는 추구미와 현재 이미지의 차이",
-  "추천 추구미 상세 해석",
-  "스타일링 방향",
-  "헤어 스타일 방향",
-  "메이크업 방향",
-  "사진상 컬러 무드 분석",
-  "추천 컬러 팔레트",
-  "피하면 좋은 스타일",
-  "상황별 이미지 전략",
-  "최종 스타일 가이드",
-];
+const BASIC_PRICE_KRW = 34900;
+const PREMIUM_PRICE_KRW = 49900;
+const basicChapters = REPORT_CHAPTERS.filter((c) => c.tier === "basic");
+const premiumOnlyChapters = REPORT_CHAPTERS.filter((c) => c.tier === "premium");
 
 const chapters = [
   { key: "mood", label: "스타일", id: "section-mood" },
@@ -556,20 +547,55 @@ export default function DetailPage() {
           상세 리포트 목차
         </h2>
         <p className="mt-2 text-xs leading-relaxed text-gray-500">
-          상세 리포트에서는 아래 내용을 순서대로 확인할 수 있어요.
+          베이직과 프리미엄, 두 가지 상품으로 나뉘어 있어요. 프리미엄은
+          베이직 내용을 전부 포함해요.
         </p>
 
-        <div className="mt-6 rounded-2xl border border-violet-100 bg-white p-6 shadow-sm shadow-violet-100/60">
-          <ol className="flex flex-col gap-3">
-            {reportContents.map((item, index) => (
+        <div className="mt-6 rounded-2xl border-2 border-violet-100 bg-white p-6 shadow-sm shadow-violet-100/60">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-bold text-black">베이직</p>
+            <p className="text-sm font-extrabold text-black">
+              {BASIC_PRICE_KRW.toLocaleString()}원
+            </p>
+          </div>
+          <ol className="mt-4 flex flex-col gap-3">
+            {basicChapters.map((chapter) => (
               <li
-                key={item}
+                key={chapter.key}
                 className="flex items-start gap-3 text-sm text-gray-700"
               >
                 <span className="shrink-0 text-xs font-semibold tabular-nums text-violet-500">
-                  {String(index + 1).padStart(2, "0")}
+                  {chapter.number}
                 </span>
-                {item}
+                {chapter.title}
+              </li>
+            ))}
+          </ol>
+        </div>
+
+        <div className="mt-4 rounded-2xl border-2 border-violet-500 bg-violet-50/40 p-6 shadow-sm shadow-violet-100/60">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center rounded-full bg-violet-600 px-2.5 py-1 text-[10px] font-bold text-white">
+                BEST
+              </span>
+              <p className="text-sm font-bold text-black">프리미엄</p>
+            </div>
+            <p className="text-sm font-extrabold text-black">
+              {PREMIUM_PRICE_KRW.toLocaleString()}원
+            </p>
+          </div>
+          <p className="mt-2 text-xs text-gray-500">베이직 8개 챕터 전체 포함 +</p>
+          <ol className="mt-3 flex flex-col gap-3">
+            {premiumOnlyChapters.map((chapter) => (
+              <li
+                key={chapter.key}
+                className="flex items-start gap-3 text-sm text-gray-700"
+              >
+                <span className="shrink-0 text-xs font-semibold tabular-nums text-violet-500">
+                  {chapter.number}
+                </span>
+                {chapter.title}
               </li>
             ))}
           </ol>

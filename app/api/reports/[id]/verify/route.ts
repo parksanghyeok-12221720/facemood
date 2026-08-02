@@ -42,5 +42,6 @@ export async function POST(
     previewResult: record.previewResult,
     fullReport: record.fullReport,
     paid: record.paid,
+    tier: record.tier,
   });
 }

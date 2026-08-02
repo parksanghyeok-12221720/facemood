@@ -392,18 +392,24 @@ export type ReportChapterKey =
   | "situationGuide"
   | "finalChecklist"
   | "faceShapeAnalysis"
-  | "animalTypeAnalysis";
+  | "animalTypeAnalysis"
+  | "accessoryGuide"
+  | "perfumeGuide";
+
+export type ReportTierName = "basic" | "premium";
 
 export const REPORT_CHAPTERS: {
   key: ReportChapterKey;
   number: string;
   title: string;
+  tier: ReportTierName;
   points: string[];
 }[] = [
   {
     key: "finalSummary",
     number: "01",
     title: "나에게 어울리는 추구미 최종 요약",
+    tier: "basic",
     points: [
       "추천 추구미",
       "보조 무드",
@@ -418,6 +424,7 @@ export const REPORT_CHAPTERS: {
     key: "currentImageMood",
     number: "02",
     title: "현재 이미지 무드 분석",
+    tier: "basic",
     points: [
       "사진상으로 보이는 첫인상",
       "현재 이미지가 주는 분위기",
@@ -430,6 +437,7 @@ export const REPORT_CHAPTERS: {
     key: "faceShapeAnalysis",
     number: "03",
     title: "사진상 얼굴형 분석",
+    tier: "basic",
     points: [
       `사진상으로 보이는 얼굴형 분류 (${FACE_SHAPE_CANDIDATES.join(" / ")} 중 하나)`,
       "이 얼굴형에서 자주 느껴지는 인상",
@@ -440,21 +448,10 @@ export const REPORT_CHAPTERS: {
     ],
   },
   {
-    key: "animalTypeAnalysis",
-    number: "04",
-    title: "사진상 동물상 분석",
-    points: [
-      `사진상으로 보이는 동물상 분류 (${ANIMAL_TYPE_CANDIDATES.join(" / ")} 중 하나)`,
-      "이 동물상이 주는 인상과 매력 포인트",
-      "이 동물상과 잘 어울리는 스타일링 방향",
-      "이 동물상과 잘 어울리는 헤어 · 메이크업 방향",
-      "확정적인 진단이 아니라는 안내",
-    ],
-  },
-  {
     key: "gapAnalysis",
-    number: "05",
+    number: "04",
     title: "원하는 추구미와 현재 이미지의 차이",
+    tier: "basic",
     points: [
       "사용자가 원하는 추구미",
       "현재 이미지와 가까운 부분",
@@ -464,47 +461,10 @@ export const REPORT_CHAPTERS: {
     ],
   },
   {
-    key: "recommendedMoodDetail",
-    number: "06",
-    title: "추천 추구미 상세 해석",
-    points: [
-      "추천 추구미가 어떤 분위기인지",
-      "이 추구미가 사용자에게 잘 맞을 수 있는 이유",
-      "이 무드를 완성하는 핵심 요소",
-      "잘 맞는 컬러, 헤어, 메이크업, 패션 방향",
-      "전체적인 이미지 전략",
-    ],
-  },
-  {
-    key: "firstImpression",
-    number: "07",
-    title: "이성이 봤을 때 첫인상 무드",
-    points: [
-      "사진상으로 전달될 수 있는 첫인상",
-      "이성이 처음 봤을 때 느낄 수 있는 분위기",
-      "첫 3초 안에 남을 수 있는 이미지",
-      "호감이 쌓이는 방식",
-      "첫인상을 더 잘 살리는 방법",
-    ],
-  },
-  {
-    key: "stylingGuide",
-    number: "08",
-    title: "스타일링 세부 가이드",
-    points: [
-      "추천 옷 색감",
-      "추천 실루엣",
-      "추천 소재",
-      "키와 체형 정보를 참고한 옷 길이와 핏 (체형 지적이 아니라 비율 스타일링 조언으로)",
-      "상의, 하의, 아우터, 신발, 가방 방향",
-      "데일리룩 예시",
-      "피하면 좋은 스타일링",
-    ],
-  },
-  {
     key: "hairGuide",
-    number: "09",
+    number: "05",
     title: "헤어 스타일 방향",
+    tier: "basic",
     points: [
       "추천 헤어 길이",
       "앞머리 유무",
@@ -517,8 +477,9 @@ export const REPORT_CHAPTERS: {
   },
   {
     key: "makeupGuide",
-    number: "10",
+    number: "06",
     title: "메이크업 방향",
+    tier: "basic",
     points: [
       "베이스 표현",
       "눈썹",
@@ -532,22 +493,10 @@ export const REPORT_CHAPTERS: {
     ],
   },
   {
-    key: "colorMoodAnalysis",
-    number: "11",
-    title: "사진상 컬러 무드 분석",
-    points: [
-      "사진 기준으로 보이는 컬러 흐름",
-      "밝기, 채도, 온도감, 선명도",
-      "어울릴 가능성이 높은 컬러 방향",
-      "조심하면 좋은 컬러 방향",
-      "퍼스널컬러 확정 진단이 아니라는 안내",
-      "옷, 메이크업, 헤어 컬러에 적용하는 방법",
-    ],
-  },
-  {
     key: "colorPalette",
-    number: "12",
+    number: "07",
     title: "추천 컬러 팔레트",
+    tier: "basic",
     points: [
       "추천 컬러 5~7개",
       "각 컬러별 활용법",
@@ -558,9 +507,115 @@ export const REPORT_CHAPTERS: {
     ],
   },
   {
-    key: "avoidStyles",
+    key: "finalChecklist",
+    number: "08",
+    title: "최종 스타일 체크리스트",
+    tier: "basic",
+    points: [
+      "오늘 바로 바꿔볼 것",
+      "쇼핑할 때 확인할 것",
+      "미용실에서 말할 것",
+      "메이크업에서 바꿔볼 것",
+      "사진 찍을 때 신경 쓸 것",
+      "최종 한 줄 조언",
+    ],
+  },
+  {
+    key: "animalTypeAnalysis",
+    number: "09",
+    title: "사진상 동물상 분석",
+    tier: "premium",
+    points: [
+      `사진상으로 보이는 동물상 분류 (${ANIMAL_TYPE_CANDIDATES.join(" / ")} 중 하나)`,
+      "이 동물상이 주는 인상과 매력 포인트",
+      "이 동물상과 잘 어울리는 스타일링 방향",
+      "이 동물상과 잘 어울리는 헤어 · 메이크업 방향",
+      "확정적인 진단이 아니라는 안내",
+    ],
+  },
+  {
+    key: "recommendedMoodDetail",
+    number: "10",
+    title: "추천 추구미 상세 해석",
+    tier: "premium",
+    points: [
+      "추천 추구미가 어떤 분위기인지",
+      "이 추구미가 사용자에게 잘 맞을 수 있는 이유",
+      "이 무드를 완성하는 핵심 요소",
+      "잘 맞는 컬러, 헤어, 메이크업, 패션 방향",
+      "전체적인 이미지 전략",
+    ],
+  },
+  {
+    key: "firstImpression",
+    number: "11",
+    title: "이성이 봤을 때 첫인상 무드",
+    tier: "premium",
+    points: [
+      "사진상으로 전달될 수 있는 첫인상",
+      "이성이 처음 봤을 때 느낄 수 있는 분위기",
+      "첫 3초 안에 남을 수 있는 이미지",
+      "호감이 쌓이는 방식",
+      "첫인상을 더 잘 살리는 방법",
+    ],
+  },
+  {
+    key: "stylingGuide",
+    number: "12",
+    title: "스타일링 세부 가이드",
+    tier: "premium",
+    points: [
+      "추천 옷 색감",
+      "추천 실루엣",
+      "추천 소재",
+      "키와 체형 정보를 참고한 옷 길이와 핏 (체형 지적이 아니라 비율 스타일링 조언으로)",
+      "상의, 하의, 아우터, 신발, 가방 방향",
+      "데일리룩 예시",
+      "피하면 좋은 스타일링",
+    ],
+  },
+  {
+    key: "accessoryGuide",
     number: "13",
+    title: "액세서리 스타일 가이드",
+    tier: "premium",
+    points: [
+      "목걸이 · 귀걸이 등 포인트 아이템 방향",
+      "시계 · 가방 같은 데일리 아이템 톤",
+      "추구미에 맞는 골드 vs 실버 계열",
+      "과하지 않게 포인트 주는 법",
+    ],
+  },
+  {
+    key: "perfumeGuide",
+    number: "14",
+    title: "향수 무드 추천",
+    tier: "premium",
+    points: [
+      "추구미에 어울리는 향 계열 (플로럴 · 우디 · 머스크 등)",
+      "상황별(데일리 · 데이트) 향 강도",
+      "향수 뿌리는 위치 · 양 팁",
+    ],
+  },
+  {
+    key: "colorMoodAnalysis",
+    number: "15",
+    title: "사진상 컬러 무드 분석",
+    tier: "premium",
+    points: [
+      "사진 기준으로 보이는 컬러 흐름",
+      "밝기, 채도, 온도감, 선명도",
+      "어울릴 가능성이 높은 컬러 방향",
+      "조심하면 좋은 컬러 방향",
+      "퍼스널컬러 확정 진단이 아니라는 안내",
+      "옷, 메이크업, 헤어 컬러에 적용하는 방법",
+    ],
+  },
+  {
+    key: "avoidStyles",
+    number: "16",
     title: "피하면 좋은 스타일 방향",
+    tier: "premium",
     points: [
       "추천 추구미와 멀어질 수 있는 색감",
       "과하게 보일 수 있는 메이크업",
@@ -571,8 +626,9 @@ export const REPORT_CHAPTERS: {
   },
   {
     key: "situationGuide",
-    number: "14",
+    number: "17",
     title: "상황별 이미지 전략",
+    tier: "premium",
     points: [
       "소개팅/데이트",
       "인스타 프로필 사진",
@@ -581,19 +637,6 @@ export const REPORT_CHAPTERS: {
       "친구 약속",
       "사진 찍는 날",
       "각 상황에서 어떤 옷, 헤어, 메이크업, 컬러를 선택하면 좋은지",
-    ],
-  },
-  {
-    key: "finalChecklist",
-    number: "15",
-    title: "최종 스타일 체크리스트",
-    points: [
-      "오늘 바로 바꿔볼 것",
-      "쇼핑할 때 확인할 것",
-      "미용실에서 말할 것",
-      "메이크업에서 바꿔볼 것",
-      "사진 찍을 때 신경 쓸 것",
-      "최종 한 줄 조언",
     ],
   },
 ];
