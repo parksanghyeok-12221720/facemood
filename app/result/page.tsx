@@ -364,7 +364,7 @@ export default function ResultPage() {
 
   return (
     <main
-      className="min-h-screen bg-white pb-28 pt-6 text-[var(--ink)]"
+      className="min-h-screen bg-white pb-44 pt-6 text-[var(--ink)]"
       style={
         {
           "--ink": "#1C1A1F",

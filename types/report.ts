@@ -192,7 +192,13 @@ export type PreviewResult = {
 // with only one photo on disk just get a single-item list — the report
 // still renders fine, it just can't vary that mood's hero image.
 const MOOD_HERO_GALLERY: Record<MoodCandidate, string[]> = {
-  "청순 자연형": ["/mood/cards/청순자연st.png"],
+  "청순 자연형": [
+    "/mood/cards/청순자연st.png",
+    "/mood/cards/청순자연st2.png",
+    "/mood/cards/청순자연st3.png",
+    "/mood/cards/청순자연st4.png",
+    "/mood/cards/청순자연st5.png",
+  ],
   "고급 도시형": [
     "/mood/cards/고급도시st.png",
     "/mood/cards/고급도시st2.png",
@@ -200,7 +206,14 @@ const MOOD_HERO_GALLERY: Record<MoodCandidate, string[]> = {
     "/mood/cards/고급도시st4.png",
     "/mood/cards/고급도시st5.png",
   ],
-  "차분 시크형": ["/mood/cards/차분시크st.png"],
+  "차분 시크형": [
+    "/mood/cards/차분시크st.png",
+    "/mood/cards/차분시크st2.png",
+    "/mood/cards/차분시크st3.png",
+    "/mood/cards/차분시크st4.png",
+    "/mood/cards/차분시크st5.png",
+    "/mood/cards/차분시크st6.png",
+  ],
   "러블리 여리형": [
     "/mood/cards/러블리 여리st.png",
     "/mood/cards/러블리 여리st2.png",
