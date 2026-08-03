@@ -1,7 +1,6 @@
 "use client";
 
 import { ChangeEvent, useEffect, useState } from "react";
-import Link from "next/link";
 import Container from "@/app/components/Container";
 
 const TOTAL_STEPS = 7;
@@ -241,7 +240,6 @@ function resizeImageToDataUrl(
 export default function MatchUploadPage() {
   const [step, setStep] = useState(1);
   const [stepError, setStepError] = useState("");
-  const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [relationship, setRelationship] = useState<string | null>(null);
@@ -343,7 +341,7 @@ export default function MatchUploadPage() {
       }
 
       window.fbq?.("trackCustom", "MatchLead");
-      setSubmitted(true);
+      window.location.href = "/match/loading";
     } catch (error) {
       const message =
         error instanceof Error
@@ -357,10 +355,6 @@ export default function MatchUploadPage() {
 
   const exampleMyName = myName.trim() || "민지";
   const examplePartnerName = partnerName.trim() || "현우";
-  const submittedGreeting =
-    myName.trim() && partnerName.trim()
-      ? `${myName.trim()}님과 ${partnerName.trim()}님`
-      : "두 분";
 
   return (
     <main
@@ -393,32 +387,7 @@ export default function MatchUploadPage() {
           FACEMOOD MATCH
         </span>
 
-        {submitted ? (
-          <div
-            className="mt-8 rounded-[24px] p-6 text-center"
-            style={{ backgroundColor: "white", border: "1px solid var(--match-beige)" }}
-          >
-            <p
-              className="text-lg font-bold"
-              style={{ fontFamily: "'Noto Serif KR', serif" }}
-            >
-              제출이 완료됐어요
-            </p>
-            <p className="mt-3 text-sm leading-relaxed" style={{ color: "var(--match-ink-soft)" }}>
-              {submittedGreeting}의 사진과 답변을 받았어요. 무드 궁합
-              리포트를 만드는 기능은 곧 열릴 예정이에요. 완성되면 가장 먼저
-              알려드릴게요.
-            </p>
-            <Link
-              href="/"
-              className="mt-6 inline-flex items-center justify-center rounded-full px-8 py-3.5 text-sm font-semibold text-white"
-              style={{ backgroundColor: "var(--match-navy)" }}
-            >
-              홈으로 돌아가기
-            </Link>
-          </div>
-        ) : (
-          <>
+        <>
             <h1
               className="mt-5 text-xl font-bold"
               style={{ fontFamily: "'Noto Serif KR', serif" }}
@@ -650,7 +619,6 @@ export default function MatchUploadPage() {
               </button>
             </div>
           </>
-        )}
       </Container>
     </main>
   );

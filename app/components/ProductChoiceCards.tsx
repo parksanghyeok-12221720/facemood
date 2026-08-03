@@ -25,12 +25,12 @@ export default function ProductChoiceCards() {
       </Link>
 
       <Link
-        href="/match"
+        href="/match/upload"
         onClick={() => window.fbq?.("trackCustom", "StartMatch")}
         className="rounded-2xl border-2 border-violet-500 bg-white px-6 py-5 text-left shadow-sm shadow-violet-100"
       >
         <span className="inline-flex items-center rounded-full bg-violet-600 px-2.5 py-1 text-[10px] font-bold tracking-wide text-white">
-          FACEMOOD MATCH — FOR TWO
+          FACEMOOD MATCH
         </span>
         <p className="mt-2.5 text-base font-bold text-black">
           그 사람과의 무드궁합

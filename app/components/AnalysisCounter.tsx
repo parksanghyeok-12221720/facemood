@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-const BASE_COUNT = 42787;
+const BASE_COUNT = 22917;
 
 // Social-proof ticker under the CTA button. Ticks up by 1-2 at irregular
 // intervals (not a fixed timer) so it reads as "live" rather than obviously
