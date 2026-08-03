@@ -340,6 +340,24 @@ export default function MatchUploadPage() {
         console.warn("사진을 로컬에 저장하지 못했습니다 (용량 제한).");
       }
 
+      try {
+        const response = await fetch("/api/match/reports", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            answers,
+            myPhoto: myPhotoDataUrl,
+            partnerPhoto: partnerPhotoDataUrl,
+          }),
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.id) localStorage.setItem("facemood_match_report_id", data.id);
+        }
+      } catch {
+        console.warn("리포트 저장에 실패했습니다 (서버 연결 문제로 추정).");
+      }
+
       window.fbq?.("trackCustom", "MatchLead");
       window.location.href = "/match/loading";
     } catch (error) {

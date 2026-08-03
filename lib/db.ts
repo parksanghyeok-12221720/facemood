@@ -53,4 +53,25 @@ for (const [column, ddl] of [
   }
 }
 
+db.exec(`
+  CREATE TABLE IF NOT EXISTS match_reports (
+    id TEXT PRIMARY KEY,
+    answers TEXT NOT NULL,
+    my_photo TEXT,
+    partner_photo TEXT,
+    full_report TEXT,
+    password_hash TEXT,
+    paid INTEGER NOT NULL DEFAULT 0,
+    paid_at TEXT,
+    payment_key TEXT,
+    order_id TEXT,
+    amount INTEGER,
+    phone TEXT,
+    bundle INTEGER NOT NULL DEFAULT 0,
+    bundle_redeemed_report_id TEXT,
+    report_sent_at TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )
+`);
+
 export default db;

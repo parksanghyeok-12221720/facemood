@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ANONYMOUS, loadTossPayments } from "@tosspayments/tosspayments-sdk";
 import type { TossPaymentsWidgets } from "@tosspayments/tosspayments-sdk";
 import Container from "@/app/components/Container";
@@ -10,6 +10,18 @@ const REPORT_ID_KEY = "facemood_report_id";
 const PENDING_PASSWORD_KEY = "facemood_pending_password";
 const PENDING_PHONE_KEY = "facemood_pending_phone";
 const PENDING_TIER_KEY = "facemood_pending_tier";
+// Set by /match/checkout/success (or the Match report password gate) when
+// this device holds an unredeemed "free FACEMOOD Premium report" credit
+// from a Match + Premium bundle purchase.
+const BUNDLE_CREDIT_KEY = "facemood_match_bundle_id";
+
+function subscribeNoop() {
+  return () => {};
+}
+
+function getServerSnapshot() {
+  return null;
+}
 
 type Tier = "basic" | "premium";
 
@@ -243,6 +255,12 @@ function PriceRow({
 }
 
 export default function CheckoutPage() {
+  const bundleId = useSyncExternalStore(
+    subscribeNoop,
+    () => localStorage.getItem(BUNDLE_CREDIT_KEY),
+    getServerSnapshot,
+  );
+
   const [tier, setTier] = useState<Tier>("premium");
   const [phonePrefix, setPhonePrefix] = useState("010");
   const [phoneMiddle, setPhoneMiddle] = useState("");
@@ -328,6 +346,54 @@ export default function CheckoutPage() {
       .catch(() => {});
   }, [chargeAmount]);
 
+  async function redeemBundle() {
+    if (isSubmitting || !bundleId) return;
+
+    if (password.length < 4) {
+      setError("비밀번호는 4자 이상 입력해주세요.");
+      return;
+    }
+    if (!agreed) {
+      setError("결제 서비스 이용약관과 개인정보 처리에 동의해주세요.");
+      return;
+    }
+
+    const reportId = localStorage.getItem(REPORT_ID_KEY);
+    if (!reportId) {
+      setError("리포트를 찾을 수 없습니다. 처음부터 다시 진행해주세요.");
+      return;
+    }
+
+    setError("");
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("/api/payments/redeem-bundle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          matchReportId: bundleId,
+          targetReportId: reportId,
+          password,
+          phone: phoneMiddle && phoneLast ? phone : null,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error ?? "번들 혜택을 적용하지 못했습니다.");
+      }
+
+      localStorage.removeItem(BUNDLE_CREDIT_KEY);
+      localStorage.setItem("facemood_report_tier", "premium");
+      window.location.href = `/report?id=${reportId}`;
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "번들 혜택 적용 중 오류가 발생했습니다.",
+      );
+      setIsSubmitting(false);
+    }
+  }
+
   function validate(): string | null {
     if (phoneMiddle.length < 3 || phoneLast.length !== 4) {
       return "리포트를 받을 연락처를 정확히 입력해주세요.";
@@ -398,6 +464,56 @@ export default function CheckoutPage() {
 
   const numericInputClass =
     "w-full rounded-xl border border-violet-100 bg-white px-3 py-3 text-center text-sm text-black outline-none focus:border-violet-300";
+
+  if (bundleId) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center bg-[#faf9f7] px-6 text-black">
+        <Container maxWidth="max-w-sm" className="flex flex-col items-center text-center">
+          <span className="inline-flex items-center rounded-full bg-violet-100 px-3 py-1 text-[11px] font-semibold tracking-[0.15em] text-violet-600">
+            FACEMOOD MATCH 번들 혜택
+          </span>
+          <p className="mt-4 text-base font-bold text-black">
+            FACEMOOD Premium 리포트 무료 이용권
+          </p>
+          <p className="mt-2 text-xs leading-relaxed text-gray-500">
+            Match + Premium 번들 결제로 받은 혜택이에요. 결제 없이 바로 리포트를
+            받아보실 수 있어요.
+          </p>
+
+          <input
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            placeholder="다시보기용 비밀번호 (4자 이상)"
+            disabled={isSubmitting}
+            className="mt-6 w-full rounded-xl border border-violet-100 px-4 py-3 text-center text-sm text-black outline-none focus:border-violet-300"
+          />
+
+          <label className="mt-4 flex items-start gap-2.5 text-left text-xs leading-relaxed text-gray-600">
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={(event) => setAgreed(event.target.checked)}
+              disabled={isSubmitting}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-violet-200 bg-white accent-violet-300 focus:ring-violet-300"
+            />
+            <span>(필수) 결제 서비스 이용약관 및 개인정보 처리방침에 동의합니다.</span>
+          </label>
+
+          {error && <p className="mt-3 text-xs text-red-500">{error}</p>}
+
+          <button
+            type="button"
+            onClick={redeemBundle}
+            disabled={!agreed || isSubmitting}
+            className="mt-6 flex w-full items-center justify-center rounded-full bg-black px-8 py-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {isSubmitting ? "적용 중..." : "무료로 리포트 받기"}
+          </button>
+        </Container>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-[#faf9f7] pb-24 text-black">

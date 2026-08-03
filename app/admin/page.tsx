@@ -4,6 +4,7 @@ import Container from "@/app/components/Container";
 import { ADMIN_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/adminAuth";
 import { getRevenueStats, listPaidReports } from "@/lib/reports";
 import type { DailyRevenuePoint } from "@/lib/reports";
+import { getMatchRevenueTotal, listPaidMatchReports } from "@/lib/matchReports";
 
 export const dynamic = "force-dynamic";
 
@@ -92,6 +93,8 @@ export default async function AdminPage() {
 
   const paidReports = listPaidReports();
   const revenue = getRevenueStats();
+  const paidMatchReports = listPaidMatchReports();
+  const matchRevenue = getMatchRevenueTotal();
 
   return (
     <main className="min-h-screen bg-[#0a0a0a] px-4 py-10 text-white">
@@ -183,6 +186,68 @@ export default async function AdminPage() {
                   <td className="px-4 py-3 text-gray-300">
                     {formatAmount(report.amount)}
                   </td>
+                  <td className="px-4 py-3 text-gray-300">{formatDate(report.paidAt)}</td>
+                  <td className="px-4 py-3 text-gray-300">
+                    {report.reportSentAt ? "발송 완료" : "미발송"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="mt-10 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-white">FACEMOOD Match 결제 내역</h2>
+          <div className="text-right">
+            <p className="text-sm font-bold text-white">
+              {matchRevenue.total.toLocaleString("ko-KR")}원
+            </p>
+            <p className="text-[11px] text-gray-500">{matchRevenue.count}건 (누적)</p>
+          </div>
+        </div>
+
+        <div className="mt-4 overflow-x-auto rounded-2xl border border-white/10">
+          <table className="w-full min-w-[680px] text-left text-sm">
+            <thead>
+              <tr className="border-b border-white/10 text-xs text-gray-500">
+                <th className="px-4 py-3 font-medium">이름</th>
+                <th className="px-4 py-3 font-medium">관계</th>
+                <th className="px-4 py-3 font-medium">연락처</th>
+                <th className="px-4 py-3 font-medium">상품</th>
+                <th className="px-4 py-3 font-medium">결제 금액</th>
+                <th className="px-4 py-3 font-medium">결제 일시</th>
+                <th className="px-4 py-3 font-medium">리포트 발송</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paidMatchReports.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                    아직 결제 내역이 없습니다.
+                  </td>
+                </tr>
+              )}
+              {paidMatchReports.map((report) => (
+                <tr key={report.id} className="border-b border-white/5 last:border-0">
+                  <td className="px-4 py-3 text-white">
+                    {report.myName && report.partnerName
+                      ? `${report.myName} · ${report.partnerName}`
+                      : "-"}
+                  </td>
+                  <td className="px-4 py-3 text-gray-300">{report.relationship ?? "-"}</td>
+                  <td className="px-4 py-3 text-gray-300">{report.phone ?? "-"}</td>
+                  <td className="px-4 py-3">
+                    {report.bundle ? (
+                      <span className="rounded-full bg-violet-500/20 px-2 py-0.5 text-[11px] font-semibold text-violet-300">
+                        번들
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-gray-300">
+                        Match
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-gray-300">{formatAmount(report.amount)}</td>
                   <td className="px-4 py-3 text-gray-300">{formatDate(report.paidAt)}</td>
                   <td className="px-4 py-3 text-gray-300">
                     {report.reportSentAt ? "발송 완료" : "미발송"}
