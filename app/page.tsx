@@ -1,7 +1,7 @@
 import Image from "next/image";
 import AnalysisCounter from "@/app/components/AnalysisCounter";
-import AnalysisStartLink from "@/app/components/AnalysisStartLink";
 import Container from "@/app/components/Container";
+import ProductChoiceCards from "@/app/components/ProductChoiceCards";
 
 const floatingTags: {
   label: string;
@@ -82,7 +82,7 @@ export default function Home() {
         </p>
 
         <div className="mt-14 w-full">
-          <AnalysisStartLink />
+          <ProductChoiceCards />
           <AnalysisCounter />
         </div>
       </Container>
