@@ -57,9 +57,12 @@ export type MatchFullReport = {
   moodTypeScore: number;
   moodTypeSummary: string;
   moodTypeKeywords: string[];
+  // Rich long-form write-up for this chapter (~1000자).
+  moodTypeBody: string;
 
   // 02. Recommended moods (2-3 other types worth exploring)
   recommendedMoods: { name: MoodTypeCandidate; reason: string }[];
+  recommendedMoodsBody: string;
 
   // PART 1. 얼굴 무드 분석
   myMoodLabel: string;
@@ -71,6 +74,7 @@ export type MatchFullReport = {
   myArtStyle: ArtStyleCandidate;
   partnerArtStyle: ArtStyleCandidate;
   artStyleTogether: string;
+  part1Body: string;
 
   // PART 2. 스타일 분석
   styleCompat: FilledScore[];
@@ -82,6 +86,7 @@ export type MatchFullReport = {
   hairTogetherScore: number;
   colorCompat: { name: string; hex: string; reason: string }[];
   itemCompat: FilledScore[];
+  part2Body: string;
 
   // PART 3. 무드 라이프
   datePlaceCompat: FilledScore[];
@@ -91,9 +96,11 @@ export type MatchFullReport = {
   partnerPerfume: string;
   togetherPerfume: string;
   seasonCompat: FilledScore[];
+  part3Body: string;
 
   // PART 4. 공유 리포트
   overallMoodScore: number;
   overallPercentile: string;
   moodKeywords: string[];
+  part4Body: string;
 };

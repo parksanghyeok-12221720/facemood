@@ -65,6 +65,22 @@ function moodTypePhoto(name: MoodTypeCandidate) {
   return `/mood/match-types/${name}.png`;
 }
 
+function BodyCard({ label, body }: { label: string; body: string }) {
+  return (
+    <Card>
+      <span
+        className="inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold"
+        style={{ backgroundColor: "var(--match-beige)", color: "var(--match-burgundy)" }}
+      >
+        {label}
+      </span>
+      <p className="mt-3 text-sm leading-relaxed" style={{ whiteSpace: "pre-line" }}>
+        {body}
+      </p>
+    </Card>
+  );
+}
+
 export default function MatchReportBody({
   report,
   myName,
@@ -133,6 +149,9 @@ export default function MatchReportBody({
               ))}
             </div>
           </Card>
+          <div className="mt-3">
+            <BodyCard label="자세히 보기" body={report.moodTypeBody} />
+          </div>
           <p className="mt-3 text-[11px] leading-relaxed" style={{ color: "var(--match-ink-soft)" }}>
             그 외 나올 수 있는 Mood Type —{" "}
             {MOOD_TYPE_CANDIDATES.filter((name) => name !== report.moodTypeName).join(" · ")}
@@ -170,6 +189,9 @@ export default function MatchReportBody({
               </div>
             ))}
           </div>
+        </div>
+        <div className="mt-5">
+          <BodyCard label="자세히 보기" body={report.recommendedMoodsBody} />
         </div>
       </section>
     );
@@ -275,6 +297,8 @@ export default function MatchReportBody({
               Together — {report.artStyleTogether}
             </div>
           </Card>
+
+          <BodyCard label="자세히 보기" body={report.part1Body} />
         </div>
       </section>
     );
@@ -375,6 +399,8 @@ export default function MatchReportBody({
               ))}
             </div>
           </Card>
+
+          <BodyCard label="자세히 보기" body={report.part2Body} />
         </div>
       </section>
     );
@@ -455,6 +481,8 @@ export default function MatchReportBody({
               ))}
             </div>
           </Card>
+
+          <BodyCard label="자세히 보기" body={report.part3Body} />
         </div>
       </section>
     );
@@ -505,6 +533,8 @@ export default function MatchReportBody({
               ))}
             </div>
           </Card>
+
+          <BodyCard label="총평" body={report.part4Body} />
 
           <div
             className="mx-auto w-full max-w-[220px] overflow-hidden rounded-[24px] shadow-sm"

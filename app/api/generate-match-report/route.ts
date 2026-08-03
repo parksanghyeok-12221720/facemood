@@ -37,7 +37,13 @@ FACEMOOD Match는 두 사람이 업로드한 사진과 답변을 바탕으로, �
 
 5. 마크다운 문법(별표, #, - 등)을 쓰지 말고, 자연스러운 문장으로만 작성하세요.
 
-6. 모든 텍스트는 한국어로, 간결하고 자연스럽게 작성하세요. 같은 표현을 반복하지 마세요.`;
+6. 모든 텍스트는 한국어로, 간결하고 자연스럽게 작성하세요. 같은 표현을 반복하지 마세요.
+
+7. moodTypeBody, recommendedMoodsBody, part1Body, part2Body, part3Body, part4Body는 각 챕터를
+   풍부하게 설명하는 본문입니다. 각각 공백 포함 900~1100자 분량으로, 문단 구분(줄바꿈 두 번)을
+   섞어가며 작성하세요. 단순히 점수나 라벨을 나열하지 말고, 왜 그렇게 분석했는지, 사진과 답변에서
+   어떤 부분이 근거가 되었는지, 두 사람에게 어떤 의미가 있는지를 구체적으로 풀어서 설명하세요.
+   미사여구나 같은 문장 반복으로 글자 수만 채우지 말고, 실질적인 내용으로 채우세요.`;
 
 function buildUserPrompt(answers: Record<string, unknown>): string {
   const answerLines = Object.entries(answers ?? {}).map(
@@ -65,6 +71,20 @@ function buildUserPrompt(answers: Record<string, unknown>): string {
     "photoConceptTags는 사진 찍기 좋은 장소/컨셉 키워드 5개를 작성하세요.",
     "moodKeywords는 두 사람의 분위기를 나타내는 영어 단어 6개를 작성하세요 (예: Calm, Warm 등 형태).",
     "overallPercentile은 '상위 N%' 형태로 작성하세요.",
+    "",
+    "각 챕터의 본문(공백 포함 900~1100자)이 다뤄야 할 내용:",
+    "- moodTypeBody: 왜 이 Mood Type으로 분석됐는지, 사진에서 어떤 부분이 이 무드로 이어졌는지,",
+    "  이 무드가 두 사람에게 어떤 인상을 주는지 설명하세요.",
+    "- recommendedMoodsBody: 추천한 다른 무드들이 지금 무드와 어떻게 다르고, 시도하면 어떤 느낌을",
+    "  더할 수 있는지 각각 짚어가며 설명하세요.",
+    "- part1Body: 각자의 현재 이미지 무드, 첫인상·시너지 점수, 그림체 케미가 왜 그렇게 나왔는지,",
+    "  두 사람의 얼굴 분위기가 어떻게 서로 다르거나 닮았는지 설명하세요.",
+    "- part2Body: 스타일·헤어·컬러·코디 궁합이 왜 그렇게 분석됐는지, 실제로 어떻게 활용하면",
+    "  좋을지 구체적인 조언을 담아 설명하세요.",
+    "- part3Body: 데이트 장소, 사진 컨셉, 향기, 계절 궁합을 왜 그렇게 추천했는지, 실제 데이트나",
+    "  나들이에서 어떻게 활용할 수 있는지 설명하세요.",
+    "- part4Body: 종합 Mood Score와 키워드가 의미하는 바를 정리하고, 리포트 전체를 요약하는",
+    "  마무리 총평으로 작성하세요.",
   ].join("\n");
 }
 
@@ -89,7 +109,9 @@ const SCHEMA = {
     "moodTypeScore",
     "moodTypeSummary",
     "moodTypeKeywords",
+    "moodTypeBody",
     "recommendedMoods",
+    "recommendedMoodsBody",
     "myMoodLabel",
     "myMoodNote",
     "partnerMoodLabel",
@@ -99,6 +121,7 @@ const SCHEMA = {
     "myArtStyle",
     "partnerArtStyle",
     "artStyleTogether",
+    "part1Body",
     "styleCompat",
     "styleGoodNote",
     "styleAvoidNote",
@@ -108,6 +131,7 @@ const SCHEMA = {
     "hairTogetherScore",
     "colorCompat",
     "itemCompat",
+    "part2Body",
     "datePlaceCompat",
     "photoConceptTags",
     "snsConceptCompat",
@@ -115,9 +139,11 @@ const SCHEMA = {
     "partnerPerfume",
     "togetherPerfume",
     "seasonCompat",
+    "part3Body",
     "overallMoodScore",
     "overallPercentile",
     "moodKeywords",
+    "part4Body",
   ],
   properties: {
     pairLabel: { type: "string" },
@@ -127,6 +153,7 @@ const SCHEMA = {
     moodTypeScore: { type: "integer" },
     moodTypeSummary: { type: "string" },
     moodTypeKeywords: { type: "array", items: { type: "string" }, minItems: 5, maxItems: 5 },
+    moodTypeBody: { type: "string" },
     recommendedMoods: {
       type: "array",
       minItems: 2,
@@ -141,6 +168,7 @@ const SCHEMA = {
         },
       },
     },
+    recommendedMoodsBody: { type: "string" },
     myMoodLabel: { type: "string" },
     myMoodNote: { type: "string" },
     partnerMoodLabel: { type: "string" },
@@ -150,6 +178,7 @@ const SCHEMA = {
     myArtStyle: { type: "string", enum: [...ART_STYLE_CANDIDATES] },
     partnerArtStyle: { type: "string", enum: [...ART_STYLE_CANDIDATES] },
     artStyleTogether: { type: "string" },
+    part1Body: { type: "string" },
     styleCompat: { type: "array", items: FILLED_SCORE_SCHEMA, minItems: 6, maxItems: 6 },
     styleGoodNote: { type: "string" },
     styleAvoidNote: { type: "string" },
@@ -173,6 +202,7 @@ const SCHEMA = {
       },
     },
     itemCompat: { type: "array", items: FILLED_SCORE_SCHEMA, minItems: 4, maxItems: 4 },
+    part2Body: { type: "string" },
     datePlaceCompat: { type: "array", items: FILLED_SCORE_SCHEMA, minItems: 4, maxItems: 4 },
     photoConceptTags: { type: "array", items: { type: "string" }, minItems: 5, maxItems: 5 },
     snsConceptCompat: { type: "array", items: FILLED_SCORE_SCHEMA, minItems: 4, maxItems: 4 },
@@ -180,11 +210,50 @@ const SCHEMA = {
     partnerPerfume: { type: "string" },
     togetherPerfume: { type: "string" },
     seasonCompat: { type: "array", items: FILLED_SCORE_SCHEMA, minItems: 4, maxItems: 4 },
+    part3Body: { type: "string" },
     overallMoodScore: { type: "integer" },
     overallPercentile: { type: "string" },
     moodKeywords: { type: "array", items: { type: "string" }, minItems: 6, maxItems: 6 },
+    part4Body: { type: "string" },
   },
 } as const;
+
+// Chapter bodies target 900-1100자 — set a bit under that so any chapter
+// that undershoots gets topped up rather than shipping noticeably thin.
+const MIN_BODY_CHARS = 850;
+const BODY_FIELDS = [
+  "moodTypeBody",
+  "recommendedMoodsBody",
+  "part1Body",
+  "part2Body",
+  "part3Body",
+  "part4Body",
+] as const;
+
+async function expandBody(client: OpenAI, currentBody: string): Promise<string> {
+  const completion = await client.chat.completions.create({
+    model: "gpt-5.4-nano",
+    messages: [
+      { role: "system", content: SYSTEM_PROMPT },
+      {
+        role: "user",
+        content: [
+          "아래는 리포트 챕터 본문 초안인데 너무 짧습니다. 내용과 어조는 그대로 유지하면서,",
+          "구체적인 이유·근거를 조금 더 추가해서 전체 분량을 공백 포함 900~1100자 정도로",
+          "만들어주세요. 미사여구나 반복으로 글자 수만 채우지 말고, 실질적인 내용으로 채워주세요.",
+          "결과는 완성된 본문 텍스트만 반환하세요 (JSON이나 따옴표 없이).",
+          "",
+          "--- 초안 ---",
+          currentBody,
+        ].join("\n"),
+      },
+    ],
+    max_completion_tokens: 1500,
+  });
+
+  const expanded = completion.choices[0]?.message?.content?.trim();
+  return expanded && expanded.length > currentBody.length ? expanded : currentBody;
+}
 
 export async function POST(request: NextRequest) {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -230,7 +299,7 @@ export async function POST(request: NextRequest) {
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: userContent },
       ],
-      max_completion_tokens: 4000,
+      max_completion_tokens: 9000,
       response_format: {
         type: "json_schema",
         json_schema: { name: "match_report", strict: true, schema: SCHEMA },
@@ -258,6 +327,16 @@ export async function POST(request: NextRequest) {
     // repeats the type the couple already landed on.
     report.recommendedMoods = report.recommendedMoods.filter(
       (mood) => mood.name !== report.moodTypeName,
+    );
+
+    // Top up any chapter body that undershot the 900-1100자 target instead
+    // of shipping a thin one.
+    await Promise.all(
+      BODY_FIELDS.map(async (field) => {
+        if (report[field].length < MIN_BODY_CHARS) {
+          report[field] = await expandBody(client, report[field]);
+        }
+      }),
     );
 
     return NextResponse.json({ report });
