@@ -28,10 +28,29 @@ function getServerSnapshot() {
   return null;
 }
 
+// Picked once per page load (not per render) so reloading the preview
+// shows a different example, while useSyncExternalStore keeps the very
+// first client render consistent with the server-rendered markup.
+let cachedVariantIndex: number | null = null;
+function getVariantIndexSnapshot() {
+  if (cachedVariantIndex === null) {
+    cachedVariantIndex = Math.floor(Math.random() * MOCK_REPORT_VARIANTS.length);
+  }
+  return cachedVariantIndex;
+}
+function getServerVariantIndexSnapshot() {
+  return 0;
+}
+
 // Canned example content for the free preview — the real, personalized
 // report is only generated after checkout (see /match/report), same
-// policy as the main FACEMOOD product's /result vs /report split.
-const MOCK_REPORT: MatchFullReport = {
+// policy as the main FACEMOOD product's /result vs /report split. Several
+// variants exist so reloading the preview doesn't always show the exact
+// same example (see pickRandomVariant below); the detail bodies are shown
+// blurred/locked either way, so their exact wording matters less than the
+// visible scores/labels varying.
+const MOCK_REPORT_VARIANTS: MatchFullReport[] = [
+  {
   pairLabel: "SOFT × CHIC",
   pairScore: 89,
   pairBullets: [
@@ -132,7 +151,194 @@ const MOCK_REPORT: MatchFullReport = {
   moodKeywords: ["Calm", "Warm", "Classic", "Elegant", "Natural", "Vintage"],
   part4Body:
     "전체적으로 봤을 때 두 분은 각자의 개성을 지키면서도 함께 있을 때 자연스럽게 균형을 이루는, 꽤 드문 조합이에요. Soft City라는 무드 타입 자체가 '과하지 않게 세련된' 방향인데, 두 분 모두 이 결을 스타일뿐 아니라 표정과 자세에서도 자연스럽게 갖고 계세요. 그래서 종합 Mood Score도 91점으로 높게 나왔고, 이는 지금까지 분석한 프로필 중 상위 8%에 해당하는 수치예요.\n\n분위기 키워드로 뽑힌 Calm, Warm, Classic, Elegant, Natural, Vintage는 언뜻 보면 서로 다른 결처럼 보이지만, 실제로는 '차분함'이라는 큰 줄기 안에서 조금씩 다른 온도를 가진 단어들이에요. 이 키워드들을 그대로 공유 카드나 SNS 소개 문구에 활용하셔도 좋고, 데이트룩이나 사진 컨셉을 정할 때 참고 단어로 써보셔도 좋아요.\n\n이 리포트는 두 분의 사진과 답변을 바탕으로 시각적인 분위기와 스타일 조화만 분석한 결과이고, 실제 관계의 좋고 나쁨이나 미래를 예측하는 내용은 담고 있지 않아요. 대신 지금 두 분이 사진으로, 스타일로, 그리고 함께 보내는 순간들로 어떤 이미지를 만들어갈 수 있는지에 대한 참고 자료로 편하게 봐주시면 좋겠어요.",
-};
+  },
+  {
+    pairLabel: "VINTAGE × ROMANCE",
+    pairScore: 85,
+    pairBullets: [
+      "빈티지한 색감이 만드는 무드",
+      "닮은 듯 다른 두 분위기",
+      "사진에서 살아나는 케미",
+      "은은한 로맨틱 밸런스",
+    ],
+    moodTypeName: "Vintage Mood",
+    moodTypeScore: 85,
+    moodTypeSummary:
+      "빈티지한 색감과 은은한 로맨틱 무드가 만나 화보 같은 분위기를 만들어내는 조합이에요.",
+    moodTypeKeywords: ["Vintage", "Romantic", "Warm", "Soft", "Nostalgic"],
+    moodTypeBody:
+      "두 분 사진에서 공통적으로 느껴지는 건 채도가 살짝 낮춰진 듯한 따뜻한 톤이에요. 선명하고 쨍한 색보다 바랜 듯한 색감을 자연스럽게 선호하시는 편이라, 사진 전체에 잔잔한 필름 감성이 묻어나요. 여기에 한 분의 로맨틱한 분위기와 다른 한 분의 차분한 분위기가 만나면서, 너무 달콤하지도 너무 건조하지도 않은 균형이 만들어졌어요.\n\n이런 조합은 사진으로 남길 때 특히 매력이 살아나요. 필름 카메라나 자연광 위주의 촬영과 잘 맞고, 배경이 화려하지 않아도 두 분의 표정과 분위기만으로 충분히 그림이 되는 타입이에요.",
+    recommendedMoods: [
+      { name: "Quiet Luxury", reason: "차분한 럭셔리 무드를 더하면 사진이 한층 더 고급스러워 보여요." },
+      { name: "Fresh Campus", reason: "산뜻한 분위기를 더하면 평소 데이트에서 훨씬 편안한 느낌을 줄 수 있어요." },
+      { name: "Chic Date", reason: "톤을 살짝 정돈하면 특별한 자리에서 세련된 인상을 줄 수 있어요." },
+    ],
+    recommendedMoodsBody:
+      "지금의 빈티지 로맨스 무드에 살짝 변화를 주고 싶다면 아래 세 방향을 참고해보세요. Quiet Luxury는 지금의 따뜻한 톤에 절제된 무게감을 더한 방향이라 특별한 자리에 잘 어울려요. Fresh Campus는 반대로 힘을 뺀 편안한 방향이라 일상 데이트에 잘 맞고요. Chic Date는 지금의 로맨틱함을 유지하면서 실루엣만 조금 더 정돈하는 방향이라, 부담 없이 시도해볼 수 있어요.",
+    myMoodLabel: "은은한 로맨틱",
+    myMoodNote: "부드럽고 따뜻한 분위기가 자연스럽게 느껴져요.",
+    partnerMoodLabel: "차분한 무드",
+    partnerMoodNote: "잔잔하고 정돈된 인상이 돋보여요.",
+    firstImpressionScore: 86,
+    synergyScore: 84,
+    myArtStyle: "빈티지그림체",
+    partnerArtStyle: "일본감성그림체",
+    artStyleTogether: "노스탤지어 감성 무드",
+    part1Body:
+      "각자의 사진을 보면 한 분은 로맨틱하고 부드러운 인상이, 다른 한 분은 차분하고 정돈된 인상이 강하게 느껴져요. 두 분위기 모두 '과하지 않은 따뜻함'이라는 공통점이 있어서 자연스럽게 어우러져요.\n\n얼굴 그림체 케미에서는 빈티지그림체와 일본감성그림체가 만나 노스탤지어 감성이 짙은 무드가 만들어졌어요. 두 그림체 모두 색감과 분위기를 강조하는 편이라, 사진 한 장에서도 이야기가 느껴지는 조합이에요.",
+    styleCompat: [
+      { label: "Casual", filled: 4 },
+      { label: "Minimal", filled: 3 },
+      { label: "Street", filled: 2 },
+      { label: "Classic", filled: 5 },
+      { label: "Formal", filled: 3 },
+      { label: "Vintage", filled: 5 },
+    ],
+    styleGoodNote: "빈티지 니트 + 클래식 소재 매치",
+    styleAvoidNote: "형광 톤의 스포티한 아이템",
+    coupleLookDirection: "웜톤 베이스 + 클래식 실루엣",
+    myHair: "웨이브 롱",
+    partnerHair: "미디움 레이어드",
+    hairTogetherScore: 4,
+    colorCompat: [
+      { name: "Rust", hex: "#B5583A", reason: "따뜻한 톤을 살려주는 포인트 컬러예요." },
+      { name: "Cream", hex: "#F1E6D3", reason: "부드러운 무드를 만들어주는 베이스 컬러예요." },
+      { name: "Olive", hex: "#7C7C4A", reason: "차분하면서도 빈티지한 느낌을 더해줘요." },
+      { name: "Mustard", hex: "#C9A24B", reason: "은은한 포인트로 활용하면 화보 같은 느낌을 줘요." },
+      { name: "Brown", hex: "#5C4433", reason: "두 분의 톤을 자연스럽게 이어주는 컬러예요." },
+    ],
+    itemCompat: [
+      { label: "Silver", filled: 2 },
+      { label: "Gold", filled: 5 },
+      { label: "Denim", filled: 3 },
+      { label: "Leather", filled: 5 },
+    ],
+    part2Body:
+      "스타일 궁합에서는 Classic과 Vintage가 나란히 최고점을 받았어요. 두 분 모두 유행을 빠르게 따라가기보다 시간이 지나도 질리지 않는 스타일을 선호하시는 편이에요. 컬러 궁합에서 안내해드린 러스트·크림·올리브·머스타드·브라운은 모두 두 분의 웜톤을 살려주는 컬러라, 데이트룩에 하나씩 활용해보시면 좋아요.\n\n헤어 궁합에서는 웨이브 롱과 미디움 레이어드가 만나 부드러운 흐름을 만들어요. 코디 궁합에서는 골드와 레더 아이템이 높은 점수를 받았는데, 이 두 소재를 포인트로 쓰면 지금의 빈티지 무드가 한층 살아나요.",
+    datePlaceCompat: [
+      { label: "빈티지 카페", filled: 5 },
+      { label: "서점", filled: 5 },
+      { label: "놀이공원", filled: 2 },
+      { label: "전시회", filled: 4 },
+    ],
+    photoConceptTags: ["필름카메라", "골목길", "서점", "노을", "빈티지 소품"],
+    snsConceptCompat: [
+      { label: "필름감성", filled: 5 },
+      { label: "골목 스냅", filled: 5 },
+      { label: "인물 클로즈업", filled: 4 },
+      { label: "노을", filled: 4 },
+    ],
+    myPerfume: "Diptyque",
+    partnerPerfume: "Byredo",
+    togetherPerfume: "Le Labo",
+    seasonCompat: [
+      { label: "가을", filled: 5 },
+      { label: "겨울", filled: 4 },
+      { label: "여름", filled: 3 },
+      { label: "봄", filled: 3 },
+    ],
+    part3Body:
+      "데이트 장소 궁합에서는 빈티지 카페와 서점이 가장 높은 점수를 받았어요. 요란한 배경보다 조용하고 정돈된 공간에서 두 분의 무드가 더 잘 살아나기 때문이에요. 사진 컨셉으로는 필름카메라, 골목길, 서점, 노을, 빈티지 소품을 추천드려요.\n\n계절 궁합에서는 가을과 겨울이 가장 높게 나왔는데, 두 분의 톤이 따뜻하고 깊은 계절광과 특히 잘 어울리기 때문이에요.",
+    overallMoodScore: 88,
+    overallPercentile: "상위 12%",
+    moodKeywords: ["Vintage", "Warm", "Romantic", "Classic", "Nostalgic", "Soft"],
+    part4Body:
+      "전체적으로 두 분은 트렌드보다 시간이 지나도 변하지 않는 분위기를 자연스럽게 지향하고 계세요. 그래서 종합 Mood Score도 88점으로 높게 나왔고, 이는 상위 12%에 해당하는 수치예요.\n\n분위기 키워드로 뽑힌 Vintage, Warm, Romantic, Classic, Nostalgic, Soft는 모두 '따뜻함'이라는 큰 줄기 안에 있는 단어들이에요. 데이트룩이나 사진 컨셉을 정할 때 참고해보세요.\n\n이 리포트는 두 분의 사진과 답변을 바탕으로 시각적인 분위기와 스타일 조화만 분석한 결과예요.",
+  },
+  {
+    pairLabel: "COZY × NATURAL",
+    pairScore: 87,
+    pairBullets: [
+      "편안하고 자연스러운 분위기",
+      "서로를 편하게 만드는 케미",
+      "꾸미지 않은 듯한 자연스러움",
+      "따뜻한 무드 밸런스",
+    ],
+    moodTypeName: "Cozy Natural",
+    moodTypeScore: 87,
+    moodTypeSummary:
+      "편안하고 자연스러운 무드가 만나 꾸미지 않아도 잘 어울리는 조합을 만들어내요.",
+    moodTypeKeywords: ["Cozy", "Natural", "Warm", "Easy", "Friendly"],
+    moodTypeBody:
+      "두 분의 사진에서 공통적으로 느껴지는 건 힘을 뺀 자연스러움이에요. 과한 보정이나 완벽하게 세팅된 스타일링보다, 편안하고 꾸미지 않은 듯한 분위기를 자연스럽게 선호하시는 편이에요. 이런 무드는 함께 있을 때 오히려 더 잘 어울려서, 사진 속에서 서로가 편안해 보이는 인상을 줘요.\n\n일상적인 순간을 담은 사진일수록 이 조합의 매력이 잘 살아나는 편이에요.",
+    recommendedMoods: [
+      { name: "Fresh Campus", reason: "산뜻함을 더하면 나들이나 여행 사진에서 훨씬 생기 있어 보여요." },
+      { name: "Soft Vintage", reason: "은은한 빈티지 톤을 더하면 사진이 조금 더 감성적으로 보여요." },
+      { name: "Urban Elegant", reason: "정돈된 포인트를 더하면 특별한 자리에서도 잘 어울려요." },
+    ],
+    recommendedMoodsBody:
+      "지금의 편안한 무드에 변주를 주고 싶다면 아래 세 방향을 참고해보세요. Fresh Campus는 지금의 자연스러움에 산뜻함을 더한 방향이라 나들이나 여행에 잘 어울려요. Soft Vintage는 색감에 변화를 주는 방향이라 사진을 감성적으로 남기고 싶을 때 추천해요. Urban Elegant는 지금과는 결이 다른 정돈된 방향이라, 특별한 자리에서 시도해보면 좋아요.",
+    myMoodLabel: "편안한 자연스러움",
+    myMoodNote: "꾸미지 않은 듯 편안한 분위기가 느껴져요.",
+    partnerMoodLabel: "따뜻한 무드",
+    partnerMoodNote: "친근하고 다정한 인상이 강해요.",
+    firstImpressionScore: 89,
+    synergyScore: 90,
+    myArtStyle: "토끼그림체",
+    partnerArtStyle: "청순그림체",
+    artStyleTogether: "포근한 데일리 무드",
+    part1Body:
+      "각자의 사진을 보면 두 분 모두 힘을 뺀 편안한 인상이 강하게 느껴져요. 방향이 비슷해서 함께 있을 때 어색함 없이 자연스럽게 녹아드는 편이라, 분위기 시너지 점수가 특히 높게 나왔어요.\n\n얼굴 그림체 케미에서는 토끼그림체와 청순그림체가 만나 포근한 데일리 무드가 만들어졌어요. 두 그림체 모두 친근함을 강조하는 편이라, 편안한 일상 사진에서 매력이 잘 살아나요.",
+    styleCompat: [
+      { label: "Casual", filled: 5 },
+      { label: "Minimal", filled: 4 },
+      { label: "Street", filled: 3 },
+      { label: "Classic", filled: 2 },
+      { label: "Formal", filled: 1 },
+      { label: "Vintage", filled: 3 },
+    ],
+    styleGoodNote: "편안한 니트 + 데님 조합",
+    styleAvoidNote: "각 잡힌 포멀 슈트 스타일",
+    coupleLookDirection: "뉴트럴 톤 + 편안한 소재",
+    myHair: "자연스러운 웨이브",
+    partnerHair: "레이어드 컷",
+    hairTogetherScore: 5,
+    colorCompat: [
+      { name: "Beige", hex: "#DFCBB0", reason: "편안한 무드를 살려주는 뉴트럴 컬러예요." },
+      { name: "Sage", hex: "#9CAF88", reason: "자연스러운 느낌을 더해주는 컬러예요." },
+      { name: "Cream", hex: "#F1E9D8", reason: "따뜻하고 부드러운 인상을 줘요." },
+      { name: "Brown", hex: "#8B6F53", reason: "안정감 있는 포인트 컬러예요." },
+      { name: "White", hex: "#F5F3EF", reason: "깨끗하고 편안한 베이스를 만들어줘요." },
+    ],
+    itemCompat: [
+      { label: "Silver", filled: 3 },
+      { label: "Gold", filled: 3 },
+      { label: "Denim", filled: 5 },
+      { label: "Leather", filled: 3 },
+    ],
+    part2Body:
+      "스타일 궁합에서는 Casual이 가장 높은 점수를 받았어요. 두 분 모두 편안한 핏과 소재를 자연스럽게 선호하시는 편이라, 데님과 니트 위주의 코디가 특히 잘 어울려요. 반대로 Formal 항목이 낮게 나온 건 두 분 다 각 잡힌 스타일보다 편안한 실루엣을 선호하시기 때문이에요.\n\n헤어 궁합에서는 자연스러운 웨이브와 레이어드 컷이 만나 부드러운 흐름을 만들어요. 컬러 궁합에서는 베이지·세이지·크림·브라운·화이트 같은 뉴트럴 톤이 두 분의 편안한 무드를 잘 살려줘요.",
+    datePlaceCompat: [
+      { label: "공원", filled: 5 },
+      { label: "카페", filled: 5 },
+      { label: "놀이공원", filled: 4 },
+      { label: "미술관", filled: 3 },
+    ],
+    photoConceptTags: ["공원", "피크닉", "카페", "여행", "일상 스냅"],
+    snsConceptCompat: [
+      { label: "일상 스냅", filled: 5 },
+      { label: "자연광", filled: 5 },
+      { label: "카페", filled: 4 },
+      { label: "피크닉", filled: 5 },
+    ],
+    myPerfume: "Jo Malone",
+    partnerPerfume: "Aesop",
+    togetherPerfume: "Le Labo",
+    seasonCompat: [
+      { label: "봄", filled: 5 },
+      { label: "여름", filled: 4 },
+      { label: "가을", filled: 4 },
+      { label: "겨울", filled: 3 },
+    ],
+    part3Body:
+      "데이트 장소 궁합에서는 공원과 카페가 가장 높은 점수를 받았어요. 편안하고 자연스러운 공간에서 두 분의 무드가 가장 잘 살아나기 때문이에요. 사진 컨셉으로는 공원, 피크닉, 카페, 여행, 일상 스냅을 추천드려요.\n\n계절 궁합에서는 봄이 가장 높게 나왔는데, 두 분의 편안한 톤이 화사하고 산뜻한 봄빛과 특히 잘 어울리기 때문이에요.",
+    overallMoodScore: 90,
+    overallPercentile: "상위 9%",
+    moodKeywords: ["Cozy", "Natural", "Warm", "Friendly", "Easy", "Soft"],
+    part4Body:
+      "전체적으로 두 분은 꾸미지 않아도 자연스럽게 잘 어울리는, 편안한 케미를 가진 조합이에요. 그래서 종합 Mood Score도 90점으로 높게 나왔고, 이는 상위 9%에 해당하는 수치예요.\n\n분위기 키워드로 뽑힌 Cozy, Natural, Warm, Friendly, Easy, Soft는 모두 '편안함'이라는 큰 줄기 안에 있는 단어들이에요. 데이트룩이나 사진 컨셉을 정할 때 참고해보세요.\n\n이 리포트는 두 분의 사진과 답변을 바탕으로 시각적인 분위기와 스타일 조화만 분석한 결과예요.",
+  },
+];
 
 const testimonials = [
   { quote: "생각보다 결과가 너무 정확했어요." },
@@ -157,6 +363,15 @@ const includedItems = [
 
 export default function MatchResultPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  // Random per page load (not per render) so reloading the preview shows a
+  // different example instead of always the same one.
+  const variantIndex = useSyncExternalStore(
+    subscribeNoop,
+    getVariantIndexSnapshot,
+    getServerVariantIndexSnapshot,
+  );
+  const mockReport = MOCK_REPORT_VARIANTS[variantIndex];
 
   const rawAnswers = useSyncExternalStore(
     subscribeNoop,
@@ -265,15 +480,15 @@ export default function MatchResultPage() {
             </span>
             <div className="mt-2 flex items-end justify-between">
               <p className="text-2xl font-bold" style={{ fontFamily: "'Noto Serif KR', serif" }}>
-                {MOCK_REPORT.pairLabel}
+                {mockReport.pairLabel}
               </p>
               <p className="text-xl font-bold" style={{ color: "var(--match-burgundy)" }}>
-                {MOCK_REPORT.pairScore}%
+                {mockReport.pairScore}%
               </p>
             </div>
-            <StarRating filled={MOCK_REPORT.pairScore / 20} />
+            <StarRating filled={mockReport.pairScore / 20} />
             <ul className="mt-3 flex flex-col gap-1.5">
-              {MOCK_REPORT.pairBullets.map((bullet) => (
+              {mockReport.pairBullets.map((bullet) => (
                 <li key={bullet} className="text-xs leading-relaxed" style={{ color: "var(--match-ink)" }}>
                   · {bullet}
                 </li>
@@ -289,7 +504,7 @@ export default function MatchResultPage() {
       </div>
 
       <Container maxWidth="max-w-3xl">
-        <MatchReportBody report={MOCK_REPORT} myName={myName} partnerName={partnerName} />
+        <MatchReportBody report={mockReport} myName={myName} partnerName={partnerName} locked />
       </Container>
 
       {/* Review */}

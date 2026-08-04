@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import StarRating from "@/app/components/StarRating";
 import type { MatchFullReport, MoodTypeCandidate } from "@/types/matchReport";
 import { MOOD_TYPE_CANDIDATES } from "@/types/matchReport";
@@ -65,18 +66,63 @@ function moodTypePhoto(name: MoodTypeCandidate) {
   return `/mood/match-types/${name}.png`;
 }
 
-function BodyCard({ label, body }: { label: string; body: string }) {
+function LockIcon() {
   return (
-    <Card>
+    <svg viewBox="0 0 20 20" fill="none" className="h-5 w-5" xmlns="http://www.w3.org/2000/svg">
+      <rect x="4.5" y="9" width="11" height="8" rx="2" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M6.5 9V6.5a3.5 3.5 0 0 1 7 0V9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function BodyCard({
+  label,
+  body,
+  locked = false,
+}: {
+  label: string;
+  body: string;
+  locked?: boolean;
+}) {
+  return (
+    <Card className={locked ? "relative overflow-hidden" : ""}>
       <span
         className="inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold"
         style={{ backgroundColor: "var(--match-beige)", color: "var(--match-burgundy)" }}
       >
         {label}
       </span>
-      <p className="mt-3 text-sm leading-relaxed" style={{ whiteSpace: "pre-line" }}>
+      <p
+        className="mt-3 text-sm leading-relaxed"
+        style={
+          locked
+            ? { whiteSpace: "pre-line", filter: "blur(5px)", userSelect: "none" }
+            : { whiteSpace: "pre-line" }
+        }
+      >
         {body}
       </p>
+
+      {locked && (
+        <div
+          className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center"
+          style={{ backgroundColor: "rgba(247, 243, 236, 0.55)" }}
+        >
+          <span style={{ color: "var(--match-navy)" }}>
+            <LockIcon />
+          </span>
+          <p className="text-xs font-bold" style={{ color: "var(--match-navy)" }}>
+            전체 리포트에서 확인하세요
+          </p>
+          <Link
+            href="/match/checkout"
+            className="mt-1 rounded-full px-4 py-2 text-[11px] font-semibold text-white"
+            style={{ backgroundColor: "var(--match-navy)" }}
+          >
+            리포트 받기
+          </Link>
+        </div>
+      )}
     </Card>
   );
 }
@@ -85,10 +131,15 @@ export default function MatchReportBody({
   report,
   myName,
   partnerName,
+  locked = false,
 }: {
   report: MatchFullReport;
   myName: string;
   partnerName: string;
+  // When true, the "자세히 보기"/"총평" detail bodies render blurred with a
+  // paywall CTA instead of the real text — used by the free /match/result
+  // preview. /match/report (the paid page) always renders unlocked.
+  locked?: boolean;
 }) {
   return (
     <>
@@ -150,7 +201,7 @@ export default function MatchReportBody({
             </div>
           </Card>
           <div className="mt-3">
-            <BodyCard label="자세히 보기" body={report.moodTypeBody} />
+            <BodyCard label="자세히 보기" body={report.moodTypeBody} locked={locked} />
           </div>
           <p className="mt-3 text-[11px] leading-relaxed" style={{ color: "var(--match-ink-soft)" }}>
             그 외 나올 수 있는 Mood Type —{" "}
@@ -191,7 +242,7 @@ export default function MatchReportBody({
           </div>
         </div>
         <div className="mt-5">
-          <BodyCard label="자세히 보기" body={report.recommendedMoodsBody} />
+          <BodyCard label="자세히 보기" body={report.recommendedMoodsBody} locked={locked} />
         </div>
       </section>
     );
@@ -298,7 +349,7 @@ export default function MatchReportBody({
             </div>
           </Card>
 
-          <BodyCard label="자세히 보기" body={report.part1Body} />
+          <BodyCard label="자세히 보기" body={report.part1Body} locked={locked} />
         </div>
       </section>
     );
@@ -400,7 +451,7 @@ export default function MatchReportBody({
             </div>
           </Card>
 
-          <BodyCard label="자세히 보기" body={report.part2Body} />
+          <BodyCard label="자세히 보기" body={report.part2Body} locked={locked} />
         </div>
       </section>
     );
@@ -482,7 +533,7 @@ export default function MatchReportBody({
             </div>
           </Card>
 
-          <BodyCard label="자세히 보기" body={report.part3Body} />
+          <BodyCard label="자세히 보기" body={report.part3Body} locked={locked} />
         </div>
       </section>
     );
@@ -534,7 +585,7 @@ export default function MatchReportBody({
             </div>
           </Card>
 
-          <BodyCard label="총평" body={report.part4Body} />
+          <BodyCard label="총평" body={report.part4Body} locked={locked} />
 
           <div
             className="mx-auto w-full max-w-[220px] overflow-hidden rounded-[24px] shadow-sm"

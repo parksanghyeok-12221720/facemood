@@ -1,90 +1,87 @@
 import Image from "next/image";
+import Link from "next/link";
 import AnalysisCounter from "@/app/components/AnalysisCounter";
 import Container from "@/app/components/Container";
 import ProductChoiceCards from "@/app/components/ProductChoiceCards";
 
-const floatingTags: {
-  label: string;
-  className: string;
-  delay: string;
-  duration: string;
-}[] = [
-  {
-    label: "#추구미",
-    className: "left-[2%] top-16",
-    delay: "0s",
-    duration: "6s",
-  },
-  {
-    label: "#헤어스타일",
-    className: "right-[4%] top-28",
-    delay: "1.2s",
-    duration: "7s",
-  },
-  {
-    label: "#메이크업",
-    className: "left-[6%] bottom-24",
-    delay: "0.6s",
-    duration: "6.5s",
-  },
-  {
-    label: "#스타일링",
-    className: "right-[2%] bottom-10",
-    delay: "1.8s",
-    duration: "7.5s",
-  },
-];
+function FaceIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="9" cy="10.5" r="1" fill="currentColor" />
+      <circle cx="15" cy="10.5" r="1" fill="currentColor" />
+      <path d="M9 14.5c.9.8 1.9 1.2 3 1.2s2.1-.4 3-1.2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function CirclesIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="9.5" cy="12" r="6" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="14.5" cy="12" r="6" stroke="currentColor" strokeWidth="1.6" />
+    </svg>
+  );
+}
 
 export default function Home() {
   return (
-    <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-white text-black">
-      {/* Background photo. Drop the hero image at public/hero-bg.png. */}
-      <Image
-        src="/hero-bg.png"
-        alt=""
-        fill
-        priority
-        sizes="100vw"
-        className="object-cover"
-      />
-      <div className="absolute inset-0 bg-gradient-to-b from-white/70 via-white/55 to-white/85" />
-
-      {/* Positioned relative to the same max-w-md column as the text below
-          (not the full viewport) so the tags hug the content instead of
-          drifting out toward the screen edges on wide/desktop views. */}
-      <div className="pointer-events-none absolute left-1/2 top-0 z-10 h-full w-full max-w-md -translate-x-1/2">
-        {floatingTags.map((tag) => (
-          <span
-            key={tag.label}
-            className={`animate-float absolute whitespace-nowrap rounded-full border border-white/60 bg-white/70 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-violet-600 shadow-sm backdrop-blur-sm ${tag.className}`}
-            style={{ animationDelay: tag.delay, animationDuration: tag.duration }}
-          >
-            {tag.label}
-          </span>
-        ))}
-      </div>
-
-      <Container className="relative z-20 flex flex-col items-center text-center">
-        <p className="mb-8 text-sm tracking-[0.3em] text-violet-600">
+    <main className="min-h-screen bg-white pb-16 text-black">
+      <Container maxWidth="max-w-md" className="pt-6">
+        <p className="text-sm font-bold tracking-[0.2em] text-violet-600">
           FACEMOOD
         </p>
 
-        <h1 className="text-3xl font-bold leading-snug text-black">
-          내 얼굴 분위기,
-          <br />
-          어떤 무드로 보일까?
-        </h1>
-
-        <p className="mt-6 text-sm leading-relaxed text-gray-500">
-          셀카와 간단한 질문으로
-          <br />
-          지금의 이미지와 원하는 추구미 방향을 비교해보세요.
-        </p>
-
-        <div className="mt-14 w-full">
-          <ProductChoiceCards />
-          <AnalysisCounter />
+        {/* Hero card */}
+        <div className="relative mt-4 aspect-[4/5] w-full overflow-hidden rounded-3xl">
+          <Image
+            src="/home-hero.png"
+            alt=""
+            fill
+            priority
+            sizes="(max-width: 480px) 100vw, 448px"
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 p-6">
+            <h1 className="text-2xl font-bold leading-snug text-white">
+              내 얼굴 분위기,
+              <br />
+              어떤 무드로 보일까?
+            </h1>
+            <p className="mt-2 text-sm leading-relaxed text-white/80">
+              셀카와 간단한 질문으로 지금의 이미지를 분석해드려요.
+            </p>
+          </div>
         </div>
+
+        {/* Category icon nav */}
+        <div className="mt-7 flex justify-center gap-12">
+          <Link href="/detail" className="flex flex-col items-center gap-2">
+            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-violet-50 text-violet-600">
+              <FaceIcon />
+            </span>
+            <span className="text-xs font-semibold text-black">추구미 찾기</span>
+          </Link>
+          <Link href="/match/upload" className="flex flex-col items-center gap-2">
+            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-violet-50 text-violet-600">
+              <CirclesIcon />
+            </span>
+            <span className="text-xs font-semibold text-black">무드 궁합</span>
+          </Link>
+        </div>
+
+        {/* Product cards */}
+        <div className="mt-10 flex items-center gap-2">
+          <h2 className="text-base font-bold text-black">FACEMOOD 서비스</h2>
+          <span className="rounded-full bg-violet-600 px-2 py-0.5 text-[10px] font-bold text-white">
+            HOT
+          </span>
+        </div>
+
+        <ProductChoiceCards />
+
+        <AnalysisCounter />
       </Container>
     </main>
   );

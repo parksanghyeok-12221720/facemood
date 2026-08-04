@@ -101,6 +101,74 @@ const chapters = [
   { key: "hair", label: "헤어", id: "section-hair" },
 ];
 
+// Photo at /public/detail-service/0N-*.png — real photos already in place.
+const serviceBreakdown = [
+  {
+    number: "01",
+    photo: "/detail-service/01-body.png",
+    title: "체형 컨설팅",
+    body: "체형을 평가하지 않고\n비율 좋아 보이는 핏과 실루엣을 제안해요",
+  },
+  {
+    number: "02",
+    photo: "/detail-service/02-color.png",
+    title: "퍼스널컬러 컨설팅",
+    body: "사진상 어울리는\n컬러 방향을 찾아드려요",
+  },
+  {
+    number: "03",
+    photo: "/detail-service/03-makeup.png",
+    title: "메이크업 컨설팅",
+    body: "원하는 무드에 맞는\n메이크업 방향을 제안해요",
+  },
+  {
+    number: "04",
+    photo: "/detail-service/04-hair.png",
+    title: "헤어 컨설팅",
+    body: "분위기를 가장 크게 바꾸는\n헤어 방향을 알려드려요",
+  },
+  {
+    number: "05",
+    photo: "/detail-service/05-face.png",
+    title: "얼굴형 컨설팅",
+    body: "사진상 얼굴형을 참고해\n어울리는 스타일을 제안해요",
+  },
+  {
+    number: "06",
+    photo: "/detail-service/06-style.png",
+    title: "스타일링 컨설팅",
+    body: "지금 이미지와\n원하는 추구미를 하나로 정리해요",
+  },
+];
+
+type PhotoReview = { photo: string; stars: string; text: string };
+
+// Photo at /public/detail-reviews/review-N.png — placeholders are seeded
+// there for now; drop in real photos under the same filenames to replace.
+const photoReviews: PhotoReview[] = [
+  { photo: "/detail-reviews/review-1.png", stars: "★★★★★", text: "생각보다 엄청 자세해서 놀랐어요" },
+  { photo: "/detail-reviews/review-2.png", stars: "★★★★★", text: "사진상 색감이 잘 맞는다는 말이 더 믿음 갔어요" },
+  { photo: "/detail-reviews/review-3.png", stars: "★★★★★", text: "지금 이미지가 캐주얼하다고 해서 뜨끔했어요" },
+  { photo: "/detail-reviews/review-4.png", stars: "★★★★★", text: "메이크업 부분이 진짜 도움 됐어요" },
+  { photo: "/detail-reviews/review-5.png", stars: "★★★★★", text: "원하는 분위기를 말로 정리해준 느낌이었어요" },
+  { photo: "/detail-reviews/review-6.png", stars: "★★★★☆", text: "헤어 추천이 생각보다 좋았어요" },
+];
+
+const faqItems = [
+  {
+    q: "사진만으로 정확한 분석이 가능한가요?",
+    a: "확정적인 진단이 아니라 참고용 방향 제안이에요. 그래서 '무조건 이렇습니다' 대신 '이런 방향이 잘 맞을 수 있어요'처럼 안내해요. 사진 화질·조명·보정에 따라 결과가 달라질 수 있다는 점도 함께 알려드려요.",
+  },
+  {
+    q: "외모 점수나 등급을 매기는 건가요?",
+    a: "아니요. FACEMOOD는 얼굴 점수화나 단점 평가를 하지 않아요. 지금 사진에서 느껴지는 분위기와 원하는 방향의 차이를 비교해서, 스타일 선택지를 제안하는 방식이에요.",
+  },
+  {
+    q: "결제 전에 미리 확인할 수 있나요?",
+    a: "네, 무료 미리보기로 대략적인 방향을 먼저 확인할 수 있어요. 마음에 드시면 그 다음에 상세 리포트를 결제하시면 돼요.",
+  },
+];
+
 function MarqueeRow({
   photos,
   animationKey,
@@ -135,6 +203,41 @@ function MarqueeRow({
             <div className="p-3">
               <p className="text-xs font-medium text-violet-500">
                 {photo.keyword}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PhotoReviewMarquee({ items }: { items: PhotoReview[] }) {
+  return (
+    <div className="marquee-fade -mx-6 overflow-hidden px-6">
+      <div
+        className="animate-marquee flex w-max gap-3"
+        style={{ animationDuration: `${items.length * 4}s` }}
+      >
+        {[...items, ...items].map((review, index) => (
+          <div
+            key={`${review.photo}-${index}`}
+            className="w-36 shrink-0 overflow-hidden rounded-2xl border border-violet-100 bg-white shadow-sm shadow-violet-100/60"
+          >
+            <div className="relative aspect-[3/4] w-full">
+              <Image
+                src={review.photo}
+                alt={review.text}
+                fill
+                sizes="144px"
+                loading="eager"
+                className="object-cover"
+              />
+            </div>
+            <div className="p-3">
+              <p className="text-xs tracking-wide text-violet-500">{review.stars}</p>
+              <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-gray-600">
+                {review.text}
               </p>
             </div>
           </div>
@@ -220,6 +323,7 @@ function TrendUpdateCarousel({ updates }: { updates: TrendUpdate[] }) {
 export default function DetailPage() {
   const [activeChapter, setActiveChapter] = useState("mood");
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
   const overview = trendContents.all;
 
   useEffect(() => {
@@ -262,7 +366,7 @@ export default function DetailPage() {
   }
 
   return (
-    <main className="min-h-screen bg-white text-black">
+    <main className="min-h-screen bg-white pb-24 text-black">
       <div className="sticky top-0 z-10 border-b border-violet-100 bg-white/90 backdrop-blur">
         <Container className="flex items-center justify-between py-4">
           <span className="text-sm font-bold tracking-[0.2em] text-violet-600">
@@ -361,6 +465,251 @@ export default function DetailPage() {
         </div>
       </Container>
 
+      {/* Precision analysis visual */}
+      <Container maxWidth="max-w-3xl" className="mt-14 text-center">
+        <span className="inline-flex items-center rounded-full bg-violet-600 px-3 py-1 text-[11px] font-bold tracking-[0.15em] text-white">
+          POINT 01
+        </span>
+        <h2 className="mt-4 text-2xl font-bold leading-snug text-black">
+          사진 한 장으로 확인하는
+          <br />
+          <span className="text-violet-600">정밀한 얼굴 분위기 분석</span>
+        </h2>
+        <p className="mt-4 text-sm leading-relaxed text-gray-500">
+          막연했던 내 얼굴 분위기를 구체적인 언어로!
+          <br />
+          AI가 사진 속 디테일까지 참고해 자세하게 분석해요.
+        </p>
+
+        <div className="relative mx-auto mt-8 aspect-[3/4] w-full max-w-xs overflow-hidden rounded-3xl border border-violet-100 shadow-sm shadow-violet-100/60">
+          <Image
+            src="/detail-point/precision-analysis.png"
+            alt="정밀 얼굴 분위기 분석 예시"
+            fill
+            sizes="320px"
+            className="object-cover"
+          />
+        </div>
+      </Container>
+
+      {/* POINT 02 */}
+      <Container maxWidth="max-w-3xl" className="mt-14 text-center">
+        <span className="inline-flex items-center rounded-full bg-violet-600 px-3 py-1 text-[11px] font-bold tracking-[0.15em] text-white">
+          POINT 02
+        </span>
+        <h2 className="mt-4 text-2xl font-bold leading-snug text-black">
+          나만을 위한
+          <br />
+          <span className="text-violet-600">
+            헤어·메이크업 방향과
+            <br />
+            스타일 리포트
+          </span>
+        </h2>
+        <p className="mt-4 text-sm leading-relaxed text-gray-500">
+          최신 헤어·스타일 트렌드를 반영해서
+          <br />
+          내가 가장 잘 어울리는 방향을 콕 짚어드립니다
+        </p>
+
+        <div className="relative mx-auto mt-8 aspect-[3/2] w-full max-w-xs overflow-hidden rounded-3xl border border-violet-100 shadow-sm shadow-violet-100/60">
+          <Image
+            src="/detail-point/style-report-mockup.png"
+            alt="스타일 리포트 예시"
+            fill
+            sizes="320px"
+            className="object-cover"
+          />
+        </div>
+      </Container>
+
+      {/* POINT 03 */}
+      <Container maxWidth="max-w-3xl" className="mt-14 text-center">
+        <span className="inline-flex items-center rounded-full bg-violet-600 px-3 py-1 text-[11px] font-bold tracking-[0.15em] text-white">
+          POINT 03
+        </span>
+        <h2 className="mt-4 text-2xl font-bold leading-snug text-black">
+          논문 기반 학술 연구를 참고한
+          <br />
+          <span className="text-violet-600">과학적인 분석 방식</span>
+        </h2>
+        <p className="mt-4 text-sm leading-relaxed text-gray-500">
+          얼굴형 분류와 스타일 추천에 대한 실제 연구를 참고해서
+          <br />
+          리포트 방향을 설계했어요
+        </p>
+
+        <div className="relative mx-auto mt-10 h-72 w-full max-w-sm">
+          {/* Far-left card — smallest, most blurred */}
+          <div
+            className="absolute overflow-hidden rounded-2xl border border-white shadow-md"
+            style={{
+              left: "3%",
+              top: "50%",
+              width: "104px",
+              height: "139px",
+              transform: "translate(-50%, -50%) rotate(-17deg) scale(0.7)",
+              filter: "blur(4px)",
+              zIndex: 10,
+            }}
+          >
+            <Image src="/detail-point/paper-4.png" alt="" fill sizes="104px" className="object-cover" />
+          </div>
+
+          {/* Near-left card */}
+          <div
+            className="absolute overflow-hidden rounded-2xl border border-white shadow-lg"
+            style={{
+              left: "26%",
+              top: "54%",
+              width: "128px",
+              height: "171px",
+              transform: "translate(-50%, -50%) rotate(-9deg) scale(0.85)",
+              filter: "blur(3px)",
+              zIndex: 20,
+            }}
+          >
+            <Image src="/detail-point/paper-2.png" alt="" fill sizes="128px" className="object-cover" />
+          </div>
+
+          {/* Front-center card — largest */}
+          <div
+            className="absolute overflow-hidden rounded-2xl border border-white shadow-xl"
+            style={{
+              left: "50%",
+              top: "48%",
+              width: "160px",
+              height: "213px",
+              transform: "translate(-50%, -50%)",
+              filter: "blur(2.5px)",
+              zIndex: 30,
+            }}
+          >
+            <Image src="/detail-point/paper-1.png" alt="" fill sizes="160px" className="object-cover" />
+          </div>
+
+          {/* Near-right card */}
+          <div
+            className="absolute overflow-hidden rounded-2xl border border-white shadow-lg"
+            style={{
+              left: "74%",
+              top: "54%",
+              width: "128px",
+              height: "171px",
+              transform: "translate(-50%, -50%) rotate(9deg) scale(0.85)",
+              filter: "blur(3px)",
+              zIndex: 20,
+            }}
+          >
+            <Image src="/detail-point/paper-3.png" alt="" fill sizes="128px" className="object-cover" />
+          </div>
+
+          {/* Far-right card — smallest, most blurred */}
+          <div
+            className="absolute overflow-hidden rounded-2xl border border-white shadow-md"
+            style={{
+              left: "97%",
+              top: "50%",
+              width: "104px",
+              height: "139px",
+              transform: "translate(-50%, -50%) rotate(17deg) scale(0.7)",
+              filter: "blur(4px)",
+              zIndex: 10,
+            }}
+          >
+            <Image src="/detail-point/paper-5.png" alt="" fill sizes="104px" className="object-cover" />
+          </div>
+        </div>
+      </Container>
+
+      {/* Pain-point hook */}
+      <Container maxWidth="max-w-3xl" className="mt-14">
+        <p className="text-center text-lg font-bold leading-snug text-black">
+          혹시
+          <br />
+          내 얘기는 아닌가요?
+        </p>
+
+        <div className="mt-6 flex flex-col gap-3">
+          {[
+            "미용실에 연예인 사진 보여줬는데\n왜 다른 느낌이 나는지 모르겠어요 😭",
+            "분명 예쁜 옷인데\n제가 입으면 안 어울려요 😭",
+            "사진 찍을 때마다\n어떤 느낌으로 나올지 감이 안 와요 😭",
+            "내 스타일 기준이 뭔지\n설명을 못 하겠어요 😭",
+          ].map((item) => (
+            <div
+              key={item}
+              className="whitespace-pre-line rounded-2xl border border-violet-100 bg-white px-5 py-4 text-center text-sm font-medium leading-relaxed text-gray-700 shadow-sm shadow-violet-100/60"
+            >
+              {item}
+            </div>
+          ))}
+        </div>
+
+        <p className="mt-8 text-center text-sm leading-relaxed text-gray-500">
+          혹시 이렇게 생각한 적 있나요?
+          <br />
+          &lsquo;패션 센스가 없나...?&rsquo; &lsquo;유행을 몰라서 그런가?&rsquo;
+        </p>
+
+        <div className="mt-8 rounded-2xl bg-black px-6 py-7 text-center">
+          <p className="text-xs font-semibold tracking-[0.15em] text-violet-300">
+            사실은
+          </p>
+          <p className="mt-3 text-lg font-bold leading-relaxed text-white">
+            나만의 추구미 기준을
+            <br />
+            몰라서예요
+          </p>
+          <p className="mt-3 text-xs leading-relaxed text-gray-400">
+            얼굴이나 센스의 문제가 아니라,
+            <br />
+            지금 내 이미지와 원하는 방향을 비교할 기준이 없었던 것뿐이에요.
+          </p>
+        </div>
+      </Container>
+
+      {/* Benefit highlights */}
+      <Container maxWidth="max-w-3xl" className="mt-14">
+        <p className="text-center text-lg font-bold leading-snug text-black">
+          지금부터
+          <br />
+          달라질 거예요
+        </p>
+
+        <div className="mt-6 flex flex-col gap-3">
+          {[
+            {
+              title: "미용실 갈 때마다 헤매지 않고",
+              body: "원하는 방향이 명확해져서 디자이너에게 정확히 전달할 수 있어요.",
+            },
+            {
+              title: "옷 고를 때 기준이 생기고",
+              body: "예뻐 보이는 게 아니라, 내 분위기에 맞는 컬러와 핏을 먼저 보게 돼요.",
+            },
+            {
+              title: "사진 찍을 때 자신감이 생겨요",
+              body: "내 이미지 무드를 알고 있으면, 어떤 각도·표정이 잘 살아나는지도 자연스럽게 알게 돼요.",
+            },
+          ].map((item) => (
+            <div
+              key={item.title}
+              className="rounded-2xl border border-violet-100 bg-white p-5 shadow-sm shadow-violet-100/60"
+            >
+              <p className="text-sm font-bold text-black">{item.title}</p>
+              <p className="mt-1.5 text-xs leading-relaxed text-gray-500">
+                {item.body}
+              </p>
+            </div>
+          ))}
+        </div>
+      </Container>
+
+      {/* Photo reviews */}
+      <div className="mx-auto mt-10 w-full max-w-3xl">
+        <PhotoReviewMarquee items={photoReviews} />
+      </div>
+
       {/* Intro mood photo marquee — this row has far more photos (54) than
           hair/makeup (11-17), so it needs a proportionally longer duration
           to scroll at the same visual speed instead of rushing by. */}
@@ -424,9 +773,53 @@ export default function DetailPage() {
         )}
       </Container>
 
+      {/* Service breakdown */}
+      <Container maxWidth="max-w-3xl" className="mt-14 text-center">
+        <span className="inline-flex items-center rounded-full bg-violet-100 px-3 py-1 text-[11px] font-semibold tracking-[0.15em] text-violet-600">
+          나만의 스타일 기준, 이렇게 만들어져요
+        </span>
+        <h2 className="mt-4 text-xl font-bold leading-snug text-black">
+          FACEMOOD 상세 리포트
+        </h2>
+      </Container>
+
+      <Container maxWidth="max-w-3xl" className="mt-6">
+        <div className="flex flex-col gap-3">
+          {serviceBreakdown.map((item) => (
+            <div
+              key={item.number}
+              className="relative mx-auto w-full max-w-xs overflow-hidden rounded-3xl"
+            >
+              <div className="relative aspect-[3/4] w-full">
+                <Image
+                  src={item.photo}
+                  alt={item.title}
+                  fill
+                  sizes="320px"
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-black/45" />
+              </div>
+              <div className="absolute inset-0 flex flex-col items-center justify-center px-5 text-center">
+                <span className="text-xs font-bold tracking-[0.2em] text-white/80">
+                  {item.number}
+                </span>
+                <p className="mt-1.5 text-lg font-bold text-white">
+                  {item.title}
+                </p>
+                <p className="mt-2 whitespace-pre-line text-xs leading-relaxed text-white/85">
+                  {item.body}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Container>
+
       {/* Chapter: 스타일 */}
       <Container id="section-mood" maxWidth="max-w-3xl" className="mt-14 scroll-mt-20">
-        <span className="inline-flex items-center rounded-full bg-violet-100 px-3 py-1 text-[11px] font-semibold tracking-[0.15em] text-violet-600">
+        <span className="text-xs font-bold tabular-nums text-violet-300">01</span>
+        <span className="ml-2 inline-flex items-center rounded-full bg-violet-100 px-3 py-1 text-[11px] font-semibold tracking-[0.15em] text-violet-600">
           STYLE
         </span>
         <h2 className="mt-4 text-lg font-bold leading-snug text-black">
@@ -487,7 +880,8 @@ export default function DetailPage() {
 
       {/* Chapter: 컬러 */}
       <Container id="section-color" maxWidth="max-w-3xl" className="mt-14 scroll-mt-20">
-        <span className="inline-flex items-center rounded-full bg-violet-100 px-3 py-1 text-[11px] font-semibold tracking-[0.15em] text-violet-600">
+        <span className="text-xs font-bold tabular-nums text-violet-300">02</span>
+        <span className="ml-2 inline-flex items-center rounded-full bg-violet-100 px-3 py-1 text-[11px] font-semibold tracking-[0.15em] text-violet-600">
           COLOR
         </span>
         <h2 className="mt-4 whitespace-pre-line text-lg font-bold leading-snug text-black">
@@ -531,7 +925,8 @@ export default function DetailPage() {
 
       {/* Chapter: 메이크업 */}
       <Container id="section-makeup" maxWidth="max-w-3xl" className="mt-14 scroll-mt-20">
-        <span className="inline-flex items-center rounded-full bg-violet-100 px-3 py-1 text-[11px] font-semibold tracking-[0.15em] text-violet-600">
+        <span className="text-xs font-bold tabular-nums text-violet-300">03</span>
+        <span className="ml-2 inline-flex items-center rounded-full bg-violet-100 px-3 py-1 text-[11px] font-semibold tracking-[0.15em] text-violet-600">
           MAKEUP
         </span>
         <h2 className="mt-4 whitespace-pre-line text-lg font-bold leading-snug text-black">
@@ -575,7 +970,8 @@ export default function DetailPage() {
 
       {/* Chapter: 헤어 */}
       <Container id="section-hair" maxWidth="max-w-3xl" className="mt-14 scroll-mt-20">
-        <span className="inline-flex items-center rounded-full bg-violet-100 px-3 py-1 text-[11px] font-semibold tracking-[0.15em] text-violet-600">
+        <span className="text-xs font-bold tabular-nums text-violet-300">04</span>
+        <span className="ml-2 inline-flex items-center rounded-full bg-violet-100 px-3 py-1 text-[11px] font-semibold tracking-[0.15em] text-violet-600">
           HAIR
         </span>
         <h2 className="mt-4 whitespace-pre-line text-lg font-bold leading-snug text-black">
@@ -617,6 +1013,40 @@ export default function DetailPage() {
         )}
       </Container>
 
+      {/* Featured case studies */}
+      <Container maxWidth="max-w-3xl" className="mt-10">
+        <span className="inline-flex items-center rounded-full bg-violet-100 px-3 py-1 text-[11px] font-semibold tracking-[0.15em] text-violet-600">
+          CASE
+        </span>
+        <h2 className="mt-4 text-lg font-bold leading-snug text-black">
+          이렇게 달라졌어요
+        </h2>
+
+        <div className="mt-6 flex flex-col gap-4">
+          {[reviews[0], reviews[3], reviews[6]].map((review, index) => (
+            <div
+              key={review.name}
+              className="rounded-2xl border border-violet-100 bg-white p-6 shadow-sm shadow-violet-100/60"
+            >
+              <span className="text-xs font-semibold tracking-[0.1em] text-violet-400">
+                CASE {String(index + 1).padStart(2, "0")}
+              </span>
+              <p className="mt-3 whitespace-pre-line text-sm font-semibold leading-relaxed text-black">
+                &ldquo;{review.text}&rdquo;
+              </p>
+              <div className="mt-4 flex items-center justify-between">
+                <span className="text-xs font-semibold text-gray-500">
+                  {review.name}
+                </span>
+                <span className="text-sm tracking-wide text-violet-500">
+                  {review.stars}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Container>
+
       {/* Reviews */}
       <Container maxWidth="max-w-3xl" className="mt-10">
         <span className="inline-flex items-center rounded-full bg-violet-100 px-3 py-1 text-[11px] font-semibold tracking-[0.15em] text-violet-600">
@@ -648,6 +1078,78 @@ export default function DetailPage() {
               </p>
               <p className="mt-3 text-sm leading-relaxed text-gray-700">
                 {review.text}
+              </p>
+            </div>
+          ))}
+        </div>
+      </Container>
+
+      {/* FAQ */}
+      <Container maxWidth="max-w-3xl" className="mt-10">
+        <span className="inline-flex items-center rounded-full bg-violet-100 px-3 py-1 text-[11px] font-semibold tracking-[0.15em] text-violet-600">
+          FAQ
+        </span>
+        <h2 className="mt-4 text-lg font-bold leading-snug text-black">
+          자주 묻는 질문
+        </h2>
+
+        <div className="mt-6 flex flex-col gap-2.5">
+          {faqItems.map((item, index) => {
+            const isOpen = openFaq === index;
+            return (
+              <div
+                key={item.q}
+                className="rounded-2xl border border-violet-100 bg-white px-5 py-4 shadow-sm shadow-violet-100/60"
+              >
+                <button
+                  type="button"
+                  onClick={() => setOpenFaq(isOpen ? null : index)}
+                  className="flex w-full items-center justify-between gap-3 text-left text-sm font-semibold text-black"
+                >
+                  <span>Q. {item.q}</span>
+                  <span className="shrink-0 text-gray-400">{isOpen ? "−" : "+"}</span>
+                </button>
+                {isOpen && (
+                  <p className="mt-2.5 text-xs leading-relaxed text-gray-500">
+                    {item.a}
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </Container>
+
+      {/* 3-point feature highlight */}
+      <Container maxWidth="max-w-3xl" className="mt-10">
+        <div className="flex flex-col gap-3">
+          {[
+            {
+              point: "REASON 01",
+              title: "실제 사진 기반 개인화 분석",
+              body: "업로드한 사진과 답변을 바탕으로 매번 다르게 작성돼요. 같은 문장을 복사해서 붙여넣는 방식이 아니에요.",
+            },
+            {
+              point: "REASON 02",
+              title: "외모 점수화 없는 무드 분석",
+              body: "점수나 등급, 단점 지적이 아니라 지금 이미지와 원하는 방향의 차이를 비교해서 방향을 제안해요.",
+            },
+            {
+              point: "REASON 03",
+              title: "평생 참고 가능한 상세 리포트",
+              body: "Basic 8개 챕터, Premium 17개 챕터로 구성되고, 미용실·쇼핑·사진 찍을 때마다 다시 꺼내볼 수 있어요.",
+            },
+          ].map((item) => (
+            <div
+              key={item.point}
+              className="rounded-2xl border border-violet-100 bg-white p-5 shadow-sm shadow-violet-100/60"
+            >
+              <span className="text-[11px] font-bold tracking-[0.15em] text-violet-400">
+                {item.point}
+              </span>
+              <p className="mt-2 text-sm font-bold text-black">{item.title}</p>
+              <p className="mt-1.5 text-xs leading-relaxed text-gray-500">
+                {item.body}
               </p>
             </div>
           ))}
@@ -719,8 +1221,14 @@ export default function DetailPage() {
       </Container>
 
       <Container className="mt-10 pb-8">
+        <p className="text-center text-lg font-bold leading-snug text-black">
+          더 이상 헤매지 않도록.
+          <br />
+          지금 이미지에서, 원하는 방향으로.
+        </p>
+
         {/* Disclaimer */}
-        <div className="rounded-3xl border border-violet-100 bg-violet-50/60 p-6 text-center">
+        <div className="mt-6 rounded-3xl border border-violet-100 bg-violet-50/60 p-6 text-center">
           <p className="text-sm font-semibold text-black">
             외모 평가는 하지 않습니다
           </p>
@@ -731,16 +1239,6 @@ export default function DetailPage() {
             카메라 보정에 따라 달라질 수 있어 확정 진단이 아닌 참고
             의견으로만 제공합니다.
           </p>
-        </div>
-
-        {/* CTA */}
-        <div className="mt-6">
-          <Link
-            href="/test"
-            className="flex w-full items-center justify-center rounded-full bg-black px-8 py-4 text-sm font-semibold text-white"
-          >
-            무료로 시작하기
-          </Link>
         </div>
       </Container>
 
@@ -760,6 +1258,21 @@ export default function DetailPage() {
           <span>개인정보 처리방침</span>
         </div>
       </footer>
+
+      {/* Sticky bottom CTA — stays visible while scrolling through the page */}
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-violet-100 bg-white/95 px-6 py-4 backdrop-blur">
+        <div className="mx-auto max-w-md">
+          <Link
+            href="/test"
+            className="flex w-full items-center justify-center rounded-full bg-black px-8 py-4 text-sm font-semibold text-white"
+          >
+            나의 추구미 무료 컨설팅 받기
+          </Link>
+          <p className="mt-2 text-center text-xs text-gray-400">
+            무료 미리보기로 먼저 확인할 수 있어요.
+          </p>
+        </div>
+      </div>
     </main>
   );
 }
