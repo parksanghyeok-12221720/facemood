@@ -15,6 +15,8 @@ export type ReportRecord = {
   phone: string | null;
   reportSentAt: string | null;
   tier: ReportTier | null;
+  bundleMatchCode: string | null;
+  bundleMatchRedeemedMatchReportId: string | null;
   createdAt: string;
 };
 
@@ -32,6 +34,8 @@ type ReportRow = {
   phone: string | null;
   report_sent_at: string | null;
   tier: string | null;
+  bundle_match_code: string | null;
+  bundle_match_redeemed_match_report_id: string | null;
   created_at: string;
 };
 
@@ -46,6 +50,8 @@ function rowToRecord(row: ReportRow): ReportRecord {
     phone: row.phone,
     reportSentAt: row.report_sent_at,
     tier: row.tier === "premium" ? "premium" : row.tier === "basic" ? "basic" : null,
+    bundleMatchCode: row.bundle_match_code,
+    bundleMatchRedeemedMatchReportId: row.bundle_match_redeemed_match_report_id,
     createdAt: row.created_at,
   };
 }
@@ -110,6 +116,40 @@ export function setCheckoutPassword(
   return result.changes > 0;
 }
 
+function generateBundleMatchCode(): string {
+  return crypto.randomBytes(4).toString("hex").toUpperCase();
+}
+
+// Called once, right after a "Premium + Match" bundle payment is confirmed
+// — generates and stores a one-time redemption code for a free FACEMOOD
+// Match report. Delivered to the customer via the report-ready SMS (see
+// lib/notify.ts) and redeemed on /match/checkout (see redeemBundleMatchCredit).
+export function grantBundleMatchCredit(id: string): string {
+  const code = generateBundleMatchCode();
+  db.prepare(`UPDATE reports SET bundle_match_code = ? WHERE id = ?`).run(
+    code,
+    id,
+  );
+  return code;
+}
+
+// Consumes a Premium+Match bundle's "one free FACEMOOD Match report" credit
+// against a specific (unpaid) match_reports.id — one-time use, enforced by
+// only succeeding while bundle_match_redeemed_match_report_id is still NULL.
+export function redeemBundleMatchCredit(
+  code: string,
+  matchReportId: string,
+): boolean {
+  const result = db
+    .prepare(
+      `UPDATE reports
+       SET bundle_match_redeemed_match_report_id = ?
+       WHERE bundle_match_code = ? AND bundle_match_redeemed_match_report_id IS NULL`,
+    )
+    .run(matchReportId, code.trim().toUpperCase());
+  return result.changes > 0;
+}
+
 export type PaidReportSummary = {
   id: string;
   name: string | null;
@@ -119,6 +159,7 @@ export type PaidReportSummary = {
   phone: string | null;
   amount: number | null;
   tier: ReportTier | null;
+  bundleMatchCode: string | null;
   paidAt: string | null;
   reportSentAt: string | null;
   createdAt: string;
@@ -130,6 +171,7 @@ type PaidReportRow = {
   amount: number | null;
   phone: string | null;
   tier: string | null;
+  bundle_match_code: string | null;
   paid_at: string | null;
   report_sent_at: string | null;
   created_at: string;
@@ -138,7 +180,7 @@ type PaidReportRow = {
 export function listPaidReports(): PaidReportSummary[] {
   const rows = db
     .prepare(
-      `SELECT id, answers, amount, phone, tier, paid_at, report_sent_at, created_at
+      `SELECT id, answers, amount, phone, tier, bundle_match_code, paid_at, report_sent_at, created_at
        FROM reports WHERE paid = 1 ORDER BY paid_at DESC`,
     )
     .all() as PaidReportRow[];
@@ -175,6 +217,7 @@ export function listPaidReports(): PaidReportSummary[] {
       phone: row.phone,
       amount: row.amount,
       tier: row.tier === "premium" ? "premium" : row.tier === "basic" ? "basic" : null,
+      bundleMatchCode: row.bundle_match_code,
       paidAt: row.paid_at,
       reportSentAt: row.report_sent_at,
       createdAt: row.created_at,

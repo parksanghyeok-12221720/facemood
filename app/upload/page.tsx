@@ -13,11 +13,11 @@ function PhotoPolicyModal({ onClose }: { onClose: () => void }) {
       onClick={onClose}
     >
       <div
-        className="flex max-h-[85vh] w-full max-w-md flex-col rounded-t-3xl bg-neutral-900 sm:rounded-3xl"
+        className="flex max-h-[85vh] w-full max-w-md flex-col rounded-t-3xl bg-white sm:rounded-3xl"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
-          <h2 className="text-sm font-bold text-white">사진 처리방침</h2>
+        <div className="flex items-center justify-between border-b border-violet-100 px-6 py-4">
+          <h2 className="text-sm font-bold text-black">사진 처리방침</h2>
           <button
             type="button"
             onClick={onClose}
@@ -28,7 +28,7 @@ function PhotoPolicyModal({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-5 text-xs leading-relaxed text-gray-300">
+        <div className="flex-1 overflow-y-auto px-6 py-5 text-xs leading-relaxed text-gray-600">
           <p>
             업로드한 사진은 FACEMOOD 이미지 무드 분석 리포트 생성을 위해서만
             사용됩니다.
@@ -53,11 +53,11 @@ function PhotoPolicyModal({ onClose }: { onClose: () => void }) {
           </p>
         </div>
 
-        <div className="border-t border-white/10 px-6 py-4">
+        <div className="border-t border-violet-100 px-6 py-4">
           <button
             type="button"
             onClick={onClose}
-            className="flex w-full items-center justify-center rounded-full bg-white px-8 py-3.5 text-sm font-semibold text-black"
+            className="flex w-full items-center justify-center rounded-full bg-black px-8 py-3.5 text-sm font-semibold text-white"
           >
             확인했습니다
           </button>
@@ -251,15 +251,15 @@ export default function UploadPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col justify-center py-16">
+    <main className="flex min-h-screen flex-col justify-center bg-white py-16 text-black">
       <Container>
-        <h1 className="text-xl font-semibold text-white">
+        <h1 className="text-xl font-bold text-black">
           사진을 업로드해주세요
         </h1>
-        <p className="mt-4 text-sm leading-relaxed text-gray-400">
+        <p className="mt-4 text-sm leading-relaxed text-gray-500">
           정확한 평가가 아니라, 현재 이미지 분위기를 참고하기 위한 사진입니다.
         </p>
-        <p className="mt-2 text-sm leading-relaxed text-gray-500">
+        <p className="mt-2 text-sm leading-relaxed text-gray-400">
           정면 셀카, 자연광 사진, 평소 스타일 사진을 추천해요.
         </p>
 
@@ -267,7 +267,7 @@ export default function UploadPage() {
           {photos.map((photo, index) => (
             <div
               key={photo.url}
-              className="relative aspect-square overflow-hidden rounded-xl border border-white/10"
+              className="relative aspect-square overflow-hidden rounded-xl border border-violet-100"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -287,7 +287,7 @@ export default function UploadPage() {
           ))}
 
           {photos.length < MAX_PHOTOS && (
-            <label className="flex aspect-square cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-white/20 text-xs text-gray-500 transition-colors hover:border-white/40">
+            <label className="flex aspect-square cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-violet-200 bg-white text-xs text-gray-400 transition-colors hover:border-violet-400">
               <span className="text-2xl">+</span>
               <span className="mt-1">
                 {photos.length}/{MAX_PHOTOS}
@@ -304,11 +304,11 @@ export default function UploadPage() {
           )}
         </div>
 
-        <p className="mt-6 text-xs text-gray-600">
+        <p className="mt-6 text-xs text-gray-400">
           사진은 외모 점수화에 사용되지 않습니다.
         </p>
 
-        <div className="mt-6 flex items-start gap-2.5 text-xs leading-relaxed text-gray-400">
+        <div className="mt-6 flex items-start gap-2.5 text-xs leading-relaxed text-gray-500">
           <input
             id="photo-consent"
             type="checkbox"
@@ -318,7 +318,7 @@ export default function UploadPage() {
               if (event.target.checked) setConsentError("");
             }}
             disabled={isAnalyzing}
-            className="mt-0.5 h-4 w-4 shrink-0 rounded border-white/20 bg-transparent accent-violet-400"
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-violet-200 bg-white accent-violet-600"
           />
           <label htmlFor="photo-consent" className="flex-1">
             (필수) 사진 처리방침에 동의합니다. 업로드한 사진은 이미지 분석
@@ -326,14 +326,14 @@ export default function UploadPage() {
             <button
               type="button"
               onClick={() => setShowPhotoPolicy(true)}
-              className="font-semibold text-violet-300 underline underline-offset-2"
+              className="font-semibold text-violet-600 underline underline-offset-2"
             >
               자세히 보기
             </button>
           </label>
         </div>
         {consentError && (
-          <p className="mt-2 text-xs text-red-400">{consentError}</p>
+          <p className="mt-2 text-xs text-red-500">{consentError}</p>
         )}
 
         <div className="mt-8">
@@ -353,7 +353,7 @@ export default function UploadPage() {
               사진 없이 결과 보기
             </Button>
           </div>
-          <p className="mt-2 text-center text-xs text-gray-600">
+          <p className="mt-2 text-center text-xs text-gray-400">
             사진 없이 진행 시, 답변 기반으로만 분석되어 정확도가 낮아질 수 있어요.
           </p>
         </div>

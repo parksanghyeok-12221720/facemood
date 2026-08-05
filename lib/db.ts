@@ -47,6 +47,11 @@ for (const [column, ddl] of [
   ["phone", "ALTER TABLE reports ADD COLUMN phone TEXT"],
   ["report_sent_at", "ALTER TABLE reports ADD COLUMN report_sent_at TEXT"],
   ["tier", "ALTER TABLE reports ADD COLUMN tier TEXT"],
+  ["bundle_match_code", "ALTER TABLE reports ADD COLUMN bundle_match_code TEXT"],
+  [
+    "bundle_match_redeemed_match_report_id",
+    "ALTER TABLE reports ADD COLUMN bundle_match_redeemed_match_report_id TEXT",
+  ],
 ] as const) {
   if (!existingColumns.has(column)) {
     db.exec(ddl);
@@ -73,5 +78,22 @@ db.exec(`
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   )
 `);
+
+// Same lightweight migration pattern as reports above — adds the
+// redemption-code column for existing databases created before it existed.
+const existingMatchColumns = new Set(
+  (
+    db.prepare(`PRAGMA table_info(match_reports)`).all() as {
+      name: string;
+    }[]
+  ).map((col) => col.name),
+);
+for (const [column, ddl] of [
+  ["bundle_code", "ALTER TABLE match_reports ADD COLUMN bundle_code TEXT"],
+] as const) {
+  if (!existingMatchColumns.has(column)) {
+    db.exec(ddl);
+  }
+}
 
 export default db;

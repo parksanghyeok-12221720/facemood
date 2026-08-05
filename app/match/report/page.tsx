@@ -381,6 +381,9 @@ export default function MatchReportPage() {
       className="min-h-screen pb-24"
       style={
         {
+          // Kept in sync with /match/result's palette (see comment there) —
+          // both pages render the same MatchReportBody, so their CSS vars
+          // must match or the paid page would look inconsistent.
           "--match-ivory": "#F7F3EC",
           "--match-ink": "#2B2620",
           "--match-ink-soft": "#8A8580",

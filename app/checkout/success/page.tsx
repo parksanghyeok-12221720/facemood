@@ -32,8 +32,11 @@ export default function CheckoutSuccessPage() {
       const amount = params.get("amount");
       const password = sessionStorage.getItem(PENDING_PASSWORD_KEY);
       const phone = sessionStorage.getItem(PENDING_PHONE_KEY);
+      const pendingTier = sessionStorage.getItem(PENDING_TIER_KEY);
       const tier =
-        sessionStorage.getItem(PENDING_TIER_KEY) === "basic" ? "basic" : "premium";
+        pendingTier === "basic" || pendingTier === "premiumMatch"
+          ? pendingTier
+          : "premium";
 
       if (!paymentKey || !orderId || !amount || !password) {
         if (!cancelled) {

@@ -15,6 +15,7 @@ export type MatchReportRecord = {
   phone: string | null;
   bundle: boolean;
   bundleRedeemedReportId: string | null;
+  bundleCode: string | null;
   reportSentAt: string | null;
   createdAt: string;
 };
@@ -34,6 +35,7 @@ type MatchReportRow = {
   phone: string | null;
   bundle: number;
   bundle_redeemed_report_id: string | null;
+  bundle_code: string | null;
   report_sent_at: string | null;
   created_at: string;
 };
@@ -51,6 +53,7 @@ function rowToRecord(row: MatchReportRow): MatchReportRecord {
     phone: row.phone,
     bundle: row.bundle === 1,
     bundleRedeemedReportId: row.bundle_redeemed_report_id,
+    bundleCode: row.bundle_code,
     reportSentAt: row.report_sent_at,
     createdAt: row.created_at,
   };
@@ -123,6 +126,40 @@ export function redeemMatchBundleCredit(
        WHERE id = ? AND paid = 1 AND bundle = 1 AND bundle_redeemed_report_id IS NULL`,
     )
     .run(targetReportId, matchReportId);
+  return result.changes > 0;
+}
+
+function generateBundleCode(): string {
+  return crypto.randomBytes(4).toString("hex").toUpperCase();
+}
+
+// Called once, right after a Match+Premium bundle payment is confirmed —
+// generates and stores a one-time redemption code for the free FACEMOOD
+// Premium report credit. Delivered via the report-ready SMS (lib/notify.ts)
+// and redeemed on /checkout (see redeemMatchBundleCreditByCode).
+export function grantBundleCode(id: string): string {
+  const code = generateBundleCode();
+  db.prepare(`UPDATE match_reports SET bundle_code = ? WHERE id = ?`).run(
+    code,
+    id,
+  );
+  return code;
+}
+
+// Same credit as redeemMatchBundleCredit, but looked up by the short code
+// instead of the match_reports.id — for redeeming on a different device
+// than the one that made the purchase.
+export function redeemMatchBundleCreditByCode(
+  code: string,
+  targetReportId: string,
+): boolean {
+  const result = db
+    .prepare(
+      `UPDATE match_reports
+       SET bundle_redeemed_report_id = ?
+       WHERE bundle_code = ? AND paid = 1 AND bundle = 1 AND bundle_redeemed_report_id IS NULL`,
+    )
+    .run(targetReportId, code.trim().toUpperCase());
   return result.changes > 0;
 }
 

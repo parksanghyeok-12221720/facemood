@@ -33,7 +33,7 @@ export default function Home() {
         </p>
 
         {/* Hero card */}
-        <div className="relative mt-4 aspect-[4/5] w-full overflow-hidden rounded-3xl">
+        <div className="relative mt-4 aspect-[1434/1097] w-full overflow-hidden rounded-3xl">
           <Image
             src="/home-hero.png"
             alt=""

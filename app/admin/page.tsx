@@ -171,7 +171,11 @@ export default async function AdminPage() {
                     {formatBodyInfo(report.age, report.height, report.weight)}
                   </td>
                   <td className="px-4 py-3">
-                    {report.tier === "premium" ? (
+                    {report.bundleMatchCode ? (
+                      <span className="rounded-full bg-fuchsia-500/20 px-2 py-0.5 text-[11px] font-semibold text-fuchsia-300">
+                        프리미엄+Match
+                      </span>
+                    ) : report.tier === "premium" ? (
                       <span className="rounded-full bg-violet-500/20 px-2 py-0.5 text-[11px] font-semibold text-violet-300">
                         프리미엄
                       </span>

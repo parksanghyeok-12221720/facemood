@@ -1,21 +1,47 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Container from "@/app/components/Container";
 
-type Question = {
+type SelectStep = {
+  type: "select";
   key: string;
   title: string;
   options: string[];
 };
 
+type PhotoOption = {
+  key: string;
+  title: string;
+  subtitle: string;
+  photo: string;
+};
+
+type PhotoStep = {
+  type: "photo";
+  key: string;
+  title: string;
+  subtitle: string;
+  options: PhotoOption[];
+  maxSelect: number;
+  recommendLabel: string;
+  recommendSubtitle: string;
+  celebrityLabel: string;
+  celebritySubtitle: string;
+  celebrityPlaceholder: string;
+};
+
+type Step = SelectStep | PhotoStep;
+
 const genderOptions = ["여성", "남성"];
 
-const questions: Question[] = [
+const steps: Step[] = [
   {
+    type: "select",
     key: "moodDirection",
-    title: "원하는 추구미는 어떤 쪽에 가까워요?",
+    title: "현재 당신의 스타일은 무엇인가요?",
     options: [
       "청순하고 자연스러운 무드",
       "고급스럽고 도시적인 무드",
@@ -26,87 +52,57 @@ const questions: Question[] = [
     ],
   },
   {
-    key: "wantToChange",
-    title: "지금 내 이미지에서 가장 바꾸고 싶은 부분은 무엇인가요?",
+    type: "photo",
+    key: "preferredStyle",
+    title: "선호하는 스타일이 있으신가요?",
+    subtitle: "최대 3개까지 고를 수 있어요.",
+    maxSelect: 3,
+    recommendLabel: "아직 잘 모르겠어요. 추천해 주세요!",
+    recommendSubtitle: "전문가가 회원님께 가장 잘 어울리는 무드를 찾아드릴게요",
+    celebrityLabel: "닮고 싶은 연예인이 있다면 입력해주세요",
+    celebritySubtitle: "스타일 무드 분석에 꼼꼼히 참고할게요",
+    celebrityPlaceholder: "예) 장원영, 카리나, 한소희, 고윤정, 아이유 등",
     options: [
-      "전체 분위기가 애매해 보여요",
-      "사진마다 이미지가 달라 보여요",
-      "옷이 나한테 잘 맞는지 모르겠어요",
-      "메이크업이 어울리는지 모르겠어요",
-      "헤어스타일이 고민이에요",
-      "색감 선택이 어려워요",
+      {
+        key: "lovely",
+        title: "러블리",
+        subtitle: "사랑스럽고 부드러운 무드",
+        photo: "/test-style/lovely.png",
+      },
+      {
+        key: "playful",
+        title: "발랄함",
+        subtitle: "밝고 생기있는 무드",
+        photo: "/test-style/playful.png",
+      },
+      {
+        key: "luxury",
+        title: "고급스러움",
+        subtitle: "우아하고 성숙한 무드",
+        photo: "/test-style/luxury.png",
+      },
+      {
+        key: "chic",
+        title: "시크",
+        subtitle: "세련되고 도시적인 무드",
+        photo: "/test-style/chic.png",
+      },
+      {
+        key: "pure",
+        title: "청순",
+        subtitle: "맑고 자연스러운 무드",
+        photo: "/test-style/pure.png",
+      },
+      {
+        key: "daily",
+        title: "데일리",
+        subtitle: "편안하고 무난한 무드",
+        photo: "/test-style/daily.png",
+      },
     ],
   },
   {
-    key: "usualStyle",
-    title: "평소 스타일은 어떤 편인가요?",
-    options: [
-      "편한 캐주얼을 자주 입어요",
-      "여성스럽고 단정한 스타일이 좋아요",
-      "미니멀하고 깔끔한 스타일이 좋아요",
-      "꾸민 느낌이 확실한 스타일이 좋아요",
-      "아직 제 스타일을 잘 모르겠어요",
-    ],
-  },
-  {
-    key: "colorUsual",
-    title: "평소 자주 입는 색감은 어떤 쪽인가요?",
-    options: [
-      "블랙/화이트/그레이",
-      "베이지/브라운/아이보리",
-      "핑크/라벤더/하늘색",
-      "네이비/버건디/카키",
-      "색을 잘 모르고 그냥 입어요",
-    ],
-  },
-  {
-    key: "personality",
-    title: "평소 성격은 어떤 편인가요?",
-    options: [
-      "활발하고 에너지 넘치는 편이에요",
-      "차분하고 조용한 편이에요",
-      "여성스럽고 부드러운 편이에요",
-      "털털하고 편안한 편이에요",
-      "신중하고 세심한 편이에요",
-      "그때그때 달라요",
-    ],
-  },
-  {
-    key: "colorMood",
-    title: "원하는 컬러 분위기는 어떤 쪽인가요?",
-    options: [
-      "맑고 깨끗한 느낌",
-      "부드럽고 여리한 느낌",
-      "고급스럽고 차분한 느낌",
-      "시크하고 선명한 느낌",
-      "러블리하고 화사한 느낌",
-    ],
-  },
-  {
-    key: "makeupLevel",
-    title: "메이크업은 평소 어느 정도로 하나요?",
-    options: [
-      "거의 안 하는 편이에요",
-      "베이스와 립 정도만 해요",
-      "데일리 메이크업은 하는 편이에요",
-      "눈화장까지 신경 쓰는 편이에요",
-      "분위기에 따라 진하게도 해요",
-      "메이크업을 잘 몰라서 추천받고 싶어요",
-    ],
-  },
-  {
-    key: "hairConcern",
-    title: "헤어스타일에서 가장 고민되는 부분은 무엇인가요?",
-    options: [
-      "앞머리를 낼지 말지 고민돼요",
-      "머리 길이가 고민돼요",
-      "펌을 해야 할지 모르겠어요",
-      "염색 컬러가 고민돼요",
-      "머리가 너무 평범해 보여요",
-      "손질이 쉬운 스타일을 원해요",
-    ],
-  },
-  {
+    type: "select",
     key: "purpose",
     title: "분석 목적은 무엇인가요?",
     options: [
@@ -119,12 +115,29 @@ const questions: Question[] = [
   },
 ];
 
-const TOTAL_STEPS = questions.length + 1;
+const TOTAL_STEPS = steps.length + 1;
+
+function ChevronLeftIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M15 5l-7 7 7 7"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 export default function TestPage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
+  const [wantsRecommendation, setWantsRecommendation] = useState(false);
+  const [celebrityInput, setCelebrityInput] = useState("");
 
   const [name, setName] = useState("");
   const [gender, setGender] = useState("");
@@ -133,7 +146,7 @@ export default function TestPage() {
   const [weight, setWeight] = useState("");
 
   const isProfileStep = step === 0;
-  const question = !isProfileStep ? questions[step - 1] : undefined;
+  const currentStep = !isProfileStep ? steps[step - 1] : undefined;
   const canSubmitProfile =
     name.trim() !== "" &&
     gender !== "" &&
@@ -141,29 +154,74 @@ export default function TestPage() {
     height.trim() !== "" &&
     weight.trim() !== "";
 
+  function handleBack() {
+    if (step === 0) {
+      router.back();
+      return;
+    }
+    setSelectedPhotos([]);
+    setWantsRecommendation(false);
+    setCelebrityInput("");
+    setStep(step - 1);
+  }
+
   function handleProfileNext() {
     setStep(step + 1);
   }
 
-  function handleSelect(option: string) {
-    if (!question) return;
-    const nextAnswers = { ...answers, [question.key]: option };
+  function finalize(nextAnswers: Record<string, string>) {
+    const result = { name, gender, age, height, weight, ...nextAnswers };
+    localStorage.setItem("facemood_test_answers", JSON.stringify(result));
+    router.push("/upload");
+  }
+
+  function commitAnswers(fragment: Record<string, string>) {
+    const nextAnswers = { ...answers, ...fragment };
     setAnswers(nextAnswers);
+    setSelectedPhotos([]);
+    setWantsRecommendation(false);
+    setCelebrityInput("");
 
     if (step + 1 < TOTAL_STEPS) {
       setStep(step + 1);
     } else {
-      const result = {
-        name,
-        gender,
-        age,
-        height,
-        weight,
-        ...nextAnswers,
-      };
-      localStorage.setItem("facemood_test_answers", JSON.stringify(result));
-      router.push("/upload");
+      finalize(nextAnswers);
     }
+  }
+
+  function commitAnswer(key: string, value: string) {
+    commitAnswers({ [key]: value });
+  }
+
+  function togglePhoto(optionKey: string, maxSelect: number) {
+    setWantsRecommendation(false);
+    setSelectedPhotos((prev) => {
+      if (prev.includes(optionKey)) {
+        return prev.filter((k) => k !== optionKey);
+      }
+      if (prev.length >= maxSelect) return prev;
+      return [...prev, optionKey];
+    });
+  }
+
+  function toggleRecommendation() {
+    setSelectedPhotos([]);
+    setWantsRecommendation((prev) => !prev);
+  }
+
+  function handlePhotoNext(photoStep: PhotoStep) {
+    const styleValue = wantsRecommendation
+      ? "아직 잘 모르겠어요 (전문가 추천 요청)"
+      : photoStep.options
+          .filter((option) => selectedPhotos.includes(option.key))
+          .map((option) => option.title)
+          .join(", ");
+
+    const fragment: Record<string, string> = { [photoStep.key]: styleValue };
+    if (celebrityInput.trim() !== "") {
+      fragment.celebrityReference = celebrityInput.trim();
+    }
+    commitAnswers(fragment);
   }
 
   const inputClass =
@@ -173,10 +231,21 @@ export default function TestPage() {
     <main className="flex min-h-screen flex-col justify-center bg-white py-16 text-black">
       <Container>
         <div>
-          <p className="mb-2 text-xs text-gray-400">
-            {step + 1} / {TOTAL_STEPS}
-          </p>
-          <div className="h-1 w-full overflow-hidden rounded-full bg-violet-100">
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onClick={handleBack}
+              aria-label="뒤로"
+              className="flex h-8 w-8 items-center justify-center text-gray-400"
+            >
+              <ChevronLeftIcon />
+            </button>
+            <p className="text-xs text-gray-400">
+              {step + 1} / {TOTAL_STEPS}
+            </p>
+            <span className="h-8 w-8" />
+          </div>
+          <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-violet-100">
             <div
               className="h-full rounded-full bg-black transition-all duration-300"
               style={{ width: `${((step + 1) / TOTAL_STEPS) * 100}%` }}
@@ -289,24 +358,138 @@ export default function TestPage() {
             </div>
           </>
         ) : (
-          question && (
+          currentStep && (
             <>
               <h1 className="mt-10 text-xl font-bold leading-snug text-black">
-                {question.title}
+                {currentStep.title}
               </h1>
 
-              <div className="mt-8 flex flex-col gap-3">
-                {question.options.map((option) => (
+              {currentStep.type === "photo" && (
+                <p className="mt-2 text-xs text-gray-400">
+                  {currentStep.subtitle}
+                </p>
+              )}
+
+              {currentStep.type === "select" ? (
+                <div className="mt-8 flex flex-col gap-3">
+                  {currentStep.options.map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => commitAnswer(currentStep.key, option)}
+                      className="w-full rounded-2xl border border-violet-100 bg-white px-5 py-4 text-left text-sm text-gray-700 transition-colors hover:border-violet-300 hover:bg-violet-50"
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <>
+                  <div className="mt-6 grid grid-cols-2 gap-3">
+                    {currentStep.options.map((option) => {
+                      const selected = selectedPhotos.includes(option.key);
+                      return (
+                        <button
+                          key={option.key}
+                          type="button"
+                          onClick={() => togglePhoto(option.key, currentStep.maxSelect)}
+                          className={`relative overflow-hidden rounded-2xl border transition-colors ${
+                            selected ? "border-violet-500" : "border-violet-100"
+                          }`}
+                        >
+                          <div className="relative aspect-[1122/1402] w-full">
+                            <Image
+                              src={option.photo}
+                              alt={option.title}
+                              fill
+                              sizes="180px"
+                              className="object-cover"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/5 to-transparent" />
+                            <span
+                              className={`absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full border text-[10px] font-bold ${
+                                selected
+                                  ? "border-violet-500 bg-violet-500 text-white"
+                                  : "border-white/70 bg-white/20 text-transparent"
+                              }`}
+                            >
+                              ✓
+                            </span>
+                          </div>
+                          <div className="absolute inset-x-0 bottom-0 p-3 text-left">
+                            <p className="text-sm font-bold text-white">
+                              {option.title}
+                            </p>
+                            <p className="mt-0.5 text-[11px] text-white/75">
+                              {option.subtitle}
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
                   <button
-                    key={option}
                     type="button"
-                    onClick={() => handleSelect(option)}
-                    className="w-full rounded-2xl border border-violet-100 bg-white px-5 py-4 text-left text-sm text-gray-700 transition-colors hover:border-violet-300 hover:bg-violet-50"
+                    onClick={toggleRecommendation}
+                    className={`mt-4 flex w-full items-center gap-3 rounded-2xl border px-5 py-4 text-left transition-colors ${
+                      wantsRecommendation
+                        ? "border-violet-500 bg-violet-50"
+                        : "border-violet-100 bg-white hover:border-violet-300"
+                    }`}
                   >
-                    {option}
+                    <span
+                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px] font-bold ${
+                        wantsRecommendation
+                          ? "border-violet-500 bg-violet-500 text-white"
+                          : "border-violet-200 text-transparent"
+                      }`}
+                    >
+                      ✓
+                    </span>
+                    <span>
+                      <span className="block text-sm font-bold text-black">
+                        {currentStep.recommendLabel}
+                      </span>
+                      <span className="mt-0.5 block text-xs text-gray-400">
+                        {currentStep.recommendSubtitle}
+                      </span>
+                    </span>
                   </button>
-                ))}
-              </div>
+
+                  <div className="mt-4 rounded-2xl border border-violet-100 bg-white px-5 py-4">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm font-bold text-black">
+                        {currentStep.celebrityLabel}
+                      </span>
+                      <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-semibold text-violet-600">
+                        선택
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-gray-400">
+                      {currentStep.celebritySubtitle}
+                    </p>
+                    <input
+                      type="text"
+                      value={celebrityInput}
+                      onChange={(e) => setCelebrityInput(e.target.value)}
+                      placeholder={currentStep.celebrityPlaceholder}
+                      className="mt-3 w-full rounded-xl border border-violet-100 bg-white px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none focus:border-violet-300"
+                    />
+                  </div>
+
+                  <div className="mt-6">
+                    <button
+                      type="button"
+                      onClick={() => handlePhotoNext(currentStep)}
+                      disabled={selectedPhotos.length === 0 && !wantsRecommendation}
+                      className="flex w-full items-center justify-center rounded-full bg-black px-8 py-4 text-sm font-semibold text-white transition-opacity disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
+                    >
+                      다음
+                    </button>
+                  </div>
+                </>
+              )}
             </>
           )
         )}

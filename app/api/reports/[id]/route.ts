@@ -55,7 +55,12 @@ export async function PATCH(
 
     if (before && !before.fullReport && before.phone) {
       const reportUrl = `${resolveSiteOrigin(request)}/report?id=${id}`;
-      sendReportReadySms(before.phone, reportUrl)
+      sendReportReadySms(
+        before.phone,
+        reportUrl,
+        before.bundleMatchCode,
+        "FACEMOOD Match 무료 이용",
+      )
         .then(() => markReportSent(id))
         .catch((error) => console.error("sendReportReadySms failed", error));
     }

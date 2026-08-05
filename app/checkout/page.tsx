@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import Image from "next/image";
 import { ANONYMOUS, loadTossPayments } from "@tosspayments/tosspayments-sdk";
 import type { TossPaymentsWidgets } from "@tosspayments/tosspayments-sdk";
 import Container from "@/app/components/Container";
@@ -23,12 +24,16 @@ function getServerSnapshot() {
   return null;
 }
 
-type Tier = "basic" | "premium";
+type Tier = "basic" | "premium" | "premiumMatch";
 
 const BASIC_PRICE_KRW = 34900;
 const PREMIUM_PRICE_KRW = 49900;
+// Premium report + a free FACEMOOD Match redemption code (see
+// /api/payments/confirm and /api/payments/redeem-match-code).
+const PREMIUM_MATCH_PRICE_KRW = 59900;
 const BASIC_ORIGINAL_PRICE_KRW = 79800;
 const PREMIUM_ORIGINAL_PRICE_KRW = 129800;
+const PREMIUM_MATCH_ORIGINAL_PRICE_KRW = 169800;
 const BASIC_DISCOUNT_PERCENT = Math.round(
   ((BASIC_ORIGINAL_PRICE_KRW - BASIC_PRICE_KRW) / BASIC_ORIGINAL_PRICE_KRW) * 100,
 );
@@ -37,10 +42,32 @@ const BASIC_DISCOUNT_PERCENT = Math.round(
 const PREMIUM_DISCOUNT_PERCENT = Math.round(
   ((PREMIUM_ORIGINAL_PRICE_KRW - PREMIUM_PRICE_KRW) / PREMIUM_ORIGINAL_PRICE_KRW) * 100,
 );
+const PREMIUM_MATCH_DISCOUNT_PERCENT = Math.round(
+  ((PREMIUM_MATCH_ORIGINAL_PRICE_KRW - PREMIUM_MATCH_PRICE_KRW) /
+    PREMIUM_MATCH_ORIGINAL_PRICE_KRW) *
+    100,
+);
+
+const TIER_PRICE: Record<Tier, number> = {
+  basic: BASIC_PRICE_KRW,
+  premium: PREMIUM_PRICE_KRW,
+  premiumMatch: PREMIUM_MATCH_PRICE_KRW,
+};
+const TIER_ORIGINAL_PRICE: Record<Tier, number> = {
+  basic: BASIC_ORIGINAL_PRICE_KRW,
+  premium: PREMIUM_ORIGINAL_PRICE_KRW,
+  premiumMatch: PREMIUM_MATCH_ORIGINAL_PRICE_KRW,
+};
+const TIER_DISCOUNT_PERCENT: Record<Tier, number> = {
+  basic: BASIC_DISCOUNT_PERCENT,
+  premium: PREMIUM_DISCOUNT_PERCENT,
+  premiumMatch: PREMIUM_MATCH_DISCOUNT_PERCENT,
+};
 
 const TIER_LABEL: Record<Tier, string> = {
   basic: "Basic",
   premium: "Premium",
+  premiumMatch: "Premium + Match",
 };
 
 const phonePrefixOptions = ["010", "011", "016", "017", "018", "019"];
@@ -273,9 +300,14 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [widgetsReady, setWidgetsReady] = useState(false);
 
+  const [showCodeInput, setShowCodeInput] = useState(false);
+  const [redeemCodeInput, setRedeemCodeInput] = useState("");
+  const [codeError, setCodeError] = useState("");
+  const [isRedeemingCode, setIsRedeemingCode] = useState(false);
+
   const widgetsRef = useRef<TossPaymentsWidgets | null>(null);
   const phone = `${phonePrefix}-${phoneMiddle}-${phoneLast}`;
-  const tierPrice = tier === "premium" ? PREMIUM_PRICE_KRW : BASIC_PRICE_KRW;
+  const tierPrice = TIER_PRICE[tier];
   const chargeAmount = isTestPhone(phone) ? TEST_AMOUNT_KRW : tierPrice;
 
   useEffect(() => {
@@ -394,6 +426,56 @@ export default function CheckoutPage() {
     }
   }
 
+  // Redeems a Match+Premium bundle credit by its short code — for when the
+  // purchase happened on a different device than this one, so the
+  // automatic localStorage-based bundleId detection above doesn't apply.
+  async function redeemWithBundleCode() {
+    if (isRedeemingCode) return;
+
+    if (redeemCodeInput.trim().length === 0) {
+      setCodeError("코드를 입력해주세요.");
+      return;
+    }
+    if (password.length < 4) {
+      setCodeError("다시보기용 비밀번호를 4자 이상 입력해주세요.");
+      return;
+    }
+
+    const reportId = localStorage.getItem(REPORT_ID_KEY);
+    if (!reportId) {
+      setCodeError("리포트를 찾을 수 없습니다. 처음부터 다시 진행해주세요.");
+      return;
+    }
+
+    setCodeError("");
+    setIsRedeemingCode(true);
+
+    try {
+      const response = await fetch("/api/payments/redeem-bundle-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: redeemCodeInput.trim(),
+          targetReportId: reportId,
+          password,
+          phone: phoneMiddle && phoneLast ? phone : null,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error ?? "코드를 확인하지 못했습니다.");
+      }
+
+      localStorage.setItem("facemood_report_tier", "premium");
+      window.location.href = `/report?id=${reportId}`;
+    } catch (err) {
+      setCodeError(
+        err instanceof Error ? err.message : "코드 확인 중 오류가 발생했습니다.",
+      );
+      setIsRedeemingCode(false);
+    }
+  }
+
   function validate(): string | null {
     if (phoneMiddle.length < 3 || phoneLast.length !== 4) {
       return "리포트를 받을 연락처를 정확히 입력해주세요.";
@@ -446,7 +528,10 @@ export default function CheckoutPage() {
 
       await widgets.requestPayment({
         orderId: reportId,
-        orderName: `FACEMOOD ${TIER_LABEL[tier]} 리포트`,
+        orderName:
+          tier === "premiumMatch"
+            ? "FACEMOOD Premium + Match 번들"
+            : `FACEMOOD ${TIER_LABEL[tier]} 리포트`,
         customerMobilePhone: `${phonePrefix}${phoneMiddle}${phoneLast}`,
         successUrl: `${window.location.origin}/checkout/success`,
         failUrl: `${window.location.origin}/checkout/fail`,
@@ -517,13 +602,19 @@ export default function CheckoutPage() {
 
   return (
     <main className="min-h-screen bg-[#faf9f7] pb-24 text-black">
-      <div className="sticky top-0 z-10 border-b border-black/5 bg-white/90 backdrop-blur">
-        <Container className="flex items-center justify-center py-4">
-          <h1 className="text-sm font-bold tracking-[0.1em]">결제하기</h1>
-        </Container>
-      </div>
-
       <Container className="mt-6">
+        {/* Photo banner */}
+        <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl">
+          <Image
+            src="/checkout-banner/premium-style-report.png"
+            alt="FACEMOOD Premium Style Report"
+            fill
+            priority
+            sizes="(max-width: 480px) 100vw, 448px"
+            className="object-cover"
+          />
+        </div>
+
         {/* Promo banner */}
         <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 p-5 text-white shadow-lg shadow-violet-200">
           <p className="text-[11px] font-semibold tracking-wide text-violet-100">
@@ -534,7 +625,7 @@ export default function CheckoutPage() {
           </p>
           <span className="mt-3 inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold">
             오늘 결제 시{" "}
-            {tier === "premium" ? PREMIUM_DISCOUNT_PERCENT : BASIC_DISCOUNT_PERCENT}% 할인
+            {TIER_DISCOUNT_PERCENT[tier]}% 할인
           </span>
         </div>
 
@@ -604,6 +695,48 @@ export default function CheckoutPage() {
           />
         </section>
 
+        {/* Bundle credit code redemption */}
+        <section className="mt-6">
+          {!showCodeInput ? (
+            <button
+              type="button"
+              onClick={() => setShowCodeInput(true)}
+              className="text-xs font-semibold text-violet-600 underline underline-offset-2"
+            >
+              코드가 있으신가요?
+            </button>
+          ) : (
+            <div className="rounded-2xl border border-violet-100 bg-white p-5">
+              <p className="text-xs font-semibold tracking-[0.2em] text-violet-500">
+                무료 이용 코드 입력
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-gray-500">
+                FACEMOOD Match + Premium 번들 결제 시 문자로 받은 코드를
+                입력하면 결제 없이 바로 리포트를 받아보실 수 있어요.
+              </p>
+              <input
+                type="text"
+                value={redeemCodeInput}
+                onChange={(event) => setRedeemCodeInput(event.target.value)}
+                placeholder="코드 입력"
+                disabled={isRedeemingCode}
+                className="mt-3 w-full rounded-xl border border-violet-100 px-4 py-3 text-center text-sm uppercase text-black outline-none focus:border-violet-300"
+              />
+              {codeError && (
+                <p className="mt-2 text-xs text-red-500">{codeError}</p>
+              )}
+              <button
+                type="button"
+                onClick={redeemWithBundleCode}
+                disabled={isRedeemingCode}
+                className="mt-3 flex w-full items-center justify-center rounded-full bg-black px-8 py-3.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {isRedeemingCode ? "확인 중..." : "코드로 무료 확인하기"}
+              </button>
+            </div>
+          )}
+        </section>
+
         {/* Product selection */}
         <section className="mt-8">
           <p className="text-xs font-semibold tracking-[0.2em] text-violet-500">
@@ -666,6 +799,40 @@ export default function CheckoutPage() {
                 {PREMIUM_PRICE_KRW.toLocaleString()}원
               </p>
             </button>
+
+            <button
+              type="button"
+              onClick={() => setTier("premiumMatch")}
+              disabled={isSubmitting}
+              className={`rounded-2xl border-2 p-5 text-left transition-colors ${
+                tier === "premiumMatch"
+                  ? "border-violet-500 bg-violet-50/50"
+                  : "border-violet-100 bg-white"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center rounded-full bg-violet-600 px-2.5 py-1 text-[10px] font-bold text-white">
+                  BUNDLE
+                </span>
+                {tier === "premiumMatch" && (
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-500 text-[10px] font-bold text-white">
+                    ✓
+                  </span>
+                )}
+              </div>
+              <p className="mt-3 text-sm font-bold text-black">
+                Premium + FACEMOOD Match 번들
+              </p>
+              <p className="mt-1 text-xs text-gray-500">
+                Premium 리포트(17개 챕터) + 나와 상대방의 무드 궁합을 보는
+                FACEMOOD Match 무료 이용 코드까지 함께. 결제 완료 후 문자로
+                받는 코드를 Match 결제 화면에서 입력하면 무료로 이용할 수
+                있어요.
+              </p>
+              <p className="mt-3 text-xl font-extrabold text-black">
+                {PREMIUM_MATCH_PRICE_KRW.toLocaleString()}원
+              </p>
+            </button>
           </div>
         </section>
 
@@ -673,12 +840,12 @@ export default function CheckoutPage() {
         <section className="mt-8 rounded-2xl border border-violet-100 bg-white p-5">
           <PriceRow
             label="기준 가격"
-            value={`${(tier === "basic" ? BASIC_ORIGINAL_PRICE_KRW : PREMIUM_ORIGINAL_PRICE_KRW).toLocaleString()}원`}
+            value={`${TIER_ORIGINAL_PRICE[tier].toLocaleString()}원`}
             strike
           />
           <PriceRow
             label="얼리버드 특별 할인"
-            value={`-${tier === "basic" ? BASIC_DISCOUNT_PERCENT : PREMIUM_DISCOUNT_PERCENT}%`}
+            value={`-${TIER_DISCOUNT_PERCENT[tier]}%`}
             tone="accent"
           />
           <div className="my-2 border-t border-violet-100" />

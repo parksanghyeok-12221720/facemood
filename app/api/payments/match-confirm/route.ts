@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getMatchReport, setMatchCheckoutPassword } from "@/lib/matchReports";
+import {
+  getMatchReport,
+  grantBundleCode,
+  setMatchCheckoutPassword,
+} from "@/lib/matchReports";
 import { MATCH_BUNDLE_PRICE_KRW, MATCH_PRICE_KRW, confirmTossPayment } from "@/lib/payment";
 import { TEST_AMOUNT_KRW, isTestPhone } from "@/lib/testPayment";
 
@@ -80,6 +84,11 @@ export async function POST(request: NextRequest) {
     phone ?? null,
     bundle,
   );
+
+  if (bundle) {
+    const bundleCode = grantBundleCode(orderId);
+    return NextResponse.json({ ok: true, bundle, bundleCode });
+  }
 
   return NextResponse.json({ ok: true, bundle });
 }

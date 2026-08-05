@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getReport, setCheckoutPassword } from "@/lib/reports";
+import { getReport, grantBundleMatchCredit, setCheckoutPassword } from "@/lib/reports";
 import type { ReportTier } from "@/lib/reports";
-import { BASIC_PRICE_KRW, PREMIUM_PRICE_KRW, confirmTossPayment } from "@/lib/payment";
+import {
+  BASIC_PRICE_KRW,
+  PREMIUM_PRICE_KRW,
+  PREMIUM_MATCH_PRICE_KRW,
+  confirmTossPayment,
+} from "@/lib/payment";
 import { TEST_AMOUNT_KRW, isTestPhone } from "@/lib/testPayment";
 
 export const runtime = "nodejs";
@@ -28,6 +33,10 @@ export async function POST(request: NextRequest) {
   }
 
   const { paymentKey, orderId, amount, password, phone } = body;
+  // "premiumMatch" is a separate SKU (Premium report + a free FACEMOOD
+  // Match redemption code) but the report itself is always generated at
+  // premium depth — the bundle flag lives on bundle_match_code, not tier.
+  const isPremiumMatchBundle = body.tier === "premiumMatch";
   const tier: ReportTier = body.tier === "basic" ? "basic" : "premium";
 
   if (!paymentKey || !orderId || typeof amount !== "number" || !password) {
@@ -66,9 +75,11 @@ export async function POST(request: NextRequest) {
   const expectedAmount =
     phone && isTestPhone(phone)
       ? TEST_AMOUNT_KRW
-      : tier === "basic"
-        ? BASIC_PRICE_KRW
-        : PREMIUM_PRICE_KRW;
+      : isPremiumMatchBundle
+        ? PREMIUM_MATCH_PRICE_KRW
+        : tier === "basic"
+          ? BASIC_PRICE_KRW
+          : PREMIUM_PRICE_KRW;
   if (amount !== expectedAmount) {
     return NextResponse.json(
       { error: "결제 금액이 올바르지 않습니다." },
@@ -88,6 +99,11 @@ export async function POST(request: NextRequest) {
     phone ?? null,
     tier,
   );
+
+  if (isPremiumMatchBundle) {
+    const bundleMatchCode = grantBundleMatchCredit(orderId);
+    return NextResponse.json({ ok: true, bundleMatchCode });
+  }
 
   return NextResponse.json({ ok: true });
 }

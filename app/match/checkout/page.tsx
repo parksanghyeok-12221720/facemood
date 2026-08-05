@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { ANONYMOUS, loadTossPayments } from "@tosspayments/tosspayments-sdk";
 import type { TossPaymentsWidgets } from "@tosspayments/tosspayments-sdk";
 import Container from "@/app/components/Container";
@@ -11,7 +12,7 @@ const PENDING_PASSWORD_KEY = "facemood_match_pending_password";
 const PENDING_PHONE_KEY = "facemood_match_pending_phone";
 const PENDING_BUNDLE_KEY = "facemood_match_pending_bundle";
 
-const MATCH_PRICE_KRW = 34900;
+const MATCH_PRICE_KRW = 29900;
 const MATCH_BUNDLE_PRICE_KRW = 59900;
 
 const phonePrefixOptions = ["010", "011", "016", "017", "018", "019"];
@@ -136,6 +137,11 @@ export default function MatchCheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [widgetsReady, setWidgetsReady] = useState(false);
 
+  const [showCodeInput, setShowCodeInput] = useState(false);
+  const [redeemCode, setRedeemCode] = useState("");
+  const [codeError, setCodeError] = useState("");
+  const [isRedeemingCode, setIsRedeemingCode] = useState(false);
+
   const widgetsRef = useRef<TossPaymentsWidgets | null>(null);
   const phone = `${phonePrefix}-${phoneMiddle}-${phoneLast}`;
   const price = bundle ? MATCH_BUNDLE_PRICE_KRW : MATCH_PRICE_KRW;
@@ -257,6 +263,52 @@ export default function MatchCheckoutPage() {
     }
   }
 
+  async function redeemWithCode() {
+    if (isRedeemingCode) return;
+
+    if (redeemCode.trim().length === 0) {
+      setCodeError("코드를 입력해주세요.");
+      return;
+    }
+    if (password.length < 4) {
+      setCodeError("다시보기용 비밀번호를 4자 이상 입력해주세요.");
+      return;
+    }
+
+    const matchReportId = localStorage.getItem(MATCH_REPORT_ID_KEY);
+    if (!matchReportId) {
+      setCodeError("리포트를 찾을 수 없습니다. 처음부터 다시 진행해주세요.");
+      return;
+    }
+
+    setCodeError("");
+    setIsRedeemingCode(true);
+
+    try {
+      const response = await fetch("/api/payments/redeem-match-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: redeemCode.trim(),
+          matchReportId,
+          password,
+          phone: phoneMiddle && phoneLast ? phone : null,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error ?? "코드를 확인하지 못했습니다.");
+      }
+
+      window.location.href = `/match/report?id=${matchReportId}`;
+    } catch (err) {
+      setCodeError(
+        err instanceof Error ? err.message : "코드 확인 중 오류가 발생했습니다.",
+      );
+      setIsRedeemingCode(false);
+    }
+  }
+
   const numericInputClass =
     "w-full rounded-xl border border-violet-100 bg-white px-3 py-3 text-center text-sm text-black outline-none focus:border-violet-300";
 
@@ -269,7 +321,19 @@ export default function MatchCheckoutPage() {
       </div>
 
       <Container className="mt-6">
-        <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 p-5 text-white shadow-lg shadow-violet-200">
+        {/* Photo banner */}
+        <div className="relative aspect-[3/2] w-full overflow-hidden rounded-2xl">
+          <Image
+            src="/match-checkout-banner/couple.png"
+            alt="FACEMOOD Match"
+            fill
+            priority
+            sizes="(max-width: 480px) 100vw, 448px"
+            className="object-cover"
+          />
+        </div>
+
+        <div className="mt-6 overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 p-5 text-white shadow-lg shadow-violet-200">
           <p className="text-[11px] font-semibold tracking-wide text-violet-100">
             FACEMOOD MATCH
           </p>
@@ -336,6 +400,47 @@ export default function MatchCheckoutPage() {
             disabled={isSubmitting}
             className="mt-3 w-full rounded-xl border border-violet-100 px-4 py-3 text-sm text-black outline-none focus:border-violet-300"
           />
+        </section>
+
+        <section className="mt-6">
+          {!showCodeInput ? (
+            <button
+              type="button"
+              onClick={() => setShowCodeInput(true)}
+              className="text-xs font-semibold text-violet-600 underline underline-offset-2"
+            >
+              코드가 있으신가요?
+            </button>
+          ) : (
+            <div className="rounded-2xl border border-violet-100 bg-white p-5">
+              <p className="text-xs font-semibold tracking-[0.2em] text-violet-500">
+                무료 이용 코드 입력
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-gray-500">
+                FACEMOOD Premium + Match 번들 결제 시 문자로 받은 코드를
+                입력하면 결제 없이 바로 리포트를 받아보실 수 있어요.
+              </p>
+              <input
+                type="text"
+                value={redeemCode}
+                onChange={(event) => setRedeemCode(event.target.value)}
+                placeholder="코드 입력"
+                disabled={isRedeemingCode}
+                className="mt-3 w-full rounded-xl border border-violet-100 px-4 py-3 text-center text-sm uppercase text-black outline-none focus:border-violet-300"
+              />
+              {codeError && (
+                <p className="mt-2 text-xs text-red-500">{codeError}</p>
+              )}
+              <button
+                type="button"
+                onClick={redeemWithCode}
+                disabled={isRedeemingCode}
+                className="mt-3 flex w-full items-center justify-center rounded-full bg-black px-8 py-3.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {isRedeemingCode ? "확인 중..." : "코드로 무료 확인하기"}
+              </button>
+            </div>
+          )}
         </section>
 
         <section className="mt-8">

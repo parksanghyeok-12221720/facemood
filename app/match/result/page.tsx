@@ -4,6 +4,7 @@ import { useMemo, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import Container from "@/app/components/Container";
+import DiscountCountdownBar from "@/app/components/DiscountCountdownBar";
 import StarRating from "@/app/components/StarRating";
 import MatchReportBody from "@/app/match/MatchReportBody";
 import type { MatchFullReport } from "@/types/matchReport";
@@ -135,9 +136,9 @@ const MOCK_REPORT_VARIANTS: MatchFullReport[] = [
     { label: "미러샷", filled: 5 },
     { label: "카페", filled: 5 },
   ],
-  myPerfume: "Byredo",
-  partnerPerfume: "Le Labo",
-  togetherPerfume: "Maison Margiela",
+  myPerfume: "우디 머스크 향",
+  partnerPerfume: "시트러스 그린 향",
+  togetherPerfume: "우디 시트러스 향",
   seasonCompat: [
     { label: "여름", filled: 5 },
     { label: "가을", filled: 5 },
@@ -228,9 +229,9 @@ const MOCK_REPORT_VARIANTS: MatchFullReport[] = [
       { label: "인물 클로즈업", filled: 4 },
       { label: "노을", filled: 4 },
     ],
-    myPerfume: "Diptyque",
-    partnerPerfume: "Byredo",
-    togetherPerfume: "Le Labo",
+    myPerfume: "앰버 바닐라 향",
+    partnerPerfume: "우디 스파이시 향",
+    togetherPerfume: "앰버 우디 향",
     seasonCompat: [
       { label: "가을", filled: 5 },
       { label: "겨울", filled: 4 },
@@ -321,9 +322,9 @@ const MOCK_REPORT_VARIANTS: MatchFullReport[] = [
       { label: "카페", filled: 4 },
       { label: "피크닉", filled: 5 },
     ],
-    myPerfume: "Jo Malone",
-    partnerPerfume: "Aesop",
-    togetherPerfume: "Le Labo",
+    myPerfume: "화이트 머스크 향",
+    partnerPerfume: "그린 플로럴 향",
+    togetherPerfume: "코튼 머스크 향",
     seasonCompat: [
       { label: "봄", filled: 5 },
       { label: "여름", filled: 4 },
@@ -341,9 +342,38 @@ const MOCK_REPORT_VARIANTS: MatchFullReport[] = [
 ];
 
 const testimonials = [
-  { quote: "생각보다 결과가 너무 정확했어요." },
-  { quote: "데이트 전에 같이 해봤는데 재밌었어요." },
-  { quote: "우리 분위기를 이렇게 표현해주는 게 신기했어요." },
+  {
+    name: "민지**",
+    quote: "심심해서 남친이랑 해봤는데 생각보다 결과가 자세해서 둘 다 놀랐어요",
+  },
+  {
+    name: "so**89",
+    quote: "데이트 전에 같이 해봤는데 은근 재밌더라구요 ㅋㅋ 분위기 궁합 얘기하면서 놀았어요",
+  },
+  {
+    name: "지은*",
+    quote: "우리 둘 분위기를 이런 식으로 표현해주는 게 신기했어요 사진도 딱 취향저격",
+  },
+  {
+    name: "yebin**",
+    quote: "서로 상대방한테 어떤 이미지로 보이는지 몰랐는데 알게 돼서 좋았어요",
+  },
+  {
+    name: "j**woo",
+    quote: "커플룩 맨날 고민이었는데 추천해준 컬러 조합이 진짜 잘 맞아서 참고 많이 했어요",
+  },
+  {
+    name: "하늘**",
+    quote: "반신반의하면서 눌러봤는데 은근히 몰입해서 끝까지 다 봤네요",
+  },
+  {
+    name: "min**k",
+    quote: "사진 컨셉 추천이 저희 스타일이랑 잘 맞아서 좀 놀랐어요",
+  },
+  {
+    name: "채원*",
+    quote: "결과 캡처해서 단톡방에 자랑했어요 ㅋㅋㅋ",
+  },
 ];
 
 const faqItems = [
@@ -408,6 +438,9 @@ export default function MatchResultPage() {
       className="min-h-screen pb-24"
       style={
         {
+          // Restored the original warm brown/cream editorial palette — the
+          // violet/white FACEMOOD-matching version was tried and reverted
+          // per user feedback (the brown tone read better for Match).
           "--match-ivory": "#F7F3EC",
           "--match-ink": "#2B2620",
           "--match-ink-soft": "#8A8580",
@@ -431,16 +464,13 @@ export default function MatchResultPage() {
         <Container maxWidth="max-w-3xl">
           <span
             className="inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold tracking-[0.2em]"
-            style={{ backgroundColor: "var(--match-navy)", color: "var(--match-ivory)" }}
+            style={{ backgroundColor: "var(--match-beige)", color: "var(--match-burgundy)" }}
           >
             FACEMOOD MATCH · PREVIEW
           </span>
 
-          <div className="mt-6 flex items-center justify-center gap-3">
-            <div
-              className="relative h-16 w-16 overflow-hidden rounded-full"
-              style={{ border: "2px solid var(--match-navy)" }}
-            >
+          <div className="mt-6 flex items-center justify-center gap-2">
+            <div className="relative aspect-[3/4] w-28 overflow-hidden rounded-3xl">
               {myPhoto ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={myPhoto} alt={myName} className="h-full w-full object-cover" />
@@ -448,13 +478,10 @@ export default function MatchResultPage() {
                 <Image src="/mood/cards/청순자연st.png" alt={myName} fill className="object-cover" />
               )}
             </div>
-            <span className="text-xl" style={{ color: "var(--match-rose)" }}>
+            <span className="text-lg font-bold" style={{ color: "var(--match-rose)" }}>
               ×
             </span>
-            <div
-              className="relative h-16 w-16 overflow-hidden rounded-full"
-              style={{ border: "2px solid var(--match-navy)" }}
-            >
+            <div className="relative aspect-[3/4] w-28 overflow-hidden rounded-3xl">
               {partnerPhoto ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={partnerPhoto} alt={partnerName} className="h-full w-full object-cover" />
@@ -465,38 +492,49 @@ export default function MatchResultPage() {
           </div>
 
           <h1
-            className="mt-5 text-xl font-bold leading-snug"
+            className="mt-5 text-lg font-bold leading-snug"
             style={{ fontFamily: "'Noto Serif KR', serif" }}
           >
             {headline}
           </h1>
 
-          <div
-            className="mx-auto mt-6 max-w-sm rounded-[28px] p-6 text-left shadow-sm"
-            style={{ backgroundColor: "var(--match-beige)" }}
-          >
-            <span className="text-[10px] font-semibold tracking-[0.2em]" style={{ color: "var(--match-burgundy)" }}>
-              얼굴 무드 궁합
-            </span>
-            <div className="mt-2 flex items-end justify-between">
-              <p className="text-2xl font-bold" style={{ fontFamily: "'Noto Serif KR', serif" }}>
-                {mockReport.pairLabel}
-              </p>
-              <p className="text-xl font-bold" style={{ color: "var(--match-burgundy)" }}>
-                {mockReport.pairScore}%
-              </p>
+          <div className="mt-6 flex flex-col items-center">
+            <p
+              className="text-5xl font-bold leading-none"
+              style={{ fontFamily: "'Noto Serif KR', serif" }}
+            >
+              {mockReport.pairScore}%
+            </p>
+            <div className="mt-3">
+              <StarRating filled={mockReport.pairScore / 20} />
             </div>
-            <StarRating filled={mockReport.pairScore / 20} />
-            <ul className="mt-3 flex flex-col gap-1.5">
-              {mockReport.pairBullets.map((bullet) => (
-                <li key={bullet} className="text-xs leading-relaxed" style={{ color: "var(--match-ink)" }}>
-                  · {bullet}
-                </li>
-              ))}
-            </ul>
+            <span
+              className="mt-3 inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold text-white"
+              style={{ backgroundColor: "var(--match-navy)" }}
+            >
+              {mockReport.overallPercentile}
+            </span>
           </div>
 
-          <p className="mx-auto mt-4 max-w-xs text-[11px] leading-relaxed" style={{ color: "var(--match-ink-soft)" }}>
+          <p
+            className="mx-auto mt-6 max-w-sm text-base font-semibold leading-relaxed"
+            style={{ fontFamily: "'Noto Serif KR', serif" }}
+          >
+            &ldquo;{mockReport.moodTypeSummary}&rdquo;
+          </p>
+
+          <div
+            className="mx-auto mt-5 flex max-w-xs flex-wrap items-center justify-center gap-x-3 gap-y-1.5"
+            style={{ color: "var(--match-ink-soft)" }}
+          >
+            {mockReport.pairBullets.map((bullet) => (
+              <span key={bullet} className="text-[11px] leading-relaxed">
+                · {bullet}
+              </span>
+            ))}
+          </div>
+
+          <p className="mx-auto mt-5 max-w-xs text-[11px] leading-relaxed" style={{ color: "var(--match-ink-soft)" }}>
             지금 보시는 리포트는 예시 구성이에요. 실제 결제 후에는 두 분의
             사진과 답변으로 직접 분석한 리포트를 받아보실 수 있어요.
           </p>
@@ -522,17 +560,27 @@ export default function MatchResultPage() {
           먼저 경험한 분들의 이야기
         </h2>
 
-        <div className="mt-5 flex flex-col gap-3">
-          {testimonials.map((review) => (
-            <div
-              key={review.quote}
-              className="rounded-[20px] p-5"
-              style={{ backgroundColor: "white", border: "1px solid var(--match-beige)" }}
-            >
-              <span style={{ color: "var(--match-rose)" }}>★★★★★</span>
-              <p className="mt-2 text-sm leading-relaxed">&ldquo;{review.quote}&rdquo;</p>
-            </div>
-          ))}
+        <div className="relative mt-5 h-72 overflow-hidden marquee-fade-vertical">
+          <div
+            className="animate-marquee-vertical flex flex-col gap-3"
+            style={{ animationDuration: `${testimonials.length * 3}s` }}
+          >
+            {[...testimonials, ...testimonials].map((review, index) => (
+              <div
+                key={`${review.quote}-${index}`}
+                className="rounded-[20px] p-5"
+                style={{ backgroundColor: "white", border: "1px solid var(--match-beige)" }}
+              >
+                <div className="flex items-center justify-between">
+                  <span style={{ color: "var(--match-rose)" }}>★★★★★</span>
+                  <span className="text-xs font-semibold" style={{ color: "var(--match-ink-soft)" }}>
+                    {review.name}
+                  </span>
+                </div>
+                <p className="mt-2 text-sm leading-relaxed">&ldquo;{review.quote}&rdquo;</p>
+              </div>
+            ))}
+          </div>
         </div>
       </Container>
 
@@ -584,14 +632,14 @@ export default function MatchResultPage() {
 
       {/* Final CTA */}
       <Container maxWidth="max-w-3xl" className="mt-12">
-        <div className="rounded-[28px] p-7 text-center text-white" style={{ backgroundColor: "var(--match-navy)" }}>
+        <div className="rounded-[28px] p-6 text-center text-white" style={{ backgroundColor: "var(--match-navy)" }}>
           <p className="text-base font-bold leading-relaxed" style={{ fontFamily: "'Noto Serif KR', serif" }}>
             우리 커플 무드 리포트,
             <br />
             지금 바로 받아보세요.
           </p>
 
-          <ul className="mt-5 flex flex-col gap-2 text-left text-xs text-white/80">
+          <ul className="mx-auto mt-5 flex w-fit flex-col gap-2 text-left text-xs text-white/80">
             {includedItems.map((item) => (
               <li key={item} className="flex items-center gap-2">
                 <span
@@ -612,6 +660,15 @@ export default function MatchResultPage() {
           </Link>
         </div>
       </Container>
+
+      {/* Sticky bottom CTA — stays visible while scrolling through the preview */}
+      <DiscountCountdownBar
+        href="/match/checkout"
+        ctaLabel="리포트 받기"
+        darkColor="#1E2A3A"
+        gradientFrom="#C9A0A0"
+        gradientTo="#6F2A3A"
+      />
     </main>
   );
 }

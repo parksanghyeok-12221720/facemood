@@ -1,9 +1,14 @@
 export const BASIC_PRICE_KRW = 34900;
 export const PREMIUM_PRICE_KRW = 49900;
-export const MATCH_PRICE_KRW = 34900;
+export const MATCH_PRICE_KRW = 29900;
 // Match + FACEMOOD Premium bundle — buying this also unlocks one FACEMOOD
 // Premium report (see /api/payments/match-confirm).
 export const MATCH_BUNDLE_PRICE_KRW = 59900;
+// FACEMOOD Premium + Match bundle, sold the other way around (from the main
+// /checkout page) — buying this grants a one-time redemption code for a
+// free FACEMOOD Match report (see /api/payments/confirm and
+// /api/payments/redeem-match-code).
+export const PREMIUM_MATCH_PRICE_KRW = 59900;
 
 export type TossConfirmResult =
   | { ok: true; payment: Record<string, unknown> }

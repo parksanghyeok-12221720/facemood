@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import Container from "@/app/components/Container";
+import DiscountCountdownBar from "@/app/components/DiscountCountdownBar";
 import PccsColorChart from "@/app/components/PccsColorChart";
 import { reviews } from "@/app/data/reviews";
 import { trendContents, trendUpdates } from "@/app/data/trendContent";
@@ -11,32 +12,6 @@ import type { TrendUpdate } from "@/app/data/trendContent";
 import { REPORT_CHAPTERS } from "@/types/report";
 
 type Photo = { src: string; keyword: string };
-
-// One photo per mood — the folder has several numbered variants per mood
-// (e.g. 러블리 여리st.png..st5.png) meant for cycling through report
-// chapters elsewhere, but showing all of them here just repeats the same
-// hashtag back-to-back, so only the first of each is kept.
-const moodPhotos: Photo[] = [
-  { src: "/mood/cards/고급도시st.png", keyword: "#고급도시st" },
-  { src: "/mood/cards/꾸안꾸 st.png", keyword: "#꾸안꾸st" },
-  { src: "/mood/cards/내추럴 데일리st.png", keyword: "#내추럴데일리st" },
-  { src: "/mood/cards/느좋녀st.png", keyword: "#느좋녀st" },
-  { src: "/mood/cards/래퍼 여친st.png", keyword: "#래퍼여친st" },
-  { src: "/mood/cards/러블리 여리st.png", keyword: "#러블리여리st" },
-  { src: "/mood/cards/러블리 캐주얼st.png", keyword: "#러블리캐주얼st" },
-  { src: "/mood/cards/러블리 힙st.png", keyword: "#러블리힙st" },
-  { src: "/mood/cards/무채색 핀터걸st.png", keyword: "#무채색핀터걸st" },
-  { src: "/mood/cards/시크섹시st.png", keyword: "#시크섹시st" },
-  { src: "/mood/cards/에겐 큐티st.png", keyword: "#에겐큐티st" },
-  { src: "/mood/cards/올블랙st.png", keyword: "#올블랙st" },
-  { src: "/mood/cards/일본여주st.png", keyword: "#일본여주st" },
-  { src: "/mood/cards/차분시크st.png", keyword: "#차분시크st" },
-  { src: "/mood/cards/청순 에겐st.png", keyword: "#청순에겐st" },
-  { src: "/mood/cards/청순 캐주얼st.png", keyword: "#청순캐주얼st" },
-  { src: "/mood/cards/청순여친st.png", keyword: "#청순여친st" },
-  { src: "/mood/cards/청순자연st.png", keyword: "#청순자연st" },
-  { src: "/mood/cards/힙 트렌디st.png", keyword: "#힙트렌디st" },
-];
 
 const makeupPhotos: Photo[] = [
   { src: "/mood/makeup/makeup1.png", keyword: "#물광베이스" },
@@ -89,10 +64,83 @@ const moodCardPhotos: Record<string, string> = {
   "일본 여주st": "/mood/cards/일본여주st.png",
 };
 
-const BASIC_PRICE_KRW = 34900;
 const PREMIUM_PRICE_KRW = 49900;
+const PREMIUM_ORIGINAL_PRICE_KRW = 129800;
 const basicChapters = REPORT_CHAPTERS.filter((c) => c.tier === "basic");
 const premiumOnlyChapters = REPORT_CHAPTERS.filter((c) => c.tier === "premium");
+
+const outcomeHighlights = [
+  { icon: "✨", text: "나에게 가장 잘 어울리는 분위기 찾기" },
+  { icon: "💇", text: "미용실에서 바로 보여줄 수 있는 헤어 추천" },
+  { icon: "💄", text: "올리브영에서 바로 구매 가능한 메이크업 추천" },
+  { icon: "👕", text: "내 체형에 맞는 코디 가이드" },
+  { icon: "📸", text: "사진에서도 더 잘 나오는 스타일 제안" },
+];
+
+const oldConsultingPoints = [
+  {
+    icon: "💬",
+    title: "분야별로 따로 받아야 하는 컨설팅",
+    body: "퍼스널컬러 · 헤어 · 메이크업 · 스타일링 · 체형 · 액세서리, 각각 예약과 비용이 필요해요.",
+  },
+  {
+    icon: "⏳",
+    title: "몇 시간 투자",
+    body: "예약 → 방문 → 상담 → 쇼핑까지 직접 비교해야 해요.",
+  },
+  {
+    icon: "📄",
+    title: "기억에 의존",
+    body: "상담이 끝나면 기억을 더듬으며 혼자 다시 찾아봐야 해요.",
+  },
+  {
+    icon: "❌",
+    title: "실제 모습을 미리 보기 어려움",
+    body: "설명은 들었지만 나에게 어울릴지 직접 해보기 전까지 알기 어려워요.",
+  },
+];
+
+const premiumEventPoints = [
+  {
+    title: "AI 기반 얼굴·체형·스타일 통합 분석",
+    body: "얼굴형 · 비율 · 분위기 · 퍼스널컬러 · 체형까지 종합 분석해요.",
+  },
+  {
+    title: "나에게 맞는 스타일을 한 번에 추천",
+    body: "헤어 · 메이크업 · 코디 · 액세서리 · 향수 · 컬러 모두 연결해서 추천해요.",
+  },
+  {
+    title: "Before → After 스타일 시뮬레이션",
+    body: "추천만 하는 게 아니라 변한 모습을 직접 확인할 수 있어요.",
+  },
+  {
+    title: "100페이지 이상의 프리미엄 리포트",
+    body: "언제든 다시 확인, 미용실에서도 활용, 쇼핑할 때도 참고할 수 있어요.",
+  },
+  {
+    title: "집에서 5분",
+    body: "사진만 업로드하면 컨설팅이 끝나요.",
+  },
+];
+
+const premiumFeatureTags = [
+  "헤어 추천",
+  "메이크업 추천",
+  "코디 추천",
+  "퍼스널컬러",
+  "체형 분석",
+  "액세서리 추천",
+  "향수 추천",
+  "스타일 시뮬레이션",
+];
+
+const recommendedForList = [
+  "매번 헤어를 바꿔도 만족스럽지 않은 분",
+  "나에게 어울리는 스타일을 모르겠는 분",
+  "쇼핑할 때 항상 실패하는 분",
+  "이미지를 한 단계 업그레이드하고 싶은 분",
+  "소개팅 · 면접 · 프로필 촬영을 준비하는 분",
+];
 
 const chapters = [
   { key: "mood", label: "스타일", id: "section-mood" },
@@ -154,6 +202,15 @@ const photoReviews: PhotoReview[] = [
   { photo: "/detail-reviews/review-6.png", stars: "★★★★☆", text: "헤어 추천이 생각보다 좋았어요" },
 ];
 
+// Each photo already contains both the before and after side in one image
+// — /public/detail-case/case-N.png. Placeholders are seeded there for
+// now; drop in real photos under the same filenames to replace them.
+const caseAssets = [
+  { photo: "/detail-case/case-1.png", ratio: "1536 / 1024" },
+  { photo: "/detail-case/case-2.png", ratio: "1313 / 1198" },
+  { photo: "/detail-case/case-3.png", ratio: "1315 / 1196" },
+];
+
 const faqItems = [
   {
     q: "사진만으로 정확한 분석이 가능한가요?",
@@ -164,8 +221,8 @@ const faqItems = [
     a: "아니요. FACEMOOD는 얼굴 점수화나 단점 평가를 하지 않아요. 지금 사진에서 느껴지는 분위기와 원하는 방향의 차이를 비교해서, 스타일 선택지를 제안하는 방식이에요.",
   },
   {
-    q: "결제 전에 미리 확인할 수 있나요?",
-    a: "네, 무료 미리보기로 대략적인 방향을 먼저 확인할 수 있어요. 마음에 드시면 그 다음에 상세 리포트를 결제하시면 돼요.",
+    q: "사진은 저장되는건가요?",
+    a: "업로드한 사진은 리포트 생성 목적으로만 사용되고, 리포트가 완성되면 자동으로 삭제돼요. 서비스 오류 대응이 필요한 경우에 한해서만 최대 7일간 보관 후 삭제돼요.",
   },
 ];
 
@@ -354,6 +411,29 @@ export default function DetailPage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Fades + slides each content section into view the first time it
+  // scrolls into the viewport (see .reveal / .reveal-visible in
+  // globals.css). Unobserves each element right after it reveals so this
+  // never fires again on scroll-up — a one-time entrance, not a toggle.
+  useEffect(() => {
+    const elements = Array.from(document.querySelectorAll(".reveal"));
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("reveal-visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: "0px 0px -10% 0px" },
+    );
+
+    elements.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
   function scrollToChapter(id: string) {
     document.getElementById(id)?.scrollIntoView({
       behavior: "smooth",
@@ -455,7 +535,7 @@ export default function DetailPage() {
       </Container>
 
       {/* Authority statement */}
-      <Container maxWidth="max-w-3xl" className="mt-6">
+      <Container maxWidth="max-w-3xl" className="mt-6 reveal">
         <div className="rounded-2xl border border-violet-200 bg-violet-50 px-5 py-4 text-center">
           <p className="text-sm font-semibold leading-relaxed text-violet-700">
             전문 이미지 컨설턴트가 글로벌 패션 교육기관의
@@ -466,7 +546,7 @@ export default function DetailPage() {
       </Container>
 
       {/* Precision analysis visual */}
-      <Container maxWidth="max-w-3xl" className="mt-14 text-center">
+      <Container maxWidth="max-w-3xl" className="mt-14 text-center reveal">
         <span className="inline-flex items-center rounded-full bg-violet-600 px-3 py-1 text-[11px] font-bold tracking-[0.15em] text-white">
           POINT 01
         </span>
@@ -493,7 +573,7 @@ export default function DetailPage() {
       </Container>
 
       {/* POINT 02 */}
-      <Container maxWidth="max-w-3xl" className="mt-14 text-center">
+      <Container maxWidth="max-w-3xl" className="mt-14 text-center reveal">
         <span className="inline-flex items-center rounded-full bg-violet-600 px-3 py-1 text-[11px] font-bold tracking-[0.15em] text-white">
           POINT 02
         </span>
@@ -524,7 +604,7 @@ export default function DetailPage() {
       </Container>
 
       {/* POINT 03 */}
-      <Container maxWidth="max-w-3xl" className="mt-14 text-center">
+      <Container maxWidth="max-w-3xl" className="mt-14 text-center reveal">
         <span className="inline-flex items-center rounded-full bg-violet-600 px-3 py-1 text-[11px] font-bold tracking-[0.15em] text-white">
           POINT 03
         </span>
@@ -623,7 +703,7 @@ export default function DetailPage() {
       </Container>
 
       {/* Pain-point hook */}
-      <Container maxWidth="max-w-3xl" className="mt-14">
+      <Container maxWidth="max-w-3xl" className="mt-14 reveal">
         <p className="text-center text-lg font-bold leading-snug text-black">
           혹시
           <br />
@@ -652,16 +732,16 @@ export default function DetailPage() {
           &lsquo;패션 센스가 없나...?&rsquo; &lsquo;유행을 몰라서 그런가?&rsquo;
         </p>
 
-        <div className="mt-8 rounded-2xl bg-black px-6 py-7 text-center">
-          <p className="text-xs font-semibold tracking-[0.15em] text-violet-300">
+        <div className="mt-8 rounded-2xl border border-violet-100 bg-violet-50 px-6 py-7 text-center">
+          <p className="text-xs font-semibold tracking-[0.15em] text-violet-500">
             사실은
           </p>
-          <p className="mt-3 text-lg font-bold leading-relaxed text-white">
+          <p className="mt-3 text-lg font-bold leading-relaxed text-black">
             나만의 추구미 기준을
             <br />
             몰라서예요
           </p>
-          <p className="mt-3 text-xs leading-relaxed text-gray-400">
+          <p className="mt-3 text-xs leading-relaxed text-gray-500">
             얼굴이나 센스의 문제가 아니라,
             <br />
             지금 내 이미지와 원하는 방향을 비교할 기준이 없었던 것뿐이에요.
@@ -670,7 +750,7 @@ export default function DetailPage() {
       </Container>
 
       {/* Benefit highlights */}
-      <Container maxWidth="max-w-3xl" className="mt-14">
+      <Container maxWidth="max-w-3xl" className="mt-14 reveal">
         <p className="text-center text-lg font-bold leading-snug text-black">
           지금부터
           <br />
@@ -710,19 +790,8 @@ export default function DetailPage() {
         <PhotoReviewMarquee items={photoReviews} />
       </div>
 
-      {/* Intro mood photo marquee — this row has far more photos (54) than
-          hair/makeup (11-17), so it needs a proportionally longer duration
-          to scroll at the same visual speed instead of rushing by. */}
-      <div className="mx-auto mt-10 w-full max-w-3xl">
-        <MarqueeRow
-          photos={moodPhotos}
-          animationKey="intro"
-          durationSeconds={moodPhotos.length * (28 / 17)}
-        />
-      </div>
-
       {/* Trend Note overview */}
-      <Container maxWidth="max-w-3xl" className="mt-10">
+      <Container maxWidth="max-w-3xl" className="mt-10 reveal">
         <div className="flex items-center justify-between gap-3">
           <span className="inline-flex items-center rounded-full bg-violet-100 px-3 py-1 text-[11px] font-semibold tracking-[0.15em] text-violet-600">
             FACEMOOD Trend Note
@@ -774,7 +843,7 @@ export default function DetailPage() {
       </Container>
 
       {/* Service breakdown */}
-      <Container maxWidth="max-w-3xl" className="mt-14 text-center">
+      <Container maxWidth="max-w-3xl" className="mt-14 text-center reveal">
         <span className="inline-flex items-center rounded-full bg-violet-100 px-3 py-1 text-[11px] font-semibold tracking-[0.15em] text-violet-600">
           나만의 스타일 기준, 이렇게 만들어져요
         </span>
@@ -783,31 +852,31 @@ export default function DetailPage() {
         </h2>
       </Container>
 
-      <Container maxWidth="max-w-3xl" className="mt-6">
-        <div className="flex flex-col gap-3">
+      <Container maxWidth="max-w-3xl" className="mt-6 reveal">
+        <div className="mx-auto grid max-w-md grid-cols-2 gap-3">
           {serviceBreakdown.map((item) => (
             <div
               key={item.number}
-              className="relative mx-auto w-full max-w-xs overflow-hidden rounded-3xl"
+              className="relative w-full overflow-hidden rounded-2xl"
             >
               <div className="relative aspect-[3/4] w-full">
                 <Image
                   src={item.photo}
                   alt={item.title}
                   fill
-                  sizes="320px"
+                  sizes="200px"
                   className="object-cover"
                 />
                 <div className="absolute inset-0 bg-black/45" />
               </div>
-              <div className="absolute inset-0 flex flex-col items-center justify-center px-5 text-center">
-                <span className="text-xs font-bold tracking-[0.2em] text-white/80">
+              <div className="absolute inset-0 flex flex-col items-center justify-center px-3 text-center">
+                <span className="text-[10px] font-bold tracking-[0.15em] text-white/80">
                   {item.number}
                 </span>
-                <p className="mt-1.5 text-lg font-bold text-white">
+                <p className="mt-1 text-sm font-bold text-white">
                   {item.title}
                 </p>
-                <p className="mt-2 whitespace-pre-line text-xs leading-relaxed text-white/85">
+                <p className="mt-1.5 whitespace-pre-line text-[10px] leading-relaxed text-white/85">
                   {item.body}
                 </p>
               </div>
@@ -817,7 +886,7 @@ export default function DetailPage() {
       </Container>
 
       {/* Chapter: 스타일 */}
-      <Container id="section-mood" maxWidth="max-w-3xl" className="mt-14 scroll-mt-20">
+      <Container id="section-mood" maxWidth="max-w-3xl" className="mt-14 scroll-mt-20 reveal">
         <span className="text-xs font-bold tabular-nums text-violet-300">01</span>
         <span className="ml-2 inline-flex items-center rounded-full bg-violet-100 px-3 py-1 text-[11px] font-semibold tracking-[0.15em] text-violet-600">
           STYLE
@@ -879,7 +948,7 @@ export default function DetailPage() {
       </Container>
 
       {/* Chapter: 컬러 */}
-      <Container id="section-color" maxWidth="max-w-3xl" className="mt-14 scroll-mt-20">
+      <Container id="section-color" maxWidth="max-w-3xl" className="mt-14 scroll-mt-20 reveal">
         <span className="text-xs font-bold tabular-nums text-violet-300">02</span>
         <span className="ml-2 inline-flex items-center rounded-full bg-violet-100 px-3 py-1 text-[11px] font-semibold tracking-[0.15em] text-violet-600">
           COLOR
@@ -924,7 +993,7 @@ export default function DetailPage() {
       </Container>
 
       {/* Chapter: 메이크업 */}
-      <Container id="section-makeup" maxWidth="max-w-3xl" className="mt-14 scroll-mt-20">
+      <Container id="section-makeup" maxWidth="max-w-3xl" className="mt-14 scroll-mt-20 reveal">
         <span className="text-xs font-bold tabular-nums text-violet-300">03</span>
         <span className="ml-2 inline-flex items-center rounded-full bg-violet-100 px-3 py-1 text-[11px] font-semibold tracking-[0.15em] text-violet-600">
           MAKEUP
@@ -969,7 +1038,7 @@ export default function DetailPage() {
       </Container>
 
       {/* Chapter: 헤어 */}
-      <Container id="section-hair" maxWidth="max-w-3xl" className="mt-14 scroll-mt-20">
+      <Container id="section-hair" maxWidth="max-w-3xl" className="mt-14 scroll-mt-20 reveal">
         <span className="text-xs font-bold tabular-nums text-violet-300">04</span>
         <span className="ml-2 inline-flex items-center rounded-full bg-violet-100 px-3 py-1 text-[11px] font-semibold tracking-[0.15em] text-violet-600">
           HAIR
@@ -1014,7 +1083,7 @@ export default function DetailPage() {
       </Container>
 
       {/* Featured case studies */}
-      <Container maxWidth="max-w-3xl" className="mt-10">
+      <Container maxWidth="max-w-3xl" className="mt-10 reveal">
         <span className="inline-flex items-center rounded-full bg-violet-100 px-3 py-1 text-[11px] font-semibold tracking-[0.15em] text-violet-600">
           CASE
         </span>
@@ -1026,29 +1095,46 @@ export default function DetailPage() {
           {[reviews[0], reviews[3], reviews[6]].map((review, index) => (
             <div
               key={review.name}
-              className="rounded-2xl border border-violet-100 bg-white p-6 shadow-sm shadow-violet-100/60"
+              className="mx-auto w-full max-w-xs rounded-2xl border border-violet-100 bg-white p-4 shadow-sm shadow-violet-100/60"
             >
               <span className="text-xs font-semibold tracking-[0.1em] text-violet-400">
                 CASE {String(index + 1).padStart(2, "0")}
               </span>
-              <p className="mt-3 whitespace-pre-line text-sm font-semibold leading-relaxed text-black">
-                &ldquo;{review.text}&rdquo;
-              </p>
+
+              <div
+                className="relative mt-3 w-full overflow-hidden rounded-xl"
+                style={{ aspectRatio: caseAssets[index].ratio }}
+              >
+                <Image
+                  src={caseAssets[index].photo}
+                  alt={`Before/After — CASE ${String(index + 1).padStart(2, "0")}`}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 720px"
+                  className="object-cover"
+                />
+              </div>
+
               <div className="mt-4 flex items-center justify-between">
-                <span className="text-xs font-semibold text-gray-500">
+                <span className="text-xs font-semibold text-black">
                   {review.name}
                 </span>
-                <span className="text-sm tracking-wide text-violet-500">
-                  {review.stars}
+                <span className="text-xs font-semibold text-gray-400">
+                  {review.score}
                 </span>
               </div>
+              <p className="mt-1 text-sm tracking-wide text-violet-500">
+                {review.stars}
+              </p>
+              <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-gray-700">
+                {review.text}
+              </p>
             </div>
           ))}
         </div>
       </Container>
 
       {/* Reviews */}
-      <Container maxWidth="max-w-3xl" className="mt-10">
+      <Container maxWidth="max-w-3xl" className="mt-10 reveal">
         <span className="inline-flex items-center rounded-full bg-violet-100 px-3 py-1 text-[11px] font-semibold tracking-[0.15em] text-violet-600">
           REVIEWS
         </span>
@@ -1085,7 +1171,7 @@ export default function DetailPage() {
       </Container>
 
       {/* FAQ */}
-      <Container maxWidth="max-w-3xl" className="mt-10">
+      <Container maxWidth="max-w-3xl" className="mt-10 reveal">
         <span className="inline-flex items-center rounded-full bg-violet-100 px-3 py-1 text-[11px] font-semibold tracking-[0.15em] text-violet-600">
           FAQ
         </span>
@@ -1121,7 +1207,7 @@ export default function DetailPage() {
       </Container>
 
       {/* 3-point feature highlight */}
-      <Container maxWidth="max-w-3xl" className="mt-10">
+      <Container maxWidth="max-w-3xl" className="mt-10 reveal">
         <div className="flex flex-col gap-3">
           {[
             {
@@ -1156,8 +1242,126 @@ export default function DetailPage() {
         </div>
       </Container>
 
+      {/* Premium Event — offline consulting comparison */}
+      <Container maxWidth="max-w-3xl" className="mt-10 reveal">
+        <div className="rounded-3xl border border-violet-100 bg-violet-50/50 p-6">
+          <p className="text-sm font-bold text-black">이런 결과를 받아보세요</p>
+          <ul className="mt-4 flex flex-col gap-3">
+            {outcomeHighlights.map((item) => (
+              <li
+                key={item.text}
+                className="flex items-start gap-2.5 text-sm leading-relaxed text-gray-700"
+              >
+                <span className="shrink-0">{item.icon}</span>
+                {item.text}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="mt-10 text-center">
+          <span className="inline-flex items-center rounded-full bg-violet-600 px-3 py-1 text-[11px] font-bold tracking-[0.15em] text-white">
+            🔥 PREMIUM EVENT
+          </span>
+          <p className="mt-4 text-lg font-bold leading-snug text-black">
+            오프라인 이미지 컨설팅 50만원+를
+            <br />
+            <span className="text-violet-600">
+              {PREMIUM_PRICE_KRW.toLocaleString()}원
+            </span>
+            에
+          </p>
+          <p className="mt-2 text-xs leading-relaxed text-gray-500">
+            단 한 번의 AI 스타일 컨설팅으로
+          </p>
+        </div>
+
+        <div className="mt-6 flex flex-col gap-4">
+          {/* Offline consulting — de-emphasized */}
+          <div className="rounded-2xl border border-gray-200 bg-gray-50 p-6">
+            <p className="text-sm font-bold text-gray-500">
+              기존 이미지 컨설팅
+            </p>
+            <ul className="mt-4 flex flex-col gap-4">
+              {oldConsultingPoints.map((point) => (
+                <li key={point.title}>
+                  <p className="text-xs font-semibold text-gray-600">
+                    {point.icon} {point.title}
+                  </p>
+                  <p className="mt-1 text-xs leading-relaxed text-gray-400">
+                    {point.body}
+                  </p>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-5 text-right text-base font-extrabold text-gray-500">
+              약 50만원+
+            </p>
+          </div>
+
+          {/* FACEMOOD Premium Report — emphasized */}
+          <div className="rounded-2xl border-2 border-violet-500 bg-white p-6 shadow-lg shadow-violet-200/60">
+            <span className="inline-flex items-center rounded-full bg-violet-600 px-2.5 py-1 text-[10px] font-bold text-white">
+              BEST
+            </span>
+            <p className="mt-3 text-sm font-bold text-black">
+              FACEMOOD Premium Report
+            </p>
+            <ul className="mt-4 flex flex-col gap-4">
+              {premiumEventPoints.map((point) => (
+                <li key={point.title}>
+                  <p className="text-xs font-semibold text-black">
+                    ✅ {point.title}
+                  </p>
+                  <p className="mt-1 text-xs leading-relaxed text-gray-500">
+                    {point.body}
+                  </p>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-5 flex items-baseline justify-end gap-2">
+              <span className="text-sm text-gray-400 line-through decoration-gray-400">
+                {PREMIUM_ORIGINAL_PRICE_KRW.toLocaleString()}원
+              </span>
+              <span className="text-xl font-extrabold text-violet-600">
+                {PREMIUM_PRICE_KRW.toLocaleString()}원
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          {premiumFeatureTags.map((tag) => (
+            <span
+              key={tag}
+              className="rounded-full bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-600"
+            >
+              ✔ {tag}
+            </span>
+          ))}
+        </div>
+
+
+        <div className="mt-10 rounded-2xl border border-violet-100 bg-white p-6">
+          <p className="text-sm font-bold text-black">
+            이런 분들에게 추천합니다
+          </p>
+          <ul className="mt-4 flex flex-col gap-2.5">
+            {recommendedForList.map((text) => (
+              <li
+                key={text}
+                className="flex items-start gap-2 text-sm leading-relaxed text-gray-700"
+              >
+                <span className="shrink-0 text-violet-500">✔</span>
+                {text}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </Container>
+
       {/* Report table of contents */}
-      <Container maxWidth="max-w-3xl" className="mt-10">
+      <Container maxWidth="max-w-3xl" className="mt-10 reveal">
         <span className="inline-flex items-center rounded-full bg-violet-100 px-3 py-1 text-[11px] font-semibold tracking-[0.15em] text-violet-600">
           REPORT CONTENTS
         </span>
@@ -1170,12 +1374,7 @@ export default function DetailPage() {
         </p>
 
         <div className="mt-6 rounded-2xl border-2 border-violet-100 bg-white p-6 shadow-sm shadow-violet-100/60">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-bold text-black">Basic</p>
-            <p className="text-sm font-extrabold text-black">
-              {BASIC_PRICE_KRW.toLocaleString()}원
-            </p>
-          </div>
+          <p className="text-sm font-bold text-black">Basic</p>
           <ol className="mt-4 flex flex-col gap-3">
             {basicChapters.map((chapter) => (
               <li
@@ -1192,16 +1391,11 @@ export default function DetailPage() {
         </div>
 
         <div className="mt-4 rounded-2xl border-2 border-violet-500 bg-violet-50/40 p-6 shadow-sm shadow-violet-100/60">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center rounded-full bg-violet-600 px-2.5 py-1 text-[10px] font-bold text-white">
-                BEST
-              </span>
-              <p className="text-sm font-bold text-black">Premium</p>
-            </div>
-            <p className="text-sm font-extrabold text-black">
-              {PREMIUM_PRICE_KRW.toLocaleString()}원
-            </p>
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center rounded-full bg-violet-600 px-2.5 py-1 text-[10px] font-bold text-white">
+              BEST
+            </span>
+            <p className="text-sm font-bold text-black">Premium</p>
           </div>
           <p className="mt-2 text-xs text-gray-500">Basic 8개 챕터 전체 포함 +</p>
           <ol className="mt-3 flex flex-col gap-3">
@@ -1220,7 +1414,7 @@ export default function DetailPage() {
         </div>
       </Container>
 
-      <Container className="mt-10 pb-8">
+      <Container className="mt-10 pb-8 reveal">
         <p className="text-center text-lg font-bold leading-snug text-black">
           더 이상 헤매지 않도록.
           <br />
@@ -1260,19 +1454,13 @@ export default function DetailPage() {
       </footer>
 
       {/* Sticky bottom CTA — stays visible while scrolling through the page */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-violet-100 bg-white/95 px-6 py-4 backdrop-blur">
-        <div className="mx-auto max-w-md">
-          <Link
-            href="/test"
-            className="flex w-full items-center justify-center rounded-full bg-black px-8 py-4 text-sm font-semibold text-white"
-          >
-            나의 추구미 무료 컨설팅 받기
-          </Link>
-          <p className="mt-2 text-center text-xs text-gray-400">
-            무료 미리보기로 먼저 확인할 수 있어요.
-          </p>
-        </div>
-      </div>
+      <DiscountCountdownBar
+        href="/test"
+        ctaLabel="나의 추구미 무료 컨설팅 받기"
+        darkColor="#000000"
+        gradientFrom="#7c3aed"
+        gradientTo="#c026d3"
+      />
     </main>
   );
 }

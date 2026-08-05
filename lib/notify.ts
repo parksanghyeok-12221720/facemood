@@ -7,6 +7,8 @@
 export async function sendReportReadySms(
   phone: string,
   reportUrl: string,
+  bundleCode?: string | null,
+  bundleProductLabel?: string,
 ): Promise<void> {
   const apiKey = process.env.ALIGO_API_KEY;
   const userId = process.env.ALIGO_USER_ID;
@@ -25,12 +27,16 @@ export async function sendReportReadySms(
     return;
   }
 
+  const bundleLine = bundleCode
+    ? `\n\n${bundleProductLabel ?? "무료 이용"} 코드: ${bundleCode}\n결제 화면의 '코드가 있으신가요?'에 입력하면 무료로 이용하실 수 있어요.`
+    : "";
+
   const body = new URLSearchParams({
     key: apiKey,
     user_id: userId,
     sender: sender.replace(/\D/g, ""),
     receiver,
-    msg: `[FACEMOOD] 상세 리포트가 완성됐어요!\n지금 확인해보세요: ${reportUrl}`,
+    msg: `[FACEMOOD] 상세 리포트가 완성됐어요!\n지금 확인해보세요: ${reportUrl}${bundleLine}`,
     title: "FACEMOOD 리포트 완성",
   });
 

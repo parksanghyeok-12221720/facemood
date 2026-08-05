@@ -632,7 +632,7 @@ export default function MatchUploadPage() {
                 {isSubmitting
                   ? "처리 중..."
                   : step === TOTAL_STEPS
-                    ? "결과 만들기"
+                    ? "결과 보러가기"
                     : "다음"}
               </button>
             </div>

@@ -85,27 +85,27 @@ export default function LoadingPage() {
     messages[Math.min(messages.length - 1, Math.floor(progress / segment))];
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center py-16">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-white py-16 text-black">
       <Container className="flex flex-col items-center text-center">
-        <p className="mb-10 text-sm tracking-[0.3em] text-gray-500">
+        <p className="mb-10 text-sm font-bold tracking-[0.2em] text-violet-600">
           FACEMOOD
         </p>
 
         <div className="relative flex h-28 w-28 items-center justify-center">
-          <div className="absolute inset-0 animate-pulse rounded-full bg-violet-500/25 blur-2xl" />
-          <div className="absolute inset-0 rounded-full border-2 border-violet-300/15 border-t-violet-300/70 animate-spin" />
-          <div className="relative flex h-20 w-20 items-center justify-center rounded-full border border-violet-300/30 bg-[#0a0a0a] text-violet-200">
+          <div className="absolute inset-0 animate-pulse rounded-full bg-violet-200/50 blur-2xl" />
+          <div className="absolute inset-0 rounded-full border-2 border-violet-100 border-t-violet-500 animate-spin" />
+          <div className="relative flex h-20 w-20 items-center justify-center rounded-full border border-violet-200 bg-violet-50 text-violet-600">
             <MoonIcon />
           </div>
         </div>
 
         <div className="relative mt-12 w-full">
-          <div className="absolute inset-0 -z-10 rounded-3xl bg-violet-500/15 blur-2xl" />
-          <div className="rounded-3xl border border-violet-400/20 bg-white/[0.03] p-8">
-            <h1 className="text-lg font-semibold leading-snug text-white">
+          <div className="absolute inset-0 -z-10 rounded-3xl bg-violet-100/50 blur-2xl" />
+          <div className="rounded-3xl border border-violet-100 bg-white p-8 shadow-sm shadow-violet-100/60">
+            <h1 className="text-lg font-bold leading-snug text-black">
               무드 리포트를 작성하고 있어요
             </h1>
-            <p className="mt-3 text-sm leading-relaxed text-gray-400">
+            <p className="mt-3 text-sm leading-relaxed text-gray-500">
               입력한 답변과 사진 속 분위기를 바탕으로
               <br />
               현재 이미지 무드와 컬러 방향을 정리하는 중이에요.
@@ -120,22 +120,22 @@ export default function LoadingPage() {
                     <span
                       className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px] ${
                         isDone
-                          ? "border-violet-300 bg-violet-300 text-black"
-                          : "border-white/15"
+                          ? "border-violet-500 bg-violet-500 text-white"
+                          : "border-violet-100"
                       }`}
                     >
                       {isDone && "✓"}
                       {isActive && !isDone && (
-                        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-violet-300" />
+                        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-violet-500" />
                       )}
                     </span>
                     <span
                       className={`text-sm ${
                         isDone
-                          ? "text-gray-300"
+                          ? "text-gray-400"
                           : isActive
-                            ? "font-medium text-white"
-                            : "text-gray-600"
+                            ? "font-semibold text-black"
+                            : "text-gray-300"
                       }`}
                     >
                       {label}
@@ -145,18 +145,18 @@ export default function LoadingPage() {
               })}
             </ul>
 
-            <p className="mt-8 min-h-10 text-sm leading-relaxed text-violet-200">
+            <p className="mt-8 min-h-10 text-sm leading-relaxed text-violet-600">
               {activeMessage}
             </p>
 
             <div className="mt-6">
-              <div className="mb-2 flex items-center justify-between text-xs text-gray-500">
+              <div className="mb-2 flex items-center justify-between text-xs text-gray-400">
                 <span>리포트 작성 중</span>
                 <span>{Math.round(progress)}%</span>
               </div>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-violet-100">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-violet-400 to-violet-200 transition-[width] duration-500 ease-out"
+                  className="h-full rounded-full bg-gradient-to-r from-violet-600 to-violet-400 transition-[width] duration-500 ease-out"
                   style={{ width: `${progress}%` }}
                 />
               </div>
@@ -164,7 +164,7 @@ export default function LoadingPage() {
           </div>
         </div>
 
-        <p className="mt-8 text-xs leading-relaxed text-gray-600">
+        <p className="mt-8 text-xs leading-relaxed text-gray-400">
           FACEMOOD는 외모 점수화가 아닌 이미지 무드와 스타일 방향을
           분석합니다.
         </p>
