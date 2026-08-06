@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import AnalysisCounter from "@/app/components/AnalysisCounter";
 import Container from "@/app/components/Container";
+import HotLiveCounter from "@/app/components/HotLiveCounter";
 import ProductChoiceCards from "@/app/components/ProductChoiceCards";
 
 function FaceIcon() {
@@ -77,6 +78,7 @@ export default function Home() {
           <span className="rounded-full bg-violet-600 px-2 py-0.5 text-[10px] font-bold text-white">
             HOT
           </span>
+          <HotLiveCounter />
         </div>
 
         <ProductChoiceCards />

@@ -29,12 +29,18 @@ export default function AnalysisCounter() {
   }, []);
 
   return (
-    <p className="mt-4 text-xs text-gray-500">
-      현재까지{" "}
-      <span className="font-bold text-violet-600">
-        {count.toLocaleString()}명
-      </span>{" "}
-      분석완료
-    </p>
+    <div className="mt-4 flex items-center justify-center gap-1.5 rounded-full bg-violet-50 px-4 py-2.5">
+      <span className="relative flex h-2 w-2 shrink-0">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-violet-400 opacity-75" />
+        <span className="relative inline-flex h-2 w-2 rounded-full bg-violet-500" />
+      </span>
+      <p className="text-xs font-semibold text-gray-600">
+        현재까지{" "}
+        <span className="text-base font-extrabold text-violet-600">
+          {count.toLocaleString()}명
+        </span>{" "}
+        분석완료
+      </p>
+    </div>
   );
 }
