@@ -137,3 +137,24 @@ body {
     transparent
   );
 }
+
+/* Odometer-style "next digit slides down from above" flip — used by the
+   live HOT counter's ones digit. */
+@keyframes digit-roll-down {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.animate-digit-roll {
+  animation: digit-roll-down 0.28s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-digit-roll {
+    animation: none;
+  }
+}
