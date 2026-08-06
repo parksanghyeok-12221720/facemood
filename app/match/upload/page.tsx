@@ -3,7 +3,7 @@
 import { ChangeEvent, useEffect, useState } from "react";
 import Container from "@/app/components/Container";
 
-const TOTAL_STEPS = 7;
+const TOTAL_STEPS = 4;
 
 const RELATIONSHIP_OPTIONS = [
   "짝사랑 상대",
@@ -22,25 +22,6 @@ const UPLOAD_GUIDELINES = [
   "밝은 곳에서 촬영한 사진",
 ];
 
-const DESIRED_IMAGE_OPTIONS = [
-  "편안하고 친근한",
-  "설레고 매력적인",
-  "귀엽고 사랑스러운",
-  "세련되고 성숙한",
-  "차분하고 신뢰감 있는",
-  "신비롭고 궁금한",
-  "자연스럽고 꾸밈없는",
-];
-
-const CURIOSITY_OPTIONS = [
-  "처음 봤을 때 잘 어울려 보이는지",
-  "서로 어떤 분위기를 더해주는지",
-  "주변 사람에게 어떤 사이로 보이는지",
-  "함께 사진을 찍으면 어떤 무드인지",
-  "데이트할 때 어울리는 스타일",
-  "상대에게 더 매력적으로 보이는 방법",
-];
-
 // Used only to adjust report tone/wording (e.g. how forward the copy reads) —
 // never fed into any personality or emotional inference.
 const RELATIONSHIP_STATUS_OPTIONS = [
@@ -52,42 +33,14 @@ const RELATIONSHIP_STATUS_OPTIONS = [
   "답변하지 않을게요",
 ];
 
-const SITUATION_OPTIONS = [
-  "첫 만남",
-  "소개팅",
-  "데이트",
-  "일상",
-  "여행",
-  "커플 사진",
-  "특별한 기념일",
-];
-
 const STEP_COPY: { title: string; subtitle: string }[] = [
   { title: "분석할 두 사람 선택", subtitle: "누구와의 케미가 궁금한가요?" },
   { title: "사진 업로드", subtitle: "얼굴이 잘 보이는 사진 두 장을 준비해주세요." },
   { title: "표시 이름", subtitle: "리포트에서 어떻게 표시할까요?" },
-  {
-    title: "상대에게 보이고 싶은 이미지",
-    subtitle: "그 사람에게 어떤 분위기로 보이고 싶나요? (최대 2개)",
-  },
-  {
-    title: "두 사람의 분위기에서 궁금한 것",
-    subtitle: "가장 궁금한 내용을 선택해주세요. (선택, 최대 2개)",
-  },
   { title: "현재 관계의 분위기", subtitle: "현재 두 사람은 어떤 상태에 가까운가요?" },
-  {
-    title: "원하는 스타일 상황",
-    subtitle: "어떤 상황에서의 케미가 궁금한가요? (복수 선택 가능)",
-  },
 ];
 
 type PhotoState = { file: File; url: string } | null;
-
-function toggleInList(list: string[], value: string, max: number) {
-  if (list.includes(value)) return list.filter((item) => item !== value);
-  if (list.length >= max) return list;
-  return [...list, value];
-}
 
 function ProgressBar({ step }: { step: number }) {
   return (
@@ -251,10 +204,7 @@ export default function MatchUploadPage() {
   const [myName, setMyName] = useState("");
   const [partnerName, setPartnerName] = useState("");
 
-  const [desiredImages, setDesiredImages] = useState<string[]>([]);
-  const [curiosities, setCuriosities] = useState<string[]>([]);
   const [relationshipStatus, setRelationshipStatus] = useState<string | null>(null);
-  const [situations, setSituations] = useState<string[]>([]);
 
   useEffect(() => {
     return () => {
@@ -299,7 +249,7 @@ export default function MatchUploadPage() {
         return;
       }
     }
-    if (step === 6 && !relationshipStatus) {
+    if (step === 4 && !relationshipStatus) {
       setStepError("항목을 선택해주세요. (답변하지 않을게요도 선택 가능해요)");
       return;
     }
@@ -326,10 +276,7 @@ export default function MatchUploadPage() {
         relationship,
         myName: myName.trim() || "나",
         partnerName: partnerName.trim() || "그 사람",
-        desiredImages,
-        curiosities,
         relationshipStatus,
-        situations,
       };
 
       localStorage.setItem("facemood_match_answers", JSON.stringify(answers));
@@ -543,61 +490,12 @@ export default function MatchUploadPage() {
 
               {step === 4 && (
                 <div className="flex flex-col gap-2.5">
-                  <p className="text-right text-[11px] font-semibold" style={{ color: "var(--match-burgundy)" }}>
-                    {desiredImages.length}/2
-                  </p>
-                  {DESIRED_IMAGE_OPTIONS.map((option) => (
-                    <OptionButton
-                      key={option}
-                      label={option}
-                      active={desiredImages.includes(option)}
-                      disabled={!desiredImages.includes(option) && desiredImages.length >= 2}
-                      onClick={() => setDesiredImages((prev) => toggleInList(prev, option, 2))}
-                    />
-                  ))}
-                </div>
-              )}
-
-              {step === 5 && (
-                <div className="flex flex-col gap-2.5">
-                  <p className="text-right text-[11px] font-semibold" style={{ color: "var(--match-burgundy)" }}>
-                    {curiosities.length}/2
-                  </p>
-                  {CURIOSITY_OPTIONS.map((option) => (
-                    <OptionButton
-                      key={option}
-                      label={option}
-                      active={curiosities.includes(option)}
-                      disabled={!curiosities.includes(option) && curiosities.length >= 2}
-                      onClick={() => setCuriosities((prev) => toggleInList(prev, option, 2))}
-                    />
-                  ))}
-                </div>
-              )}
-
-              {step === 6 && (
-                <div className="flex flex-col gap-2.5">
                   {RELATIONSHIP_STATUS_OPTIONS.map((option) => (
                     <OptionButton
                       key={option}
                       label={option}
                       active={relationshipStatus === option}
                       onClick={() => setRelationshipStatus(option)}
-                    />
-                  ))}
-                </div>
-              )}
-
-              {step === 7 && (
-                <div className="flex flex-col gap-2.5">
-                  {SITUATION_OPTIONS.map((option) => (
-                    <OptionButton
-                      key={option}
-                      label={option}
-                      active={situations.includes(option)}
-                      onClick={() =>
-                        setSituations((prev) => toggleInList(prev, option, SITUATION_OPTIONS.length))
-                      }
                     />
                   ))}
                 </div>
@@ -632,7 +530,7 @@ export default function MatchUploadPage() {
                 {isSubmitting
                   ? "처리 중..."
                   : step === TOTAL_STEPS
-                    ? "결과 보러가기"
+                    ? "결과 확인하기"
                     : "다음"}
               </button>
             </div>

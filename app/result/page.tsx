@@ -136,8 +136,6 @@ const answerFactors = [
   "분석 목적",
 ];
 
-const BASIC_PRICE_KRW = 34900;
-const PREMIUM_PRICE_KRW = 49900;
 const basicChapters = REPORT_CHAPTERS.filter((c) => c.tier === "basic");
 const premiumOnlyChapters = REPORT_CHAPTERS.filter((c) => c.tier === "premium");
 
@@ -961,12 +959,7 @@ export default function ResultPage() {
         </h2>
 
         <div className="mt-5 rounded-[24px] border-2 border-[var(--hairline)] bg-white p-5">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-bold text-[var(--ink)]">Basic</p>
-            <p className="text-sm font-extrabold text-[var(--ink)]">
-              {BASIC_PRICE_KRW.toLocaleString()}원
-            </p>
-          </div>
+          <p className="text-sm font-bold text-[var(--ink)]">Basic</p>
           <p className="mt-1 text-[11px] text-[var(--ink-soft)]">
             핵심 {basicChapters.length}개 챕터
           </p>
@@ -983,16 +976,11 @@ export default function ResultPage() {
         </div>
 
         <div className="mt-3 rounded-[24px] border-2 border-[var(--rose)] bg-[var(--rose-tint)]/30 p-5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center rounded-full bg-[var(--rose-deep)] px-2.5 py-1 text-[10px] font-bold text-white">
-                BEST
-              </span>
-              <p className="text-sm font-bold text-[var(--ink)]">Premium</p>
-            </div>
-            <p className="text-sm font-extrabold text-[var(--ink)]">
-              {PREMIUM_PRICE_KRW.toLocaleString()}원
-            </p>
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center rounded-full bg-[var(--rose-deep)] px-2.5 py-1 text-[10px] font-bold text-white">
+              BEST
+            </span>
+            <p className="text-sm font-bold text-[var(--ink)]">Premium</p>
           </div>
           <p className="mt-1 text-[11px] text-[var(--ink-soft)]">
             Basic 전체 포함 + {premiumOnlyChapters.length}개 챕터 추가, 총{" "}

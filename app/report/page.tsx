@@ -115,31 +115,32 @@ function GeneratingState() {
   }, []);
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-white px-6 text-center text-black">
+    <main
+      className="flex min-h-screen flex-col items-center justify-center px-6 text-center"
+      style={{ backgroundColor: "#FAF9F6", color: "#1C1B22" }}
+    >
       <Container maxWidth="max-w-sm" className="flex flex-col items-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-violet-200 border-t-violet-500" />
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-[#F1EDFB] border-t-[#6D4FC4]" />
 
         <div className="mt-6 w-full">
-          <div className="h-2 w-full overflow-hidden rounded-full bg-violet-100">
+          <div className="h-2 w-full overflow-hidden rounded-full bg-[#F1EDFB]">
             <div
-              className="h-full rounded-full bg-violet-500 transition-all duration-700 ease-out"
+              className="h-full rounded-full bg-[#6D4FC4] transition-all duration-700 ease-out"
               style={{ width: `${progress}%` }}
             />
           </div>
-          <p className="mt-2 text-xs font-semibold text-violet-500">
+          <p className="mt-2 text-xs font-semibold text-[#6D4FC4]">
             {progress}%
           </p>
         </div>
 
-        <p className="mt-5 text-sm font-semibold text-black">
+        <p className="mt-5 text-sm font-semibold">
           {GENERATING_STAGES[stageIndex]}
         </p>
-        <p className="mt-1 text-xs text-gray-400">보통 1~2분 정도 걸려요.</p>
+        <p className="mt-1 text-xs text-[#8A8580]">보통 1~2분 정도 걸려요.</p>
 
-        <div className="mt-5 w-full rounded-2xl border border-red-100 bg-red-50 px-4 py-3">
-          <p className="text-xs font-bold text-red-500">
-            ⚠️ 화면을 나가지 마세요
-          </p>
+        <div className="mt-6 w-full rounded-[12px] border border-red-100 bg-red-50 px-4 py-3.5">
+          <p className="text-xs font-bold text-red-500">화면을 나가지 마세요</p>
           <p className="mt-1 text-[11px] leading-relaxed text-red-400">
             지금 창을 닫거나 다른 화면으로 이동하면 생성이 중단되고
             <br />
@@ -161,16 +162,19 @@ function ErrorState({
   onRetry: () => void;
 }) {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-white px-6 text-center text-black">
-      <p className="text-sm font-semibold text-black">{message}</p>
+    <main
+      className="flex min-h-screen flex-col items-center justify-center px-6 text-center"
+      style={{ backgroundColor: "#FAF9F6", color: "#1C1B22" }}
+    >
+      <p className="text-sm font-semibold">{message}</p>
       <button
         type="button"
         onClick={onRetry}
-        className="mt-6 rounded-full bg-black px-6 py-3 text-sm font-semibold text-white"
+        className="mt-6 flex h-[52px] items-center justify-center rounded-[12px] bg-[#6D4FC4] px-8 text-sm font-semibold text-white transition-colors hover:bg-[#4A3380]"
       >
         다시 시도
       </button>
-      <Link href="/upload" className="mt-4 text-xs text-gray-400 underline">
+      <Link href="/upload" className="mt-4 text-xs text-[#8A8580] underline">
         처음부터 다시 진행하기
       </Link>
     </main>
@@ -189,8 +193,11 @@ function PasswordGate({
   const [password, setPassword] = useState("");
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-white px-6 text-center text-black">
-      <p className="text-sm font-semibold text-black">
+    <main
+      className="flex min-h-screen flex-col items-center justify-center px-6 text-center"
+      style={{ backgroundColor: "#FAF9F6", color: "#1C1B22" }}
+    >
+      <p className="text-sm font-semibold">
         비밀번호를 입력하면 리포트를 다시 볼 수 있어요.
       </p>
       <input
@@ -199,18 +206,18 @@ function PasswordGate({
         onChange={(event) => setPassword(event.target.value)}
         placeholder="비밀번호"
         disabled={isVerifying}
-        className="mt-5 w-full max-w-xs rounded-xl border border-violet-100 px-4 py-3 text-center text-sm text-black outline-none focus:border-violet-300"
+        className="mt-5 h-[52px] w-full max-w-xs rounded-[12px] border border-[#E7E2D9] px-4 text-center text-sm outline-none focus:border-[#6D4FC4]"
       />
       {error && <p className="mt-2 text-xs text-red-500">{error}</p>}
       <button
         type="button"
         onClick={() => onSubmit(password)}
         disabled={isVerifying || password.length === 0}
-        className="mt-5 rounded-full bg-black px-6 py-3 text-sm font-semibold text-white disabled:opacity-50"
+        className="mt-5 flex h-[52px] items-center justify-center rounded-[12px] bg-[#6D4FC4] px-8 text-sm font-semibold text-white transition-colors hover:bg-[#4A3380] disabled:opacity-50"
       >
         {isVerifying ? "확인 중..." : "리포트 확인하기"}
       </button>
-      <Link href="/upload" className="mt-4 text-xs text-gray-400 underline">
+      <Link href="/upload" className="mt-4 text-xs text-[#8A8580] underline">
         처음부터 다시 진행하기
       </Link>
     </main>
@@ -374,33 +381,24 @@ function ChapterBody({ text }: { text: string }) {
           return (
             <blockquote
               key={index}
-              className="relative my-2 mb-7 rounded-sm border border-[var(--hairline)] bg-[var(--paper-raised)] px-7 py-6"
+              className="relative my-2 mb-7 rounded-[12px] border border-[var(--hairline)] bg-[var(--paper-raised)] px-7 py-6"
             >
-              <span
-                className="mb-1.5 block text-[40px] leading-none text-[var(--plum)] opacity-65"
-                style={{ fontFamily: "'Noto Serif KR', serif" }}
-                aria-hidden="true"
-              >
-                &ldquo;
+              <span className="block text-[10.5px] font-semibold italic tracking-[0.04em] text-[var(--ink-soft)]">
+                Consultant&apos;s Note
               </span>
               <p
-                className="text-[16.5px] font-medium leading-[1.7] text-[var(--ink)]"
+                className="mt-3 text-[17px] font-medium leading-[1.7] text-[var(--ink)]"
                 style={{ fontFamily: "'Noto Serif KR', serif" }}
               >
                 {renderInlineMarkdown(block.content)}
               </p>
-              <cite
-                className="mt-3.5 block text-[11px] not-italic tracking-[0.04em] text-[var(--ink-soft)]"
-              >
-                — 한 줄 총평
-              </cite>
             </blockquote>
           );
         }
         return (
           <p
             key={index}
-            className="mb-5 text-[15.5px] leading-[1.85] text-[var(--ink)] last:mb-0"
+            className="mb-5 text-[16.5px] leading-[1.85] text-[var(--ink)] last:mb-0"
           >
             {renderInlineMarkdown(block.content)}
           </p>
@@ -408,20 +406,6 @@ function ChapterBody({ text }: { text: string }) {
       })}
     </div>
   );
-}
-
-// Ties each chapter's accent to a real color from this report's own
-// palette (chapter 11 — 사진상 컬러 무드 분석) instead of a fixed color,
-// so it stays correct for whichever mood/palette this particular user got.
-function getChapterAccent(
-  index: number,
-  palette: PreviewResult["colorHint"]["palette"] | undefined,
-): { hex: string; name: string } {
-  if (!palette || palette.length === 0) {
-    return { hex: "#6D4FC4", name: "플럼" };
-  }
-  const chip = palette[index % palette.length];
-  return { hex: chip.hex, name: chip.name };
 }
 
 function chapterAnchorId(key: ReportChapterKey) {
@@ -446,14 +430,17 @@ function TableOfContents({
   chapters: (typeof REPORT_CHAPTERS)[number][];
 }) {
   return (
-    <Container className="mt-14">
+    <Container className="reveal mt-16">
+      <span className="block text-[11px] font-semibold tracking-[0.16em] text-[var(--ink-soft)]">
+        TABLE OF CONTENTS
+      </span>
       <h2
-        className="text-[22px] font-semibold text-[var(--ink)]"
+        className="mt-2 text-[28px] font-semibold leading-tight text-[var(--ink)]"
         style={{ fontFamily: "'Noto Serif KR', serif" }}
       >
         리포트 구성
       </h2>
-      <p className="mb-6 mt-1.5 text-sm text-[var(--ink-soft)]">
+      <p className="mb-7 mt-2.5 text-[15px] leading-relaxed text-[var(--ink-soft)]">
         전체 {chapters.length}개 챕터로 이어집니다. 원하는 챕터를 눌러 바로
         이동할 수 있어요.
       </p>
@@ -492,11 +479,11 @@ function PaletteGrid({ palette }: { palette: PreviewResult["colorHint"]["palette
       {palette.map((chip) => (
         <div
           key={chip.name}
-          className="rounded-md border border-[var(--hairline)] bg-[var(--paper-raised)] p-3"
+          className="rounded-[12px] border border-[var(--hairline)] bg-[var(--paper-raised)] p-3"
         >
           <div className="flex items-center gap-2">
             <span
-              className="h-9 w-9 shrink-0 rounded-full border border-black/5 shadow-sm"
+              className="h-9 w-9 shrink-0 rounded-full border border-black/5"
               style={{ backgroundColor: chip.hex }}
             />
             <div>
@@ -519,43 +506,42 @@ function PaletteGrid({ palette }: { palette: PreviewResult["colorHint"]["palette
   );
 }
 
-function MoodTag({ accent }: { accent: { hex: string; name: string } }) {
+// English eyebrow + Korean subhead, consulting-book style — each section
+// label gets a small uppercase English tag above the Korean text instead
+// of just the Korean alone.
+const SECTION_EYEBROWS: Record<string, string> = {
+  "자세한 분석": "DETAILED ANALYSIS",
+  "바로 적용 팁": "QUICK TIPS",
+  체크리스트: "CHECKLIST",
+};
+
+function SectionLabel({ children }: { children: string }) {
+  const eyebrow = SECTION_EYEBROWS[children];
   return (
-    <span
-      className="mb-3.5 inline-flex items-center gap-1.5 text-[11px] font-medium tracking-[0.04em] text-[var(--ink-soft)]"
-    >
-      <span
-        className="h-2 w-2 rounded-full"
-        style={{ backgroundColor: accent.hex }}
-        aria-hidden="true"
-      />
-      MOOD — {accent.name}
-    </span>
+    <div className="mb-3">
+      {eyebrow && (
+        <span className="block text-[10.5px] font-semibold tracking-[0.16em] text-[var(--ink-soft)]">
+          {eyebrow}
+        </span>
+      )}
+      <span className="mt-1 block text-[13px] font-semibold text-[var(--plum-deep)]">
+        {children}
+      </span>
+    </div>
   );
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="mb-2.5 block text-[11.5px] font-semibold text-[var(--plum-deep)]">
-      {children}
-    </span>
-  );
+function Divider() {
+  return <div className="my-7 h-px bg-[var(--hairline)]" aria-hidden="true" />;
 }
 
 // The one-line "diagnosis" — a punchy verdict shown right under the
 // chapter title, before the reader commits to the long-form analysis.
-function DiagnosisLine({
-  text,
-  accent,
-}: {
-  text: string;
-  accent: { hex: string };
-}) {
+function DiagnosisLine({ text }: { text: string }) {
   return (
-    <div className="mt-5 flex items-start gap-2.5 rounded-md bg-[var(--plum-tint)] px-4 py-3.5">
+    <div className="mt-6 flex items-start gap-2.5 rounded-[12px] bg-[var(--plum-tint)] px-4 py-3.5">
       <span
-        className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full"
-        style={{ backgroundColor: accent.hex }}
+        className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--plum)]"
         aria-hidden="true"
       />
       <p className="text-[16px] font-semibold leading-[1.5] text-[var(--ink)] break-keep">
@@ -584,7 +570,7 @@ function KeywordPills({ items }: { items: string[] }) {
 // into the full detailed-analysis section below it.
 function SummaryCard({ lines }: { lines: string[] }) {
   return (
-    <div className="mt-4 rounded-md border border-[var(--hairline)] bg-[var(--paper-raised)] p-5">
+    <div className="mt-4 rounded-[12px] border border-[var(--hairline)] bg-[var(--paper-raised)] p-5">
       <ol className="flex flex-col gap-3">
         {lines.map((line, index) => (
           <li key={index} className="flex items-start gap-3">
@@ -601,20 +587,13 @@ function SummaryCard({ lines }: { lines: string[] }) {
   );
 }
 
-function TipsList({
-  items,
-  accent,
-}: {
-  items: string[];
-  accent: { hex: string };
-}) {
+function TipsList({ items }: { items: string[] }) {
   return (
     <ul className="flex flex-col gap-2.5">
       {items.map((item, index) => (
         <li key={index} className="flex items-start gap-2.5">
           <span
-            className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
-            style={{ backgroundColor: accent.hex }}
+            className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--plum)] text-[10px] font-bold text-white"
             aria-hidden="true"
           >
             ✓
@@ -628,24 +607,14 @@ function TipsList({
   );
 }
 
-function ChecklistBlock({
-  items,
-  accent,
-}: {
-  items: string[];
-  accent: { hex: string };
-}) {
+function ChecklistBlock({ items }: { items: string[] }) {
   return (
-    <div
-      className="rounded-md border border-dashed p-4"
-      style={{ borderColor: accent.hex }}
-    >
+    <div className="rounded-[12px] border border-dashed border-[var(--plum)] p-4">
       <ul className="flex flex-col gap-2.5">
         {items.map((item, index) => (
           <li key={index} className="flex items-center gap-2.5">
             <span
-              className="h-4 w-4 shrink-0 rounded border-[1.5px]"
-              style={{ borderColor: accent.hex }}
+              className="h-4 w-4 shrink-0 rounded border-[1.5px] border-[var(--plum)]"
               aria-hidden="true"
             />
             <p className="text-[14px] leading-[1.5] text-[var(--ink)] break-keep">
@@ -665,7 +634,6 @@ function ChapterCard({
   colorHint,
   typeValue,
   styleTypeValue,
-  accent,
   heroPickIndex,
 }: {
   chapter: (typeof REPORT_CHAPTERS)[number];
@@ -674,7 +642,6 @@ function ChapterCard({
   colorHint: PreviewResult["colorHint"] | undefined;
   typeValue?: string | null;
   styleTypeValue?: HairStyleCandidate | MakeupStyleCandidate | null;
-  accent: { hex: string; name: string };
   heroPickIndex: number;
 }) {
   const visual = CHAPTER_VISUALS[chapter.key];
@@ -716,13 +683,13 @@ function ChapterCard({
     <Container
       id={chapterAnchorId(chapter.key)}
       maxWidth="max-w-3xl"
-      className="mt-8 scroll-mt-6"
+      className="reveal mt-10 scroll-mt-6"
     >
       <div
-        className={`overflow-hidden rounded-md border shadow-sm ${
+        className={`overflow-hidden rounded-[12px] border ${
           isFinal
-            ? "border-[var(--plum-tint)] bg-[var(--plum-tint)] shadow-none"
-            : "border-[var(--hairline)] bg-[var(--paper-raised)] shadow-none"
+            ? "border-[var(--plum-tint)] bg-[var(--plum-tint)]"
+            : "border-[var(--hairline)] bg-[var(--paper-raised)]"
         }`}
       >
         {imageSrc && (
@@ -748,38 +715,32 @@ function ChapterCard({
           </div>
         )}
 
-        <div
-          className="p-6 pl-[22px]"
-          style={{ borderLeft: `3px solid ${accent.hex}` }}
-        >
-          <MoodTag accent={accent} />
-          <span
-            className="block text-[12px] font-semibold tracking-[0.08em] text-[var(--plum)]"
-          >
+        <div className="p-7 pl-[26px] sm:p-8 sm:pl-[30px]" style={{ borderLeft: "3px solid var(--plum)" }}>
+          <span className="block text-[12px] font-semibold tracking-[0.1em] text-[var(--plum)]">
             CHAPTER {chapter.number}
           </span>
           <h2
-            className="mt-2.5 text-[clamp(22px,3vw,26px)] font-semibold leading-[1.35] tracking-[-0.005em] text-[var(--ink)] break-keep"
+            className="mt-3 text-[28px] font-semibold leading-[1.3] tracking-[-0.005em] text-[var(--ink)] break-keep sm:text-[32px]"
             style={{ fontFamily: "'Noto Serif KR', serif" }}
           >
             {chapter.title}
           </h2>
 
           {visual === "palette" && colorHint?.palette && (
-            <div className="mt-5">
+            <div className="mt-6">
               <PaletteGrid palette={colorHint.palette} />
             </div>
           )}
 
           {visual === "typeBadge" && typeValue && (
-            <div className="mt-5 rounded-md border border-[var(--hairline)] bg-[var(--plum-tint)] p-5 text-center">
+            <div className="mt-6 rounded-[12px] border border-[var(--hairline)] bg-[var(--plum-tint)] p-5 text-center">
               <p
                 className="text-xs font-semibold tracking-[0.08em] text-[var(--plum-deep)]"
               >
                 사진상 분석 결과
               </p>
               {typeImageSrc && (
-                <div className="relative mx-auto mt-3 h-24 w-24 overflow-hidden rounded-full border-4 border-white shadow-md">
+                <div className="relative mx-auto mt-3 h-24 w-24 overflow-hidden rounded-full border-4 border-white">
                   <Image
                     src={typeImageSrc}
                     alt={typeValue}
@@ -801,9 +762,7 @@ function ChapterCard({
             </div>
           )}
 
-          {content.diagnosis && (
-            <DiagnosisLine text={content.diagnosis} accent={accent} />
-          )}
+          {content.diagnosis && <DiagnosisLine text={content.diagnosis} />}
 
           {content.keywords && content.keywords.length > 0 && (
             <KeywordPills items={content.keywords} />
@@ -813,23 +772,31 @@ function ChapterCard({
             <SummaryCard lines={content.summary} />
           )}
 
-          <div className="mt-7">
+          <Divider />
+
+          <div>
             <SectionLabel>자세한 분석</SectionLabel>
             <ChapterBody text={content.body} />
           </div>
 
           {content.tips && content.tips.length > 0 && (
-            <div className="mt-7">
-              <SectionLabel>바로 적용 팁</SectionLabel>
-              <TipsList items={content.tips} accent={accent} />
-            </div>
+            <>
+              <Divider />
+              <div>
+                <SectionLabel>바로 적용 팁</SectionLabel>
+                <TipsList items={content.tips} />
+              </div>
+            </>
           )}
 
           {content.checklist && content.checklist.length > 0 && (
-            <div className="mt-7">
-              <SectionLabel>체크리스트</SectionLabel>
-              <ChecklistBlock items={content.checklist} accent={accent} />
-            </div>
+            <>
+              <Divider />
+              <div>
+                <SectionLabel>체크리스트</SectionLabel>
+                <ChecklistBlock items={content.checklist} />
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -1035,6 +1002,31 @@ export default function ReportPage() {
     report = ensureReportVisuals(report);
   }
 
+  // Fades + slides each chapter into view the first time it scrolls into
+  // the viewport (see .reveal / .reveal-visible in globals.css) — same
+  // one-time-entrance pattern as /detail. Re-queries whenever `report`
+  // changes since the TOC/chapter cards only exist in the DOM once the
+  // report has actually loaded.
+  useEffect(() => {
+    if (!report) return;
+    const elements = Array.from(document.querySelectorAll(".reveal"));
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("reveal-visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: "0px 0px -10% 0px" },
+    );
+
+    elements.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [report]);
+
   if (!report) {
     if (fetchState.status === "locked" || fetchState.status === "verifying") {
       return (
@@ -1089,17 +1081,17 @@ export default function ReportPage() {
 
       <Container className="text-center">
         <p
-          className="text-[13px] font-semibold tracking-[0.14em] text-[var(--plum-deep)]"
+          className="text-[13px] font-semibold tracking-[0.16em] text-[var(--plum-deep)]"
         >
-          FACEMOOD
+          FACEMOOD REPORT
         </p>
         <h1
-          className="mt-4 text-2xl font-bold leading-snug text-[var(--ink)]"
+          className="mt-5 text-[42px] font-bold leading-[1.15] text-[var(--ink)] sm:text-[52px]"
           style={{ fontFamily: "'Noto Serif KR', serif" }}
         >
           상세 스타일 리포트
         </h1>
-        <p className="mt-3 text-sm leading-relaxed text-[var(--ink-soft)]">
+        <p className="mt-4 text-[15px] leading-relaxed text-[var(--ink-soft)]">
           이미지 컨설팅 관점에서 정리한 스타일 분석 흐름이에요.
           <br />
           사진과 답변을 바탕으로 한 참고용 리포트입니다.
@@ -1113,9 +1105,8 @@ export default function ReportPage() {
         // photo gallery (0, 1, 2, ...) so ChapterCard can cycle through
         // them instead of every one of these chapters showing photo #1.
         let heroCounter = 0;
-        return visibleChapters.map((chapter, index) => {
+        return visibleChapters.map((chapter) => {
           const chapterData = report[chapter.key]!;
-          const accent = getChapterAccent(index, report.colorHint?.palette);
 
           const typeValue =
             chapter.key === "faceShapeAnalysis"
@@ -1143,14 +1134,13 @@ export default function ReportPage() {
               colorHint={report.colorHint}
               typeValue={typeValue}
               styleTypeValue={styleTypeValue}
-              accent={accent}
               heroPickIndex={heroPickIndex}
             />
           );
         });
       })()}
 
-      <Container className="mt-10">
+      <Container className="mt-12">
         <p className="text-center text-xs leading-relaxed text-[var(--ink-soft)]">
           FACEMOOD는 외모 점수화 없이, 이미지 무드와 스타일 방향만
           분석합니다. 퍼스널컬러는 조명과 카메라 보정에 따라 달라질 수 있어

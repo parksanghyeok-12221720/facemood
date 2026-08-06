@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import Container from "@/app/components/Container";
@@ -437,6 +437,28 @@ export default function MatchResultPage() {
   const hasNames = Boolean(answers.myName && answers.partnerName);
   const myName = answers.myName || "나";
   const partnerName = answers.partnerName || "그 사람";
+
+  // Fades + slides each section into view the first time it scrolls into
+  // the viewport (see .reveal / .reveal-visible in globals.css) — same
+  // one-time-entrance pattern as /detail and /report.
+  useEffect(() => {
+    const elements = Array.from(document.querySelectorAll(".reveal"));
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("reveal-visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: "0px 0px -10% 0px" },
+    );
+
+    elements.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
   const headline = hasNames ? `${myName}님과 ${partnerName}님의 무드 궁합` : "우리의 무드 궁합";
 
   return (
@@ -547,12 +569,12 @@ export default function MatchResultPage() {
         </Container>
       </div>
 
-      <Container maxWidth="max-w-3xl">
+      <Container maxWidth="max-w-3xl" className="reveal">
         <MatchReportBody report={mockReport} myName={myName} partnerName={partnerName} locked />
       </Container>
 
       {/* Review */}
-      <Container maxWidth="max-w-3xl" className="mt-12">
+      <Container maxWidth="max-w-3xl" className="reveal mt-12">
         <span
           className="inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold tracking-[0.2em]"
           style={{ backgroundColor: "var(--match-beige)", color: "var(--match-burgundy)" }}
@@ -591,7 +613,7 @@ export default function MatchResultPage() {
       </Container>
 
       {/* FAQ */}
-      <Container maxWidth="max-w-3xl" className="mt-12">
+      <Container maxWidth="max-w-3xl" className="reveal mt-12">
         <span
           className="inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold tracking-[0.2em]"
           style={{ backgroundColor: "var(--match-beige)", color: "var(--match-burgundy)" }}
@@ -637,7 +659,7 @@ export default function MatchResultPage() {
       </Container>
 
       {/* Final CTA */}
-      <Container maxWidth="max-w-3xl" className="mt-12">
+      <Container maxWidth="max-w-3xl" className="reveal mt-12">
         <div className="rounded-[28px] p-6 text-center text-white" style={{ backgroundColor: "var(--match-navy)" }}>
           <p className="text-base font-bold leading-relaxed" style={{ fontFamily: "'Noto Serif KR', serif" }}>
             우리 커플 무드 리포트,
