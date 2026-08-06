@@ -4,7 +4,7 @@ import Container from "@/app/components/Container";
 import { ADMIN_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/adminAuth";
 import { getRevenueStats, listPaidReports } from "@/lib/reports";
 import type { DailyRevenuePoint } from "@/lib/reports";
-import { getMatchRevenueTotal, listPaidMatchReports } from "@/lib/matchReports";
+import { getMatchRevenueStats, listPaidMatchReports } from "@/lib/matchReports";
 
 export const dynamic = "force-dynamic";
 
@@ -94,7 +94,24 @@ export default async function AdminPage() {
   const paidReports = listPaidReports();
   const revenue = getRevenueStats();
   const paidMatchReports = listPaidMatchReports();
-  const matchRevenue = getMatchRevenueTotal();
+  const matchRevenue = getMatchRevenueStats();
+
+  // Combined FACEMOOD + Match totals for the top summary cards — Match
+  // sales used to only show up in their own section below and were
+  // missing from 오늘/이번 달/누적 매출 entirely.
+  const combinedTodayTotal = revenue.todayTotal + matchRevenue.todayTotal;
+  const combinedTodayCount = revenue.todayCount + matchRevenue.todayCount;
+  const combinedMonthTotal = revenue.monthTotal + matchRevenue.monthTotal;
+  const combinedMonthCount = revenue.monthCount + matchRevenue.monthCount;
+  const combinedAllTimeTotal = revenue.allTimeTotal + matchRevenue.allTimeTotal;
+  const combinedDaily: DailyRevenuePoint[] = revenue.daily.map((point, i) => {
+    const matchPoint = matchRevenue.daily[i];
+    return {
+      date: point.date,
+      total: point.total + (matchPoint?.total ?? 0),
+      count: point.count + (matchPoint?.count ?? 0),
+    };
+  });
 
   return (
     <main className="min-h-screen bg-[#0a0a0a] px-4 py-10 text-white">
@@ -120,27 +137,29 @@ export default async function AdminPage() {
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
             <p className="text-xs text-gray-500">오늘 매출</p>
             <p className="mt-1 text-lg font-bold text-white sm:text-xl">
-              {revenue.todayTotal.toLocaleString("ko-KR")}원
+              {combinedTodayTotal.toLocaleString("ko-KR")}원
             </p>
-            <p className="mt-0.5 text-[11px] text-gray-500">{revenue.todayCount}건</p>
+            <p className="mt-0.5 text-[11px] text-gray-500">{combinedTodayCount}건</p>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
             <p className="text-xs text-gray-500">이번 달 매출</p>
             <p className="mt-1 text-lg font-bold text-white sm:text-xl">
-              {revenue.monthTotal.toLocaleString("ko-KR")}원
+              {combinedMonthTotal.toLocaleString("ko-KR")}원
             </p>
-            <p className="mt-0.5 text-[11px] text-gray-500">{revenue.monthCount}건</p>
+            <p className="mt-0.5 text-[11px] text-gray-500">{combinedMonthCount}건</p>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
             <p className="text-xs text-gray-500">누적 매출</p>
             <p className="mt-1 text-lg font-bold text-white sm:text-xl">
-              {revenue.allTimeTotal.toLocaleString("ko-KR")}원
+              {combinedAllTimeTotal.toLocaleString("ko-KR")}원
             </p>
-            <p className="mt-0.5 text-[11px] text-gray-500">{paidReports.length}건</p>
+            <p className="mt-0.5 text-[11px] text-gray-500">
+              {paidReports.length + paidMatchReports.length}건
+            </p>
           </div>
         </div>
 
-        <RevenueChart daily={revenue.daily} />
+        <RevenueChart daily={combinedDaily} />
 
         <div className="mt-6 overflow-x-auto rounded-2xl border border-white/10">
           <table className="w-full min-w-[680px] text-left text-sm">
@@ -204,9 +223,9 @@ export default async function AdminPage() {
           <h2 className="text-sm font-semibold text-white">FACEMOOD Match 결제 내역</h2>
           <div className="text-right">
             <p className="text-sm font-bold text-white">
-              {matchRevenue.total.toLocaleString("ko-KR")}원
+              {matchRevenue.allTimeTotal.toLocaleString("ko-KR")}원
             </p>
-            <p className="text-[11px] text-gray-500">{matchRevenue.count}건 (누적)</p>
+            <p className="text-[11px] text-gray-500">{paidMatchReports.length}건 (누적)</p>
           </div>
         </div>
 

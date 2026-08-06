@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-const BASE_COUNT = 1482;
+const BASE_COUNT = 69728;
 
 // Live-activity ticker next to the "HOT" badge — same irregular-interval,
 // always-increasing tick pattern as AnalysisCounter, just smaller
@@ -30,8 +30,9 @@ export default function HotLiveCounter() {
   }, []);
 
   return (
-    <span className="inline-flex items-center gap-1 text-xs font-bold text-orange-500">
-      🔥 {count.toLocaleString()}
+    <span className="inline-flex items-center gap-1 text-base font-extrabold tracking-tight text-orange-500 sm:text-lg">
+      <span className="text-lg sm:text-xl">🔥</span>
+      {count.toLocaleString()}
     </span>
   );
 }

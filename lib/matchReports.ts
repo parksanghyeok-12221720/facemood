@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import db from "@/lib/db";
+import type { DailyRevenuePoint, RevenueStats } from "@/lib/reports";
 import type { MatchFullReport } from "@/types/matchReport";
 
 export type MatchReportRecord = {
@@ -245,12 +246,62 @@ export function listPaidMatchReports(): PaidMatchReportSummary[] {
   });
 }
 
-export function getMatchRevenueTotal(): { total: number; count: number } {
-  const row = db
-    .prepare(
-      `SELECT COALESCE(SUM(amount), 0) AS total, COUNT(*) AS count
-       FROM match_reports WHERE paid = 1`,
-    )
-    .get() as { total: number; count: number };
-  return row;
+// paid_at is written via SQLite's datetime('now'), which is UTC — shift
+// by +9h before taking the date portion so "오늘"/"이번달" line up with
+// Korea Standard Time regardless of what timezone the server itself runs
+// in. Same conversion as lib/reports.ts's getRevenueStats.
+function toKstDateString(epochMs: number): string {
+  return new Date(epochMs + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+// Same today/month/all-time/daily breakdown as the main FACEMOOD product's
+// getRevenueStats, but over match_reports — so admin can combine the two
+// into one accurate total instead of Match sales only ever showing up in
+// their own separate all-time figure.
+export function getMatchRevenueStats(days = 30): RevenueStats {
+  const rows = db
+    .prepare(`SELECT amount, paid_at FROM match_reports WHERE paid = 1 AND paid_at IS NOT NULL`)
+    .all() as { amount: number | null; paid_at: string }[];
+
+  const byDay = new Map<string, { total: number; count: number }>();
+  let allTimeTotal = 0;
+
+  for (const row of rows) {
+    const utcMs = new Date(`${row.paid_at.replace(" ", "T")}Z`).getTime();
+    if (Number.isNaN(utcMs)) continue;
+    const day = toKstDateString(utcMs);
+    const entry = byDay.get(day) ?? { total: 0, count: 0 };
+    entry.total += row.amount ?? 0;
+    entry.count += 1;
+    byDay.set(day, entry);
+    allTimeTotal += row.amount ?? 0;
+  }
+
+  const now = Date.now();
+  const todayKey = toKstDateString(now);
+  const monthKey = todayKey.slice(0, 7);
+
+  let todayTotal = 0;
+  let todayCount = 0;
+  let monthTotal = 0;
+  let monthCount = 0;
+  for (const [day, entry] of byDay) {
+    if (day === todayKey) {
+      todayTotal = entry.total;
+      todayCount = entry.count;
+    }
+    if (day.startsWith(monthKey)) {
+      monthTotal += entry.total;
+      monthCount += entry.count;
+    }
+  }
+
+  const daily: DailyRevenuePoint[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const day = toKstDateString(now - i * 24 * 60 * 60 * 1000);
+    const entry = byDay.get(day) ?? { total: 0, count: 0 };
+    daily.push({ date: day, total: entry.total, count: entry.count });
+  }
+
+  return { todayTotal, todayCount, monthTotal, monthCount, allTimeTotal, daily };
 }

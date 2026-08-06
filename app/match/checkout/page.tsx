@@ -12,7 +12,7 @@ const PENDING_PASSWORD_KEY = "facemood_match_pending_password";
 const PENDING_PHONE_KEY = "facemood_match_pending_phone";
 const PENDING_BUNDLE_KEY = "facemood_match_pending_bundle";
 
-const MATCH_PRICE_KRW = 29900;
+const MATCH_PRICE_KRW = 34900;
 const MATCH_BUNDLE_PRICE_KRW = 59900;
 
 const phonePrefixOptions = ["010", "011", "016", "017", "018", "019"];
