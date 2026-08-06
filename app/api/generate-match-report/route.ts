@@ -13,6 +13,15 @@ export const runtime = "nodejs";
 // ever called from /match/report, after checkout — the free preview
 // (/match/result) always shows canned example content instead, same
 // policy as the main FACEMOOD product's /result vs /report split.
+//
+// Same two-phase architecture as the main FACEMOOD product's
+// /api/generate-report: one call produces the short structured fields
+// (scores, labels, enums), then each of the report's 9 numbered chapters
+// (matching MatchReportBody.tsx's 01-09 PartLabel sections, in the same
+// order) gets its own dedicated call for its long-form body. Splitting the
+// bodies into separate per-chapter calls — instead of asking for all 9 in
+// one completion — is what actually gets the model to hit the 1,000자+
+// target reliably instead of undershooting.
 
 const SYSTEM_PROMPT = `당신은 FACEMOOD Match의 커플 무드 궁합 리포트를 작성하는 AI입니다.
 
@@ -37,15 +46,145 @@ FACEMOOD Match는 두 사람이 업로드한 사진과 답변을 바탕으로, �
 
 5. 마크다운 문법(별표, #, - 등)을 쓰지 말고, 자연스러운 문장으로만 작성하세요.
 
-6. 모든 텍스트는 한국어로, 간결하고 자연스럽게 작성하세요. 같은 표현을 반복하지 마세요.
+6. 모든 텍스트는 한국어로 작성하세요. 애매하거나 두루뭉술한 표현("느낌이 좋아요", "잘 어울려요"
+같은 말만 반복하는 것) 대신, 무엇을, 왜, 어떻게 그렇게 봤는지 구체적인 근거와 예시를 명확하게
+써서 내용이 분명하게 읽히도록 하세요. 같은 표현을 여러 챕터에서 반복하지 마세요.
 
-7. moodTypeBody, recommendedMoodsBody, part1Body, part2Body, part3Body, part4Body는 각 챕터를
-   풍부하게 설명하는 본문입니다. 각각 공백 포함 900~1100자 분량으로, 문단 구분(줄바꿈 두 번)을
-   섞어가며 작성하세요. 단순히 점수나 라벨을 나열하지 말고, 왜 그렇게 분석했는지, 사진과 답변에서
-   어떤 부분이 근거가 되었는지, 두 사람에게 어떤 의미가 있는지를 구체적으로 풀어서 설명하세요.
-   미사여구나 같은 문장 반복으로 글자 수만 채우지 말고, 실질적인 내용으로 채우세요.`;
+7. 각 챕터 본문은 공백 포함 1,000~1,300자 분량으로, 문단 구분(줄바꿈 두 번)을 섞어가며
+작성하세요. 단순히 점수나 라벨을 나열하지 말고, 왜 그렇게 분석했는지, 사진과 답변에서 어떤
+부분이 근거가 되었는지, 두 사람에게 구체적으로 어떤 의미와 활용법이 있는지 명확한 문장으로
+풀어서 설명하세요. 미사여구나 같은 문장 반복으로 글자 수만 채우지 말고, 실질적인 내용으로
+채우세요.`;
 
-function buildUserPrompt(answers: Record<string, unknown>): string {
+const FILLED_SCORE_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["label", "filled"],
+  properties: {
+    label: { type: "string" },
+    filled: { type: "integer" },
+  },
+} as const;
+
+// ---------------------------------------------------------------------------
+// Phase 1 — structured fields (scores, labels, enums). Short enough that a
+// single completion reliably returns everything in full.
+// ---------------------------------------------------------------------------
+
+const STRUCTURED_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: [
+    "pairLabel",
+    "pairScore",
+    "pairBullets",
+    "firstImpressionScore",
+    "synergyScore",
+    "myArtStyle",
+    "partnerArtStyle",
+    "artStyleTogether",
+    "moodTypeName",
+    "moodTypeScore",
+    "moodTypeSummary",
+    "moodTypeKeywords",
+    "recommendedMoods",
+    "styleCompat",
+    "styleGoodNote",
+    "myHair",
+    "partnerHair",
+    "hairTogetherScore",
+    "itemCompat",
+    "coupleLookDirection",
+    "datePlaceCompat",
+    "photoConceptTags",
+    "snsConceptCompat",
+    "seasonCompat",
+    "colorCompat",
+    "styleAvoidNote",
+    "myPerfume",
+    "partnerPerfume",
+    "togetherPerfume",
+    "overallMoodScore",
+    "overallPercentile",
+    "moodKeywords",
+  ],
+  properties: {
+    pairLabel: { type: "string" },
+    pairScore: { type: "integer" },
+    pairBullets: { type: "array", items: { type: "string" }, minItems: 4, maxItems: 4 },
+    firstImpressionScore: { type: "integer" },
+    synergyScore: { type: "integer" },
+    myArtStyle: { type: "string", enum: [...ART_STYLE_CANDIDATES] },
+    partnerArtStyle: { type: "string", enum: [...ART_STYLE_CANDIDATES] },
+    artStyleTogether: { type: "string" },
+    moodTypeName: { type: "string", enum: [...MOOD_TYPE_CANDIDATES] },
+    moodTypeScore: { type: "integer" },
+    moodTypeSummary: { type: "string" },
+    moodTypeKeywords: { type: "array", items: { type: "string" }, minItems: 5, maxItems: 5 },
+    recommendedMoods: {
+      type: "array",
+      minItems: 2,
+      maxItems: 3,
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["name", "reason"],
+        properties: {
+          name: { type: "string", enum: [...MOOD_TYPE_CANDIDATES] },
+          reason: { type: "string" },
+        },
+      },
+    },
+    styleCompat: { type: "array", items: FILLED_SCORE_SCHEMA, minItems: 6, maxItems: 6 },
+    styleGoodNote: { type: "string" },
+    myHair: { type: "string" },
+    partnerHair: { type: "string" },
+    hairTogetherScore: { type: "integer" },
+    itemCompat: { type: "array", items: FILLED_SCORE_SCHEMA, minItems: 4, maxItems: 4 },
+    coupleLookDirection: { type: "string" },
+    datePlaceCompat: { type: "array", items: FILLED_SCORE_SCHEMA, minItems: 4, maxItems: 4 },
+    photoConceptTags: { type: "array", items: { type: "string" }, minItems: 5, maxItems: 5 },
+    snsConceptCompat: { type: "array", items: FILLED_SCORE_SCHEMA, minItems: 4, maxItems: 4 },
+    seasonCompat: { type: "array", items: FILLED_SCORE_SCHEMA, minItems: 4, maxItems: 4 },
+    colorCompat: {
+      type: "array",
+      minItems: 5,
+      maxItems: 5,
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["name", "hex", "reason"],
+        properties: {
+          name: { type: "string" },
+          hex: { type: "string" },
+          reason: { type: "string" },
+        },
+      },
+    },
+    styleAvoidNote: { type: "string" },
+    myPerfume: { type: "string" },
+    partnerPerfume: { type: "string" },
+    togetherPerfume: { type: "string" },
+    overallMoodScore: { type: "integer" },
+    overallPercentile: { type: "string" },
+    moodKeywords: { type: "array", items: { type: "string" }, minItems: 6, maxItems: 6 },
+  },
+} as const;
+
+type StructuredFields = Omit<
+  MatchFullReport,
+  | "firstImpressionBody"
+  | "artStyleBody"
+  | "moodMatchBody"
+  | "styleCompatBody"
+  | "moodboardBody"
+  | "dateSnsBody"
+  | "colorCompatBody"
+  | "perfumeBody"
+  | "finalBody"
+>;
+
+function buildStructuredPrompt(answers: Record<string, unknown>): string {
   const answerLines = Object.entries(answers ?? {}).map(
     ([key, value]) => `- ${key}: ${JSON.stringify(value)}`,
   );
@@ -75,187 +214,291 @@ function buildUserPrompt(answers: Record<string, unknown>): string {
     "moodKeywords는 두 사람의 분위기를 나타내는 영어 단어 6개를 작성하세요 (예: Calm, Warm 등 형태).",
     "overallPercentile은 '상위 N%' 형태로 작성하세요.",
     "",
-    "각 챕터의 본문(공백 포함 900~1100자)이 다뤄야 할 내용:",
-    "- moodTypeBody: 왜 이 Mood Type으로 분석됐는지, 사진에서 어떤 부분이 이 무드로 이어졌는지,",
-    "  이 무드가 두 사람에게 어떤 인상을 주는지 설명하세요.",
-    "- recommendedMoodsBody: 추천한 다른 무드들이 지금 무드와 어떻게 다르고, 시도하면 어떤 느낌을",
-    "  더할 수 있는지 각각 짚어가며 설명하세요.",
-    "- part1Body: 각자의 현재 이미지 무드, 첫인상·시너지 점수, 그림체 케미가 왜 그렇게 나왔는지,",
-    "  두 사람의 얼굴 분위기가 어떻게 서로 다르거나 닮았는지 설명하세요.",
-    "- part2Body: 스타일·헤어·컬러·코디 궁합이 왜 그렇게 분석됐는지, 실제로 어떻게 활용하면",
-    "  좋을지 구체적인 조언을 담아 설명하세요.",
-    "- part3Body: 데이트 장소, 사진 컨셉, 향기, 계절 궁합을 왜 그렇게 추천했는지, 실제 데이트나",
-    "  나들이에서 어떻게 활용할 수 있는지 설명하세요.",
-    "- part4Body: 종합 Mood Score와 키워드가 의미하는 바를 정리하고, 리포트 전체를 요약하는",
-    "  마무리 총평으로 작성하세요.",
+    "이 응답에는 본문(body) 텍스트는 포함하지 마세요 — 점수, 라벨, 목록 같은 짧은 구조화된",
+    "값만 채워주세요. 각 챕터의 상세 본문은 이어지는 별도 요청에서 작성합니다.",
   ].join("\n");
 }
 
-const FILLED_SCORE_SCHEMA = {
-  type: "object",
-  additionalProperties: false,
-  required: ["label", "filled"],
-  properties: {
-    label: { type: "string" },
-    filled: { type: "integer" },
-  },
-} as const;
+// ---------------------------------------------------------------------------
+// Phase 2 — one dedicated call per numbered chapter for its long-form body.
+// Order matches MatchReportBody.tsx's 01-09 PartLabel sections exactly.
+// ---------------------------------------------------------------------------
 
-const SCHEMA = {
-  type: "object",
-  additionalProperties: false,
-  required: [
-    "pairLabel",
-    "pairScore",
-    "pairBullets",
-    "moodTypeName",
-    "moodTypeScore",
-    "moodTypeSummary",
-    "moodTypeKeywords",
-    "moodTypeBody",
-    "recommendedMoods",
-    "recommendedMoodsBody",
-    "myMoodLabel",
-    "myMoodNote",
-    "partnerMoodLabel",
-    "partnerMoodNote",
-    "firstImpressionScore",
-    "synergyScore",
-    "myArtStyle",
-    "partnerArtStyle",
-    "artStyleTogether",
-    "part1Body",
-    "styleCompat",
-    "styleGoodNote",
-    "styleAvoidNote",
-    "coupleLookDirection",
-    "myHair",
-    "partnerHair",
-    "hairTogetherScore",
-    "colorCompat",
-    "itemCompat",
-    "part2Body",
-    "datePlaceCompat",
-    "photoConceptTags",
-    "snsConceptCompat",
-    "myPerfume",
-    "partnerPerfume",
-    "togetherPerfume",
-    "seasonCompat",
-    "part3Body",
-    "overallMoodScore",
-    "overallPercentile",
-    "moodKeywords",
-    "part4Body",
-  ],
-  properties: {
-    pairLabel: { type: "string" },
-    pairScore: { type: "integer" },
-    pairBullets: { type: "array", items: { type: "string" }, minItems: 4, maxItems: 4 },
-    moodTypeName: { type: "string", enum: [...MOOD_TYPE_CANDIDATES] },
-    moodTypeScore: { type: "integer" },
-    moodTypeSummary: { type: "string" },
-    moodTypeKeywords: { type: "array", items: { type: "string" }, minItems: 5, maxItems: 5 },
-    moodTypeBody: { type: "string" },
-    recommendedMoods: {
-      type: "array",
-      minItems: 2,
-      maxItems: 3,
-      items: {
-        type: "object",
-        additionalProperties: false,
-        required: ["name", "reason"],
-        properties: {
-          name: { type: "string", enum: [...MOOD_TYPE_CANDIDATES] },
-          reason: { type: "string" },
-        },
-      },
-    },
-    recommendedMoodsBody: { type: "string" },
-    myMoodLabel: { type: "string" },
-    myMoodNote: { type: "string" },
-    partnerMoodLabel: { type: "string" },
-    partnerMoodNote: { type: "string" },
-    firstImpressionScore: { type: "integer" },
-    synergyScore: { type: "integer" },
-    myArtStyle: { type: "string", enum: [...ART_STYLE_CANDIDATES] },
-    partnerArtStyle: { type: "string", enum: [...ART_STYLE_CANDIDATES] },
-    artStyleTogether: { type: "string" },
-    part1Body: { type: "string" },
-    styleCompat: { type: "array", items: FILLED_SCORE_SCHEMA, minItems: 6, maxItems: 6 },
-    styleGoodNote: { type: "string" },
-    styleAvoidNote: { type: "string" },
-    coupleLookDirection: { type: "string" },
-    myHair: { type: "string" },
-    partnerHair: { type: "string" },
-    hairTogetherScore: { type: "integer" },
-    colorCompat: {
-      type: "array",
-      minItems: 5,
-      maxItems: 5,
-      items: {
-        type: "object",
-        additionalProperties: false,
-        required: ["name", "hex", "reason"],
-        properties: {
-          name: { type: "string" },
-          hex: { type: "string" },
-          reason: { type: "string" },
-        },
-      },
-    },
-    itemCompat: { type: "array", items: FILLED_SCORE_SCHEMA, minItems: 4, maxItems: 4 },
-    part2Body: { type: "string" },
-    datePlaceCompat: { type: "array", items: FILLED_SCORE_SCHEMA, minItems: 4, maxItems: 4 },
-    photoConceptTags: { type: "array", items: { type: "string" }, minItems: 5, maxItems: 5 },
-    snsConceptCompat: { type: "array", items: FILLED_SCORE_SCHEMA, minItems: 4, maxItems: 4 },
-    myPerfume: { type: "string" },
-    partnerPerfume: { type: "string" },
-    togetherPerfume: { type: "string" },
-    seasonCompat: { type: "array", items: FILLED_SCORE_SCHEMA, minItems: 4, maxItems: 4 },
-    part3Body: { type: "string" },
-    overallMoodScore: { type: "integer" },
-    overallPercentile: { type: "string" },
-    moodKeywords: { type: "array", items: { type: "string" }, minItems: 6, maxItems: 6 },
-    part4Body: { type: "string" },
-  },
-} as const;
+type ChapterKey =
+  | "firstImpressionBody"
+  | "artStyleBody"
+  | "moodMatchBody"
+  | "styleCompatBody"
+  | "moodboardBody"
+  | "dateSnsBody"
+  | "colorCompatBody"
+  | "perfumeBody"
+  | "finalBody";
 
-// Chapter bodies target 900-1100자 — set a bit under that so any chapter
-// that undershoots gets topped up rather than shipping noticeably thin.
-const MIN_BODY_CHARS = 850;
-const BODY_FIELDS = [
-  "moodTypeBody",
-  "recommendedMoodsBody",
-  "part1Body",
-  "part2Body",
-  "part3Body",
-  "part4Body",
-] as const;
-
-async function expandBody(client: OpenAI, currentBody: string): Promise<string> {
-  const completion = await client.chat.completions.create({
-    model: "gpt-5.4-nano",
-    messages: [
-      { role: "system", content: SYSTEM_PROMPT },
-      {
-        role: "user",
-        content: [
-          "아래는 리포트 챕터 본문 초안인데 너무 짧습니다. 내용과 어조는 그대로 유지하면서,",
-          "구체적인 이유·근거를 조금 더 추가해서 전체 분량을 공백 포함 900~1100자 정도로",
-          "만들어주세요. 미사여구나 반복으로 글자 수만 채우지 말고, 실질적인 내용으로 채워주세요.",
-          "결과는 완성된 본문 텍스트만 반환하세요 (JSON이나 따옴표 없이).",
-          "",
-          "--- 초안 ---",
-          currentBody,
-        ].join("\n"),
-      },
+const CHAPTERS: {
+  key: ChapterKey;
+  number: string;
+  title: string;
+  needsPhotos: boolean;
+  instructions: (s: StructuredFields) => string[];
+}[] = [
+  {
+    key: "firstImpressionBody",
+    number: "01",
+    title: "첫인상 분석",
+    needsPhotos: true,
+    instructions: (s) => [
+      `첫인상 조화 점수는 ${s.firstImpressionScore}점, 분위기 시너지 점수는 ${s.synergyScore}점입니다.`,
+      "왜 이 점수가 나왔는지, 두 사람이 함께 있을 때 다른 사람 눈에 어떻게 비칠지, 사진의 어떤",
+      "부분(표정, 톤, 스타일링)이 근거가 되었는지 구체적으로 설명하세요.",
     ],
-    max_completion_tokens: 1500,
-  });
+  },
+  {
+    key: "artStyleBody",
+    number: "02",
+    title: "얼굴 그림체 궁합",
+    needsPhotos: true,
+    instructions: (s) => [
+      `본인 그림체는 ${s.myArtStyle}, 상대방 그림체는 ${s.partnerArtStyle}이고, 함께일 때는`,
+      `"${s.artStyleTogether}"로 분석됐습니다.`,
+      "각 그림체가 사진에서 어떻게 느껴졌는지, 두 그림체가 만났을 때 왜 이런 together 무드가",
+      "만들어지는지, 이 조합이 사진이나 프로필에서 어떻게 활용되면 좋을지 설명하세요.",
+    ],
+  },
+  {
+    key: "moodMatchBody",
+    number: "03",
+    title: "무드 궁합",
+    needsPhotos: true,
+    instructions: (s) => [
+      `Mood Type은 ${s.moodTypeName} (Mood Score ${s.moodTypeScore}), 요약은`,
+      `"${s.moodTypeSummary}", 키워드는 ${s.moodTypeKeywords.join(", ")}입니다.`,
+      `추천 무드는 ${s.recommendedMoods.map((m) => `${m.name}(${m.reason})`).join(" / ")}입니다.`,
+      "왜 이 Mood Type으로 분석됐는지, 사진의 어떤 부분이 이 무드로 이어졌는지 설명한 뒤,",
+      "추천한 다른 무드들이 지금 무드와 어떻게 다르고 시도하면 어떤 느낌을 더할 수 있는지도",
+      "이어서 자연스럽게 다루세요.",
+    ],
+  },
+  {
+    key: "styleCompatBody",
+    number: "04",
+    title: "스타일 궁합",
+    needsPhotos: true,
+    instructions: (s) => [
+      `헤어는 본인 "${s.myHair}", 상대방 "${s.partnerHair}" (헤어 궁합 ${s.hairTogetherScore}/5)이고,`,
+      `스타일 카테고리 점수는 ${s.styleCompat.map((c) => `${c.label} ${c.filled}/5`).join(", ")}입니다.`,
+      `아이템 궁합은 ${s.itemCompat.map((c) => `${c.label} ${c.filled}/5`).join(", ")}이고,`,
+      `같이 입으면 좋은 스타일은 "${s.styleGoodNote}"입니다.`,
+      "왜 이런 점수가 나왔는지, 실제로 옷을 맞춰 입거나 헤어를 스타일링할 때 어떻게 활용하면",
+      "좋을지 구체적인 조언을 담아 설명하세요.",
+    ],
+  },
+  {
+    key: "moodboardBody",
+    number: "05",
+    title: "이런 방향으로 스타일을 맞추면",
+    needsPhotos: false,
+    instructions: (s) => [
+      `스타일 궁합 중 가장 점수가 높은 카테고리들과, 어울리는 컬러 팔레트`,
+      `(${s.colorCompat.map((c) => c.name).join(", ")}), 커플룩 방향 "${s.coupleLookDirection}"을`,
+      "종합해서, 두 사람이 실제로 스타일을 맞추면 어떤 무드보드가 완성되는지 정리하세요.",
+      "개별 항목을 나열하기보다, 이 요소들을 함께 적용했을 때 만들어지는 전체적인 그림을",
+      "그려주듯 설명하세요.",
+    ],
+  },
+  {
+    key: "dateSnsBody",
+    number: "06",
+    title: "데이트 스타일 & SNS",
+    needsPhotos: false,
+    instructions: (s) => [
+      `계절 궁합은 ${s.seasonCompat.map((c) => `${c.label} ${c.filled}/5`).join(", ")},`,
+      `데이트 장소 궁합은 ${s.datePlaceCompat.map((c) => `${c.label} ${c.filled}/5`).join(", ")}입니다.`,
+      `사진 컨셉 태그는 ${s.photoConceptTags.join(", ")}이고,`,
+      `SNS 프로필 궁합은 ${s.snsConceptCompat.map((c) => `${c.label} ${c.filled}/5`).join(", ")}입니다.`,
+      "왜 이런 장소/시즌/컨셉이 추천됐는지, 실제 데이트나 나들이, 프로필 사진을 찍을 때 어떻게",
+      "활용할 수 있는지 설명하세요.",
+    ],
+  },
+  {
+    key: "colorCompatBody",
+    number: "07",
+    title: "컬러 궁합",
+    needsPhotos: false,
+    instructions: (s) => [
+      `메인 컬러 5가지는 ${s.colorCompat.map((c) => `${c.name}(${c.hex}) — ${c.reason}`).join(" / ")}이고,`,
+      `피하면 좋은 스타일은 "${s.styleAvoidNote}"입니다.`,
+      "각 컬러가 왜 두 사람에게 잘 어울리는지, 옷·소품·메이크업 중 어디에 적용하면 좋을지,",
+      "그리고 피하면 좋은 컬러/스타일 방향은 왜 그런지 설명하세요.",
+    ],
+  },
+  {
+    key: "perfumeBody",
+    number: "08",
+    title: "향수 궁합",
+    needsPhotos: false,
+    instructions: (s) => [
+      `본인 향은 "${s.myPerfume}", 상대방 향은 "${s.partnerPerfume}", 함께일 때는`,
+      `"${s.togetherPerfume}"으로 추천됐습니다.`,
+      "각 향이 왜 두 사람의 이미지와 어울리는지, 함께 있을 때 두 향이 어떻게 조화를 이루는지,",
+      "언제/어떻게 뿌리면 좋을지 설명하세요.",
+    ],
+  },
+  {
+    key: "finalBody",
+    number: "09",
+    title: "총평",
+    needsPhotos: false,
+    instructions: (s) => [
+      `종합 Mood Score는 ${s.overallMoodScore}점 (${s.overallPercentile}), 분위기 키워드는`,
+      `${s.moodKeywords.join(", ")}입니다.`,
+      "지금까지의 분석(첫인상, 그림체, 무드, 스타일, 컬러, 향수)을 종합해서 두 사람의 전체적인",
+      "이미지 궁합을 정리하는 마무리 총평으로 작성하세요. 리포트 전체를 요약하듯 자연스럽게",
+      "마무리하세요.",
+    ],
+  },
+];
 
-  const expanded = completion.choices[0]?.message?.content?.trim();
-  return expanded && expanded.length > currentBody.length ? expanded : currentBody;
+function buildChapterPrompt(
+  chapter: (typeof CHAPTERS)[number],
+  structured: StructuredFields,
+  answers: Record<string, unknown>,
+): string {
+  const answerLines = Object.entries(answers ?? {}).map(
+    ([key, value]) => `- ${key}: ${JSON.stringify(value)}`,
+  );
+
+  return [
+    `지금부터 FACEMOOD Match 리포트의 "${chapter.number}. ${chapter.title}" 챕터 본문을`,
+    "작성합니다. 공백 포함 1,000~1,300자 분량으로, 아래 분석 결과를 근거로 왜 그렇게 나왔는지",
+    "구체적으로 설명하세요.",
+    "",
+    "두 사람이 입력한 정보:",
+    answerLines.length > 0 ? answerLines.join("\n") : "(입력 정보 없음)",
+    "",
+    "이 챕터가 다뤄야 할 분석 결과:",
+    ...chapter.instructions(structured),
+    "",
+    chapter.needsPhotos
+      ? "사진이 첨부되어 있습니다 (첫 번째: 본인, 두 번째: 상대방). 사진에서 보이는 분위기를 참고하세요."
+      : "이 챕터는 위 분석 결과 텍스트만으로 작성하고, 새로운 점수나 항목을 만들어내지 마세요.",
+    "",
+    "결과는 완성된 본문 텍스트만 반환하세요 (JSON이나 따옴표, 챕터 제목 없이 본문만).",
+  ].join("\n");
+}
+
+// Chapter bodies target 1,000-1,300자 — set a bit under the floor so any
+// chapter that undershoots gets topped up rather than shipping thin.
+const MIN_BODY_CHARS = 950;
+
+async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 5): Promise<T> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      const isRateLimit = error instanceof OpenAI.APIError && error.status === 429;
+      if (!isRateLimit || attempt >= maxAttempts) throw error;
+
+      const retryAfterHeader =
+        error instanceof OpenAI.APIError
+          ? (error.headers as Headers | undefined)?.get?.("retry-after")
+          : undefined;
+      const retryAfterSeconds = Number(retryAfterHeader ?? NaN);
+      const waitMs = Number.isFinite(retryAfterSeconds)
+        ? retryAfterSeconds * 1000 + 500
+        : attempt * 4000;
+
+      await new Promise((resolve) => setTimeout(resolve, waitMs));
+    }
+  }
+}
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let nextIndex = 0;
+
+  async function worker() {
+    for (;;) {
+      const current = nextIndex++;
+      if (current >= items.length) return;
+      results[current] = await fn(items[current]);
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, worker),
+  );
+  return results;
+}
+
+// How many chapter requests run at once — kept low for the same reason as
+// the main FACEMOOD product's generator: small tokens-per-minute limits on
+// lower OpenAI usage tiers 429 quickly if everything fires at once.
+const CHAPTER_CONCURRENCY = 3;
+
+async function generateChapterBody(
+  client: OpenAI,
+  chapter: (typeof CHAPTERS)[number],
+  structured: StructuredFields,
+  answers: Record<string, unknown>,
+  myPhoto: string | null,
+  partnerPhoto: string | null,
+): Promise<string> {
+  const userContent: (
+    | { type: "text"; text: string }
+    | { type: "image_url"; image_url: { url: string } }
+  )[] = [{ type: "text", text: buildChapterPrompt(chapter, structured, answers) }];
+
+  if (chapter.needsPhotos) {
+    if (myPhoto) userContent.push({ type: "image_url", image_url: { url: myPhoto } });
+    if (partnerPhoto) userContent.push({ type: "image_url", image_url: { url: partnerPhoto } });
+  }
+
+  const completion = await withRetry(() =>
+    client.chat.completions.create({
+      model: "gpt-5.4-nano",
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: userContent },
+      ],
+      max_completion_tokens: 2200,
+    }),
+  );
+
+  let body = completion.choices[0]?.message?.content?.trim() ?? "";
+
+  if (body.length < MIN_BODY_CHARS) {
+    const expanded = await withRetry(() =>
+      client.chat.completions.create({
+        model: "gpt-5.4-nano",
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          {
+            role: "user",
+            content: [
+              `아래는 "${chapter.number}. ${chapter.title}" 챕터 본문 초안인데 너무 짧습니다.`,
+              "내용과 어조는 그대로 유지하면서, 구체적인 이유·예시를 조금 더 추가해서 전체",
+              "분량을 공백 포함 1,000~1,300자 정도로 만들어주세요. 미사여구나 반복으로 글자 수만",
+              "채우지 말고, 실질적인 내용으로 명확하게 채워주세요. 결과는 완성된 본문 텍스트만",
+              "반환하세요 (JSON이나 따옴표 없이).",
+              "",
+              "--- 초안 ---",
+              body,
+            ].join("\n"),
+          },
+        ],
+        max_completion_tokens: 2200,
+      }),
+    );
+    const expandedBody = expanded.choices[0]?.message?.content?.trim();
+    if (expandedBody && expandedBody.length > body.length) body = expandedBody;
+  }
+
+  return body;
 }
 
 export async function POST(request: NextRequest) {
@@ -287,60 +530,66 @@ export async function POST(request: NextRequest) {
 
   const client = new OpenAI({ apiKey });
 
-  const userContent: (
-    | { type: "text"; text: string }
-    | { type: "image_url"; image_url: { url: string } }
-  )[] = [{ type: "text", text: buildUserPrompt(answers) }];
-
-  if (myPhoto) userContent.push({ type: "image_url", image_url: { url: myPhoto } });
-  if (partnerPhoto) userContent.push({ type: "image_url", image_url: { url: partnerPhoto } });
-
   try {
-    const completion = await client.chat.completions.create({
-      model: "gpt-5.4-nano",
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: userContent },
-      ],
-      max_completion_tokens: 9000,
-      response_format: {
-        type: "json_schema",
-        json_schema: { name: "match_report", strict: true, schema: SCHEMA },
-      },
-    });
+    const structuredUserContent: (
+      | { type: "text"; text: string }
+      | { type: "image_url"; image_url: { url: string } }
+    )[] = [{ type: "text", text: buildStructuredPrompt(answers) }];
+    if (myPhoto) structuredUserContent.push({ type: "image_url", image_url: { url: myPhoto } });
+    if (partnerPhoto) {
+      structuredUserContent.push({ type: "image_url", image_url: { url: partnerPhoto } });
+    }
 
-    const content = completion.choices[0]?.message?.content;
-    if (!content) {
+    const structuredCompletion = await withRetry(() =>
+      client.chat.completions.create({
+        model: "gpt-5.4-nano",
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: structuredUserContent },
+        ],
+        max_completion_tokens: 3000,
+        response_format: {
+          type: "json_schema",
+          json_schema: { name: "match_report_structured", strict: true, schema: STRUCTURED_SCHEMA },
+        },
+      }),
+    );
+
+    const structuredContent = structuredCompletion.choices[0]?.message?.content;
+    if (!structuredContent) {
       throw new Error("AI 응답을 받지 못했습니다.");
     }
 
-    const report = JSON.parse(content) as MatchFullReport;
+    const structured = JSON.parse(structuredContent) as StructuredFields;
 
     // json_schema enums can't express "different from the other field", and
     // the model doesn't reliably follow that instruction in prose — force
     // distinctness deterministically rather than leaving both on the same
     // art style.
-    if (report.myArtStyle === report.partnerArtStyle) {
-      const currentIndex = ART_STYLE_CANDIDATES.indexOf(report.partnerArtStyle);
-      report.partnerArtStyle =
+    if (structured.myArtStyle === structured.partnerArtStyle) {
+      const currentIndex = ART_STYLE_CANDIDATES.indexOf(structured.partnerArtStyle);
+      structured.partnerArtStyle =
         ART_STYLE_CANDIDATES[(currentIndex + 1) % ART_STYLE_CANDIDATES.length];
     }
 
     // Same reasoning — make sure the "other moods to explore" list never
     // repeats the type the couple already landed on.
-    report.recommendedMoods = report.recommendedMoods.filter(
-      (mood) => mood.name !== report.moodTypeName,
+    structured.recommendedMoods = structured.recommendedMoods.filter(
+      (mood) => mood.name !== structured.moodTypeName,
     );
 
-    // Top up any chapter body that undershot the 900-1100자 target instead
-    // of shipping a thin one.
-    await Promise.all(
-      BODY_FIELDS.map(async (field) => {
-        if (report[field].length < MIN_BODY_CHARS) {
-          report[field] = await expandBody(client, report[field]);
-        }
-      }),
+    const bodies = await mapWithConcurrency(CHAPTERS, CHAPTER_CONCURRENCY, (chapter) =>
+      generateChapterBody(client, chapter, structured, answers, myPhoto, partnerPhoto),
     );
+
+    const chapterBodies = Object.fromEntries(
+      CHAPTERS.map((chapter, index) => [chapter.key, bodies[index]]),
+    ) as Record<ChapterKey, string>;
+
+    const report: MatchFullReport = {
+      ...structured,
+      ...chapterBodies,
+    };
 
     return NextResponse.json({ report });
   } catch (error) {

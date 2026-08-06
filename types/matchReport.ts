@@ -46,61 +46,69 @@ export type StyleCandidate = (typeof STYLE_CANDIDATES)[number];
 
 export type FilledScore = { label: string; filled: number };
 
+// Each numbered chapter below matches, 1:1 and in the same order, the 01-09
+// PartLabel sections rendered by MatchReportBody.tsx (and the free preview
+// at /match/result) — same "one long-form body per TOC chapter" shape as
+// the main FACEMOOD product's REPORT_CHAPTERS (see types/report.ts).
 export type MatchFullReport = {
   // Hero
   pairLabel: string;
   pairScore: number;
   pairBullets: string[];
 
-  // 01. Mood Type
+  // 01. 첫인상 분석
+  firstImpressionScore: number;
+  synergyScore: number;
+  firstImpressionBody: string;
+
+  // 02. 얼굴 그림체 궁합
+  myArtStyle: ArtStyleCandidate;
+  partnerArtStyle: ArtStyleCandidate;
+  artStyleTogether: string;
+  artStyleBody: string;
+
+  // 03. 무드 궁합
   moodTypeName: MoodTypeCandidate;
   moodTypeScore: number;
   moodTypeSummary: string;
   moodTypeKeywords: string[];
-  // Rich long-form write-up for this chapter (~1000자).
-  moodTypeBody: string;
-
-  // 02. Recommended moods (2-3 other types worth exploring)
   recommendedMoods: { name: MoodTypeCandidate; reason: string }[];
-  recommendedMoodsBody: string;
+  moodMatchBody: string;
 
-  // PART 1. 얼굴 무드 분석
-  myMoodLabel: string;
-  myMoodNote: string;
-  partnerMoodLabel: string;
-  partnerMoodNote: string;
-  firstImpressionScore: number;
-  synergyScore: number;
-  myArtStyle: ArtStyleCandidate;
-  partnerArtStyle: ArtStyleCandidate;
-  artStyleTogether: string;
-  part1Body: string;
-
-  // PART 2. 스타일 분석
+  // 04. 스타일 궁합
   styleCompat: FilledScore[];
   styleGoodNote: string;
-  styleAvoidNote: string;
-  coupleLookDirection: string;
   myHair: string;
   partnerHair: string;
   hairTogetherScore: number;
-  colorCompat: { name: string; hex: string; reason: string }[];
   itemCompat: FilledScore[];
-  part2Body: string;
+  styleCompatBody: string;
 
-  // PART 3. 무드 라이프
+  // 05. 이런 방향으로 스타일을 맞추면
+  coupleLookDirection: string;
+  moodboardBody: string;
+
+  // 06. 데이트 스타일 & SNS
   datePlaceCompat: FilledScore[];
   photoConceptTags: string[];
   snsConceptCompat: FilledScore[];
+  seasonCompat: FilledScore[];
+  dateSnsBody: string;
+
+  // 07. 컬러 궁합
+  colorCompat: { name: string; hex: string; reason: string }[];
+  styleAvoidNote: string;
+  colorCompatBody: string;
+
+  // 08. 향수 궁합
   myPerfume: string;
   partnerPerfume: string;
   togetherPerfume: string;
-  seasonCompat: FilledScore[];
-  part3Body: string;
+  perfumeBody: string;
 
-  // PART 4. 공유 리포트
+  // 09. 총평
   overallMoodScore: number;
   overallPercentile: string;
   moodKeywords: string[];
-  part4Body: string;
+  finalBody: string;
 };

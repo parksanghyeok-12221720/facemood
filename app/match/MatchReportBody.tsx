@@ -349,6 +349,9 @@ export default function MatchReportBody({
             </Card>
           ))}
         </div>
+        <div className="mt-3">
+          <BodyCard label="자세히 보기" body={report.firstImpressionBody} locked={locked} />
+        </div>
       </section>
     );
   }
@@ -431,7 +434,7 @@ export default function MatchReportBody({
             </div>
           </Card>
 
-          <BodyCard label="자세히 보기" body={report.part1Body} locked={locked} />
+          <BodyCard label="자세히 보기" body={report.artStyleBody} locked={locked} />
         </div>
       </section>
     );
@@ -478,9 +481,6 @@ export default function MatchReportBody({
               ))}
             </div>
           </Card>
-          <div className="mt-3">
-            <BodyCard label="자세히 보기" body={report.moodTypeBody} locked={locked} />
-          </div>
         </div>
 
         <p className="mt-8 text-sm font-bold">잘 어울리는 추천 무드</p>
@@ -520,7 +520,7 @@ export default function MatchReportBody({
           </div>
         </div>
         <div className="mt-4">
-          <BodyCard label="자세히 보기" body={report.recommendedMoodsBody} locked={locked} />
+          <BodyCard label="자세히 보기" body={report.moodMatchBody} locked={locked} />
         </div>
       </section>
     );
@@ -575,7 +575,7 @@ export default function MatchReportBody({
             </p>
           </Card>
 
-          <BodyCard label="자세히 보기" body={report.part2Body} locked={locked} />
+          <BodyCard label="자세히 보기" body={report.styleCompatBody} locked={locked} />
         </div>
       </section>
     );
@@ -608,22 +608,26 @@ export default function MatchReportBody({
             ))}
           </div>
         </div>
-        <Card className="mt-3">
-          <p className="text-xs font-semibold" style={{ color: "var(--match-ink-soft)" }}>
-            같이 맞추면 좋은 컬러 팔레트
-          </p>
-          <div className="mt-3 flex gap-2">
-            {report.colorCompat.map((color) => (
-              <span
-                key={color.name}
-                className="h-12 flex-1 rounded-xl"
-                style={{ backgroundColor: color.hex, border: "1px solid var(--match-beige)" }}
-                title={color.name}
-              />
-            ))}
-          </div>
-          <p className="mt-3 text-xs leading-relaxed">{report.coupleLookDirection}</p>
-        </Card>
+        <div className="mt-3 flex flex-col gap-3">
+          <Card>
+            <p className="text-xs font-semibold" style={{ color: "var(--match-ink-soft)" }}>
+              같이 맞추면 좋은 컬러 팔레트
+            </p>
+            <div className="mt-3 flex gap-2">
+              {report.colorCompat.map((color) => (
+                <span
+                  key={color.name}
+                  className="h-12 flex-1 rounded-xl"
+                  style={{ backgroundColor: color.hex, border: "1px solid var(--match-beige)" }}
+                  title={color.name}
+                />
+              ))}
+            </div>
+            <p className="mt-3 text-xs leading-relaxed">{report.coupleLookDirection}</p>
+          </Card>
+
+          <BodyCard label="자세히 보기" body={report.moodboardBody} locked={locked} />
+        </div>
       </section>
     );
   }
@@ -674,7 +678,7 @@ export default function MatchReportBody({
             </div>
           </Card>
 
-          <BodyCard label="자세히 보기" body={report.part3Body} locked={locked} />
+          <BodyCard label="자세히 보기" body={report.dateSnsBody} locked={locked} />
         </div>
       </section>
     );
@@ -684,7 +688,7 @@ export default function MatchReportBody({
     return (
       <section className="mt-10">
         <PartLabel part="07" title="컬러 궁합" />
-        <div className="mt-5">
+        <div className="mt-5 flex flex-col gap-3">
           <Card>
             <p className="text-[11px] leading-relaxed" style={{ color: "var(--match-ink-soft)" }}>
               두 분이 함께 있을 때 가장 잘 어울리는 메인 컬러 5가지예요.
@@ -712,6 +716,8 @@ export default function MatchReportBody({
               — {report.styleAvoidNote}
             </p>
           </Card>
+
+          <BodyCard label="자세히 보기" body={report.colorCompatBody} locked={locked} />
         </div>
       </section>
     );
@@ -721,7 +727,7 @@ export default function MatchReportBody({
     return (
       <section className="mt-10">
         <PartLabel part="08" title="향수 궁합" />
-        <div className="mt-5">
+        <div className="mt-5 flex flex-col gap-3">
           <Card>
             <div className="grid grid-cols-2 gap-2">
               <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl">
@@ -767,6 +773,8 @@ export default function MatchReportBody({
               Together — {report.togetherPerfume}
             </div>
           </Card>
+
+          <BodyCard label="자세히 보기" body={report.perfumeBody} locked={locked} />
         </div>
       </section>
     );
@@ -814,7 +822,7 @@ export default function MatchReportBody({
             </div>
           </Card>
 
-          <BodyCard label="총평" body={report.part4Body} locked={locked} />
+          <BodyCard label="총평" body={report.finalBody} locked={locked} />
 
           <ShareCard report={report} />
         </div>
