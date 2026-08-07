@@ -562,7 +562,7 @@ export default function MatchCheckoutPage() {
             disabled={!agreed || !refundAgreed || !widgetsReady || isSubmitting}
             className="flex w-full items-center justify-center rounded-full bg-black px-8 py-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {isSubmitting ? "결제 요청 중..." : `${price.toLocaleString()}원 결제하기`}
+            {isSubmitting ? "결제 요청 중..." : `${chargeAmount.toLocaleString()}원 결제하기`}
           </button>
           <p className="mt-3 text-center text-xs text-gray-400">
             위에서 원하는 결제수단을 선택한 뒤 결제를 진행해주세요.

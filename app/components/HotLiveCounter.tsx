@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const BASE_COUNT = 69728;
+// Must match the CSS animation-duration for .animate-digit-roll-in/-out in
+// globals.css — used to know when it's safe to drop the outgoing digit.
+const ROLL_MS = 380;
 
 // Live-activity ticker next to the "HOT" badge — same irregular-interval,
 // always-increasing tick pattern as AnalysisCounter, just faster and with
@@ -11,15 +14,34 @@ const BASE_COUNT = 69728;
 // by a real viewer count.
 export default function HotLiveCounter() {
   const [count, setCount] = useState(BASE_COUNT);
+  const [outgoingDigit, setOutgoingDigit] = useState<string | null>(null);
+  const countRef = useRef(count);
+
+  useEffect(() => {
+    countRef.current = count;
+  }, [count]);
 
   useEffect(() => {
     let cancelled = false;
+    let cleanupTimer: ReturnType<typeof setTimeout>;
 
     function scheduleNext() {
       const delay = 500 + Math.random() * 1300;
       setTimeout(() => {
         if (cancelled) return;
+        // Capture the digit that's about to be replaced so it can animate
+        // out (rising away) at the same time the new one rises in —
+        // without this, the old digit would just vanish instantly while
+        // only the new one moved, which read as a jerky cut rather than
+        // one continuous motion.
+        setOutgoingDigit(countRef.current.toLocaleString().slice(-1));
         setCount((prev) => prev + (2 + Math.floor(Math.random() * 2)));
+
+        clearTimeout(cleanupTimer);
+        cleanupTimer = setTimeout(() => {
+          if (!cancelled) setOutgoingDigit(null);
+        }, ROLL_MS);
+
         scheduleNext();
       }, delay);
     }
@@ -27,6 +49,7 @@ export default function HotLiveCounter() {
     scheduleNext();
     return () => {
       cancelled = true;
+      clearTimeout(cleanupTimer);
     };
   }, []);
 
@@ -40,11 +63,12 @@ export default function HotLiveCounter() {
       <span className="inline-flex items-baseline">
         {leadingDigits}
         <span className="relative inline-block h-[1em] w-[0.62em] overflow-hidden align-baseline">
-          {/* Keyed on count so React remounts this span on every tick,
-              replaying the CSS roll-down animation each time the ones
-              digit changes — a small "odometer" flip instead of an
-              instant swap. */}
-          <span key={count} className="absolute inset-0 animate-digit-roll">
+          {outgoingDigit !== null && (
+            <span className="absolute inset-0 animate-digit-roll-out" aria-hidden="true">
+              {outgoingDigit}
+            </span>
+          )}
+          <span key={count} className="absolute inset-0 animate-digit-roll-in">
             {lastDigit}
           </span>
         </span>

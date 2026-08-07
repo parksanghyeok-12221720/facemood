@@ -138,23 +138,46 @@ body {
   );
 }
 
-/* Odometer-style "next digit slides down from above" flip — used by the
-   live HOT counter's ones digit. */
-@keyframes digit-roll-down {
+/* Odometer-style digit flip — used by the live HOT counter's ones digit.
+   The outgoing digit rises up and out while the incoming one rises up
+   from below into its place, both at once, so it reads as one continuous
+   upward motion instead of an instant cut. */
+@keyframes digit-roll-in {
   from {
-    transform: translateY(-100%);
+    transform: translateY(100%);
   }
   to {
     transform: translateY(0);
   }
 }
 
-.animate-digit-roll {
-  animation: digit-roll-down 0.28s ease-out;
+@keyframes digit-roll-out {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-100%);
+  }
+}
+
+.animate-digit-roll-in,
+.animate-digit-roll-out {
+  animation-duration: 0.38s;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  animation-fill-mode: forwards;
+}
+
+.animate-digit-roll-in {
+  animation-name: digit-roll-in;
+}
+
+.animate-digit-roll-out {
+  animation-name: digit-roll-out;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-digit-roll {
+  .animate-digit-roll-in,
+  .animate-digit-roll-out {
     animation: none;
   }
 }
