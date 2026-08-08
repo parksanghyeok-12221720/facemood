@@ -64,7 +64,11 @@ const moodCardPhotos: Record<string, string> = {
   "일본 여주st": "/mood/cards/일본여주st.png",
 };
 
-const PREMIUM_PRICE_KRW = 49900;
+// Display-only teaser price for the PREMIUM EVENT promo card below —
+// intentionally decoupled from lib/payment.ts's real PREMIUM_PRICE_KRW
+// (49,900원), which is what /checkout actually charges. Keep this in mind
+// if the promo copy is ever meant to match the real checkout price again.
+const PREMIUM_EVENT_PRICE_KRW = 34900;
 const PREMIUM_ORIGINAL_PRICE_KRW = 129800;
 const basicChapters = REPORT_CHAPTERS.filter((c) => c.tier === "basic");
 const premiumOnlyChapters = REPORT_CHAPTERS.filter((c) => c.tier === "premium");
@@ -1267,7 +1271,7 @@ export default function DetailPage() {
             오프라인 이미지 컨설팅 50만원+를
             <br />
             <span className="text-violet-600">
-              {PREMIUM_PRICE_KRW.toLocaleString()}원
+              {PREMIUM_EVENT_PRICE_KRW.toLocaleString()}원
             </span>
             에
           </p>
@@ -1324,7 +1328,7 @@ export default function DetailPage() {
                 {PREMIUM_ORIGINAL_PRICE_KRW.toLocaleString()}원
               </span>
               <span className="text-xl font-extrabold text-violet-600">
-                {PREMIUM_PRICE_KRW.toLocaleString()}원
+                {PREMIUM_EVENT_PRICE_KRW.toLocaleString()}원
               </span>
             </div>
           </div>
