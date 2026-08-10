@@ -151,9 +151,10 @@ export default function MatchCheckoutPage() {
   const widgetsRef = useRef<TossPaymentsWidgets | null>(null);
   const phone = `${phonePrefix}-${phoneMiddle}-${phoneLast}`;
   const price = bundle ? MATCH_BUNDLE_PRICE_KRW : MATCH_PRICE_KRW;
-  const discountedPrice = kakaoDiscountApplied
-    ? price - KAKAO_CHANNEL_DISCOUNT_KRW
-    : price;
+  // Kakao channel discount is bundle-only — the standalone Match option
+  // never discounts, even if it was already applied while bundle was on.
+  const discountedPrice =
+    kakaoDiscountApplied && bundle ? price - KAKAO_CHANNEL_DISCOUNT_KRW : price;
   const chargeAmount = isTestPhone(phone) ? TEST_AMOUNT_KRW : discountedPrice;
 
   useEffect(() => {
@@ -324,10 +325,12 @@ export default function MatchCheckoutPage() {
 
   return (
     <main className="min-h-screen bg-[#faf9f7] pb-24 text-black">
-      <KakaoChannelDiscountPopup
-        applied={kakaoDiscountApplied}
-        onApplied={() => setKakaoDiscountApplied(true)}
-      />
+      {bundle && (
+        <KakaoChannelDiscountPopup
+          applied={kakaoDiscountApplied}
+          onApplied={() => setKakaoDiscountApplied(true)}
+        />
+      )}
       <div className="sticky top-0 z-10 border-b border-black/5 bg-white/90 backdrop-blur">
         <Container className="flex items-center justify-center py-4">
           <h1 className="text-sm font-bold tracking-[0.1em]">결제하기</h1>
@@ -518,12 +521,14 @@ export default function MatchCheckoutPage() {
           </div>
         </section>
 
-        <section className="mt-4">
-          <KakaoChannelDiscount
-            applied={kakaoDiscountApplied}
-            onApplied={() => setKakaoDiscountApplied(true)}
-          />
-        </section>
+        {bundle && (
+          <section className="mt-4">
+            <KakaoChannelDiscount
+              applied={kakaoDiscountApplied}
+              onApplied={() => setKakaoDiscountApplied(true)}
+            />
+          </section>
+        )}
 
         <section className="mt-8">
           <p className="text-xs font-semibold tracking-[0.2em] text-violet-500">

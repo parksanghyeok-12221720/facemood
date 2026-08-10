@@ -66,10 +66,11 @@ export async function POST(request: NextRequest) {
   // server-verifiable proof the user actually finished adding the channel
   // — see lib/kakaoChannel.ts) — same trust level as a coupon code, so it
   // just needs to be an allowed alternate amount, not proof of anything.
+  // Bundle-only: standalone Match never gets it, even with the flag set.
   const expectedAmount =
     phone && isTestPhone(phone)
       ? TEST_AMOUNT_KRW
-      : kakaoDiscount
+      : kakaoDiscount && bundle
         ? matchPrice - KAKAO_CHANNEL_DISCOUNT_KRW
         : matchPrice;
   if (amount !== expectedAmount) {

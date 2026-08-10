@@ -314,9 +314,13 @@ export default function CheckoutPage() {
   const widgetsRef = useRef<TossPaymentsWidgets | null>(null);
   const phone = `${phonePrefix}-${phoneMiddle}-${phoneLast}`;
   const tierPrice = TIER_PRICE[tier];
-  const discountedTierPrice = kakaoDiscountApplied
-    ? tierPrice - KAKAO_CHANNEL_DISCOUNT_KRW
-    : tierPrice;
+  // Kakao channel discount is bundle-only — picking Basic/Premium alone
+  // never discounts, even if it was already applied while on the bundle.
+  const isBundleTier = tier === "premiumMatch";
+  const discountedTierPrice =
+    kakaoDiscountApplied && isBundleTier
+      ? tierPrice - KAKAO_CHANNEL_DISCOUNT_KRW
+      : tierPrice;
   const chargeAmount = isTestPhone(phone) ? TEST_AMOUNT_KRW : discountedTierPrice;
 
   useEffect(() => {
@@ -612,10 +616,12 @@ export default function CheckoutPage() {
 
   return (
     <main className="min-h-screen bg-[#faf9f7] pb-24 text-black">
-      <KakaoChannelDiscountPopup
-        applied={kakaoDiscountApplied}
-        onApplied={() => setKakaoDiscountApplied(true)}
-      />
+      {isBundleTier && (
+        <KakaoChannelDiscountPopup
+          applied={kakaoDiscountApplied}
+          onApplied={() => setKakaoDiscountApplied(true)}
+        />
+      )}
       <Container className="mt-6">
         {/* Photo banner */}
         <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl">
@@ -886,7 +892,7 @@ export default function CheckoutPage() {
             value={`-${TIER_DISCOUNT_PERCENT[tier]}%`}
             tone="accent"
           />
-          {kakaoDiscountApplied && (
+          {isBundleTier && kakaoDiscountApplied && (
             <PriceRow
               label="카카오 채널 추가 할인"
               value={`-${KAKAO_CHANNEL_DISCOUNT_KRW.toLocaleString()}원`}
@@ -901,13 +907,15 @@ export default function CheckoutPage() {
           />
         </section>
 
-        {/* Kakao channel add-friend discount */}
-        <section className="mt-4">
-          <KakaoChannelDiscount
-            applied={kakaoDiscountApplied}
-            onApplied={() => setKakaoDiscountApplied(true)}
-          />
-        </section>
+        {/* Kakao channel add-friend discount — bundle only */}
+        {isBundleTier && (
+          <section className="mt-4">
+            <KakaoChannelDiscount
+              applied={kakaoDiscountApplied}
+              onApplied={() => setKakaoDiscountApplied(true)}
+            />
+          </section>
+        )}
 
         {/* Payment method — rendered inline by the Toss widget SDK */}
         <section className="mt-8">
