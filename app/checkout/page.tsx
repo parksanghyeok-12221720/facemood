@@ -6,6 +6,7 @@ import { ANONYMOUS, loadTossPayments } from "@tosspayments/tosspayments-sdk";
 import type { TossPaymentsWidgets } from "@tosspayments/tosspayments-sdk";
 import Container from "@/app/components/Container";
 import KakaoChannelDiscount from "@/app/components/KakaoChannelDiscount";
+import KakaoChannelDiscountPopup from "@/app/components/KakaoChannelDiscountPopup";
 import { KAKAO_CHANNEL_DISCOUNT_KRW } from "@/lib/kakaoChannel";
 import { TEST_AMOUNT_KRW, isTestPhone } from "@/lib/testPayment";
 
@@ -611,6 +612,10 @@ export default function CheckoutPage() {
 
   return (
     <main className="min-h-screen bg-[#faf9f7] pb-24 text-black">
+      <KakaoChannelDiscountPopup
+        applied={kakaoDiscountApplied}
+        onApplied={() => setKakaoDiscountApplied(true)}
+      />
       <Container className="mt-6">
         {/* Photo banner */}
         <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl">

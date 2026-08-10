@@ -6,6 +6,7 @@ import { ANONYMOUS, loadTossPayments } from "@tosspayments/tosspayments-sdk";
 import type { TossPaymentsWidgets } from "@tosspayments/tosspayments-sdk";
 import Container from "@/app/components/Container";
 import KakaoChannelDiscount from "@/app/components/KakaoChannelDiscount";
+import KakaoChannelDiscountPopup from "@/app/components/KakaoChannelDiscountPopup";
 import { KAKAO_CHANNEL_DISCOUNT_KRW } from "@/lib/kakaoChannel";
 import { TEST_AMOUNT_KRW, isTestPhone } from "@/lib/testPayment";
 
@@ -323,6 +324,10 @@ export default function MatchCheckoutPage() {
 
   return (
     <main className="min-h-screen bg-[#faf9f7] pb-24 text-black">
+      <KakaoChannelDiscountPopup
+        applied={kakaoDiscountApplied}
+        onApplied={() => setKakaoDiscountApplied(true)}
+      />
       <div className="sticky top-0 z-10 border-b border-black/5 bg-white/90 backdrop-blur">
         <Container className="flex items-center justify-center py-4">
           <h1 className="text-sm font-bold tracking-[0.1em]">결제하기</h1>
