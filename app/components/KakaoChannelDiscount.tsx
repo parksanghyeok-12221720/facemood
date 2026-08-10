@@ -28,17 +28,25 @@ declare global {
 // onApplied).
 export default function KakaoChannelDiscount({
   applied,
+  eligible,
   onApplied,
 }: {
   applied: boolean;
+  // Whether the currently-selected product actually gets discounted (e.g.
+  // false for the entry-level Basic tier / standalone option) — when
+  // false, this never shows the "적용 완료" success state even if applied
+  // is true, since claiming a discount that isn't reflected in the price
+  // would be misleading.
+  eligible: boolean;
   onApplied: () => void;
 }) {
   const [isOpening, setIsOpening] = useState(false);
+  const showApplied = applied && eligible;
 
   if (!KAKAO_JS_KEY) return null;
 
   async function handleClick() {
-    if (isOpening || applied) return;
+    if (isOpening || showApplied) return;
     if (!window.Kakao) return;
 
     if (!window.Kakao.isInitialized()) {
@@ -66,27 +74,29 @@ export default function KakaoChannelDiscount({
       />
       <div
         className={`flex items-center gap-3 rounded-2xl border p-4 ${
-          applied
+          showApplied
             ? "border-violet-200 bg-violet-50"
             : "border-yellow-200 bg-yellow-50"
         }`}
       >
         <span className="text-2xl" aria-hidden="true">
-          {applied ? "✅" : "💬"}
+          {showApplied ? "✅" : "💬"}
         </span>
         <div className="flex-1">
           <p className="text-sm font-bold text-black">
-            {applied
+            {showApplied
               ? `카카오 채널 추가 할인 적용 완료 (-${KAKAO_CHANNEL_DISCOUNT_KRW.toLocaleString()}원)`
               : "카카오 채널 추가하고 즉시 할인받기"}
           </p>
           <p className="mt-0.5 text-xs text-gray-500">
-            {applied
+            {showApplied
               ? "할인된 금액으로 결제가 진행돼요."
-              : `채널 추가 한 번이면 ${KAKAO_CHANNEL_DISCOUNT_KRW.toLocaleString()}원 할인이 바로 적용돼요.`}
+              : eligible
+                ? `채널 추가 한 번이면 ${KAKAO_CHANNEL_DISCOUNT_KRW.toLocaleString()}원 할인이 바로 적용돼요.`
+                : `이 상품은 할인 대상이 아니에요. 상위 상품 선택 시 ${KAKAO_CHANNEL_DISCOUNT_KRW.toLocaleString()}원 할인이 적용돼요.`}
           </p>
         </div>
-        {!applied && (
+        {!showApplied && (
           <button
             type="button"
             onClick={handleClick}

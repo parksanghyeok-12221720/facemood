@@ -83,11 +83,11 @@ export async function POST(request: NextRequest) {
   // server-verifiable proof the user actually finished adding the channel
   // — see lib/kakaoChannel.ts) — same trust level as a coupon code, so it
   // just needs to be an allowed alternate amount, not proof of anything.
-  // Bundle-only: Basic/Premium alone never get it, even with the flag set.
+  // Available on Premium and the bundle — never on Basic.
   const expectedAmount =
     phone && isTestPhone(phone)
       ? TEST_AMOUNT_KRW
-      : kakaoDiscount && isPremiumMatchBundle
+      : kakaoDiscount && tier !== "basic"
         ? tierPrice - KAKAO_CHANNEL_DISCOUNT_KRW
         : tierPrice;
   if (amount !== expectedAmount) {

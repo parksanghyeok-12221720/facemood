@@ -17,15 +17,21 @@ const KAKAO_JS_KEY = process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
 // explicit request.
 export default function KakaoChannelDiscountPopup({
   applied,
+  eligible,
   onApplied,
 }: {
   applied: boolean;
+  // Whether the currently-selected product actually gets discounted (e.g.
+  // false for the entry-level Basic tier / standalone option) — the popup
+  // still shows either way, but the copy is honest about whether this
+  // specific selection benefits.
+  eligible: boolean;
   onApplied: () => void;
 }) {
   const [dismissed, setDismissed] = useState(false);
   const [isOpening, setIsOpening] = useState(false);
 
-  if (!KAKAO_JS_KEY || applied || dismissed) return null;
+  if (!KAKAO_JS_KEY || (applied && eligible) || dismissed) return null;
 
   async function handleClick() {
     if (isOpening) return;
@@ -83,7 +89,9 @@ export default function KakaoChannelDiscountPopup({
             {KAKAO_CHANNEL_DISCOUNT_KRW.toLocaleString()}원 할인받기
           </p>
           <p className="mt-2 text-xs leading-relaxed text-gray-500">
-            채널 추가 한 번이면 할인된 금액으로 바로 결제할 수 있어요.
+            {eligible
+              ? "채널 추가 한 번이면 할인된 금액으로 바로 결제할 수 있어요."
+              : "지금 선택한 상품은 할인 대상이 아니에요. 상위 상품 선택 시 할인이 적용돼요."}
           </p>
 
           <button
@@ -92,7 +100,7 @@ export default function KakaoChannelDiscountPopup({
             disabled={isOpening}
             className="mt-5 flex w-full items-center justify-center rounded-full bg-black px-6 py-3.5 text-sm font-semibold text-white disabled:opacity-50"
           >
-            {isOpening ? "여는 중..." : "채널 추가하고 할인받기"}
+            {isOpening ? "여는 중..." : eligible ? "채널 추가하고 할인받기" : "채널 추가하기"}
           </button>
           <button
             type="button"

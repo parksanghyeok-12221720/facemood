@@ -314,11 +314,13 @@ export default function CheckoutPage() {
   const widgetsRef = useRef<TossPaymentsWidgets | null>(null);
   const phone = `${phonePrefix}-${phoneMiddle}-${phoneLast}`;
   const tierPrice = TIER_PRICE[tier];
-  // Kakao channel discount is bundle-only — picking Basic/Premium alone
-  // never discounts, even if it was already applied while on the bundle.
-  const isBundleTier = tier === "premiumMatch";
+  // Kakao channel discount is available on Premium and the bundle, but
+  // never on Basic — even if it was already applied while on a different
+  // tier. The popup/banner themselves still show regardless of tier (see
+  // render below); this only gates whether the discount actually applies.
+  const isKakaoDiscountEligibleTier = tier !== "basic";
   const discountedTierPrice =
-    kakaoDiscountApplied && isBundleTier
+    kakaoDiscountApplied && isKakaoDiscountEligibleTier
       ? tierPrice - KAKAO_CHANNEL_DISCOUNT_KRW
       : tierPrice;
   const chargeAmount = isTestPhone(phone) ? TEST_AMOUNT_KRW : discountedTierPrice;
@@ -616,12 +618,11 @@ export default function CheckoutPage() {
 
   return (
     <main className="min-h-screen bg-[#faf9f7] pb-24 text-black">
-      {isBundleTier && (
-        <KakaoChannelDiscountPopup
-          applied={kakaoDiscountApplied}
-          onApplied={() => setKakaoDiscountApplied(true)}
-        />
-      )}
+      <KakaoChannelDiscountPopup
+        applied={kakaoDiscountApplied}
+        eligible={isKakaoDiscountEligibleTier}
+        onApplied={() => setKakaoDiscountApplied(true)}
+      />
       <Container className="mt-6">
         {/* Photo banner */}
         <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl">
@@ -892,7 +893,7 @@ export default function CheckoutPage() {
             value={`-${TIER_DISCOUNT_PERCENT[tier]}%`}
             tone="accent"
           />
-          {isBundleTier && kakaoDiscountApplied && (
+          {isKakaoDiscountEligibleTier && kakaoDiscountApplied && (
             <PriceRow
               label="카카오 채널 추가 할인"
               value={`-${KAKAO_CHANNEL_DISCOUNT_KRW.toLocaleString()}원`}
@@ -907,15 +908,16 @@ export default function CheckoutPage() {
           />
         </section>
 
-        {/* Kakao channel add-friend discount — bundle only */}
-        {isBundleTier && (
-          <section className="mt-4">
-            <KakaoChannelDiscount
-              applied={kakaoDiscountApplied}
-              onApplied={() => setKakaoDiscountApplied(true)}
-            />
-          </section>
-        )}
+        {/* Kakao channel add-friend discount — shown on every tier, but
+            only actually discounts Premium/bundle (see
+            isKakaoDiscountEligibleTier above) */}
+        <section className="mt-4">
+          <KakaoChannelDiscount
+            applied={kakaoDiscountApplied}
+            eligible={isKakaoDiscountEligibleTier}
+            onApplied={() => setKakaoDiscountApplied(true)}
+          />
+        </section>
 
         {/* Payment method — rendered inline by the Toss widget SDK */}
         <section className="mt-8">
