@@ -5,12 +5,15 @@ import Image from "next/image";
 import { ANONYMOUS, loadTossPayments } from "@tosspayments/tosspayments-sdk";
 import type { TossPaymentsWidgets } from "@tosspayments/tosspayments-sdk";
 import Container from "@/app/components/Container";
+import KakaoChannelDiscount from "@/app/components/KakaoChannelDiscount";
+import { KAKAO_CHANNEL_DISCOUNT_KRW } from "@/lib/kakaoChannel";
 import { TEST_AMOUNT_KRW, isTestPhone } from "@/lib/testPayment";
 
 const MATCH_REPORT_ID_KEY = "facemood_match_report_id";
 const PENDING_PASSWORD_KEY = "facemood_match_pending_password";
 const PENDING_PHONE_KEY = "facemood_match_pending_phone";
 const PENDING_BUNDLE_KEY = "facemood_match_pending_bundle";
+const PENDING_KAKAO_DISCOUNT_KEY = "facemood_match_pending_kakao_discount";
 
 const MATCH_PRICE_KRW = 34900;
 const MATCH_BUNDLE_PRICE_KRW = 59900;
@@ -142,10 +145,15 @@ export default function MatchCheckoutPage() {
   const [codeError, setCodeError] = useState("");
   const [isRedeemingCode, setIsRedeemingCode] = useState(false);
 
+  const [kakaoDiscountApplied, setKakaoDiscountApplied] = useState(false);
+
   const widgetsRef = useRef<TossPaymentsWidgets | null>(null);
   const phone = `${phonePrefix}-${phoneMiddle}-${phoneLast}`;
   const price = bundle ? MATCH_BUNDLE_PRICE_KRW : MATCH_PRICE_KRW;
-  const chargeAmount = isTestPhone(phone) ? TEST_AMOUNT_KRW : price;
+  const discountedPrice = kakaoDiscountApplied
+    ? price - KAKAO_CHANNEL_DISCOUNT_KRW
+    : price;
+  const chargeAmount = isTestPhone(phone) ? TEST_AMOUNT_KRW : discountedPrice;
 
   useEffect(() => {
     window.fbq?.("track", "InitiateCheckout", { value: price, currency: "KRW" });
@@ -243,6 +251,7 @@ export default function MatchCheckoutPage() {
       sessionStorage.setItem(PENDING_PASSWORD_KEY, password);
       sessionStorage.setItem(PENDING_PHONE_KEY, phone);
       sessionStorage.setItem(PENDING_BUNDLE_KEY, bundle ? "1" : "0");
+      sessionStorage.setItem(PENDING_KAKAO_DISCOUNT_KEY, kakaoDiscountApplied ? "1" : "0");
 
       await widgets.requestPayment({
         orderId: reportId,
@@ -502,6 +511,13 @@ export default function MatchCheckoutPage() {
               </p>
             </button>
           </div>
+        </section>
+
+        <section className="mt-4">
+          <KakaoChannelDiscount
+            applied={kakaoDiscountApplied}
+            onApplied={() => setKakaoDiscountApplied(true)}
+          />
         </section>
 
         <section className="mt-8">

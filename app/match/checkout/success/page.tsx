@@ -7,6 +7,7 @@ import Container from "@/app/components/Container";
 const PENDING_PASSWORD_KEY = "facemood_match_pending_password";
 const PENDING_PHONE_KEY = "facemood_match_pending_phone";
 const PENDING_BUNDLE_KEY = "facemood_match_pending_bundle";
+const PENDING_KAKAO_DISCOUNT_KEY = "facemood_match_pending_kakao_discount";
 const BUNDLE_CREDIT_KEY = "facemood_match_bundle_id";
 
 type ConfirmState = { status: "confirming" } | { status: "error"; message: string };
@@ -31,6 +32,7 @@ export default function MatchCheckoutSuccessPage() {
       const password = sessionStorage.getItem(PENDING_PASSWORD_KEY);
       const phone = sessionStorage.getItem(PENDING_PHONE_KEY);
       const bundle = sessionStorage.getItem(PENDING_BUNDLE_KEY) === "1";
+      const kakaoDiscount = sessionStorage.getItem(PENDING_KAKAO_DISCOUNT_KEY) === "1";
 
       if (!paymentKey || !orderId || !amount || !password) {
         if (!cancelled) {
@@ -53,6 +55,7 @@ export default function MatchCheckoutSuccessPage() {
             password,
             phone,
             bundle,
+            kakaoDiscount,
           }),
         });
         const data = await response.json();
@@ -64,6 +67,7 @@ export default function MatchCheckoutSuccessPage() {
         sessionStorage.removeItem(PENDING_PASSWORD_KEY);
         sessionStorage.removeItem(PENDING_PHONE_KEY);
         sessionStorage.removeItem(PENDING_BUNDLE_KEY);
+        sessionStorage.removeItem(PENDING_KAKAO_DISCOUNT_KEY);
         if (data.bundle) {
           localStorage.setItem(BUNDLE_CREDIT_KEY, orderId);
         }

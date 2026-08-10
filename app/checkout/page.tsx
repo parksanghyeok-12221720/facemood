@@ -5,12 +5,15 @@ import Image from "next/image";
 import { ANONYMOUS, loadTossPayments } from "@tosspayments/tosspayments-sdk";
 import type { TossPaymentsWidgets } from "@tosspayments/tosspayments-sdk";
 import Container from "@/app/components/Container";
+import KakaoChannelDiscount from "@/app/components/KakaoChannelDiscount";
+import { KAKAO_CHANNEL_DISCOUNT_KRW } from "@/lib/kakaoChannel";
 import { TEST_AMOUNT_KRW, isTestPhone } from "@/lib/testPayment";
 
 const REPORT_ID_KEY = "facemood_report_id";
 const PENDING_PASSWORD_KEY = "facemood_pending_password";
 const PENDING_PHONE_KEY = "facemood_pending_phone";
 const PENDING_TIER_KEY = "facemood_pending_tier";
+const PENDING_KAKAO_DISCOUNT_KEY = "facemood_pending_kakao_discount";
 // Set by /match/checkout/success (or the Match report password gate) when
 // this device holds an unredeemed "free FACEMOOD Premium report" credit
 // from a Match + Premium bundle purchase.
@@ -305,10 +308,15 @@ export default function CheckoutPage() {
   const [codeError, setCodeError] = useState("");
   const [isRedeemingCode, setIsRedeemingCode] = useState(false);
 
+  const [kakaoDiscountApplied, setKakaoDiscountApplied] = useState(false);
+
   const widgetsRef = useRef<TossPaymentsWidgets | null>(null);
   const phone = `${phonePrefix}-${phoneMiddle}-${phoneLast}`;
   const tierPrice = TIER_PRICE[tier];
-  const chargeAmount = isTestPhone(phone) ? TEST_AMOUNT_KRW : tierPrice;
+  const discountedTierPrice = kakaoDiscountApplied
+    ? tierPrice - KAKAO_CHANNEL_DISCOUNT_KRW
+    : tierPrice;
+  const chargeAmount = isTestPhone(phone) ? TEST_AMOUNT_KRW : discountedTierPrice;
 
   useEffect(() => {
     window.fbq?.("track", "InitiateCheckout", {
@@ -525,6 +533,7 @@ export default function CheckoutPage() {
       sessionStorage.setItem(PENDING_PASSWORD_KEY, password);
       sessionStorage.setItem(PENDING_PHONE_KEY, phone);
       sessionStorage.setItem(PENDING_TIER_KEY, tier);
+      sessionStorage.setItem(PENDING_KAKAO_DISCOUNT_KEY, kakaoDiscountApplied ? "1" : "0");
 
       await widgets.requestPayment({
         orderId: reportId,
@@ -848,11 +857,26 @@ export default function CheckoutPage() {
             value={`-${TIER_DISCOUNT_PERCENT[tier]}%`}
             tone="accent"
           />
+          {kakaoDiscountApplied && (
+            <PriceRow
+              label="카카오 채널 추가 할인"
+              value={`-${KAKAO_CHANNEL_DISCOUNT_KRW.toLocaleString()}원`}
+              tone="accent"
+            />
+          )}
           <div className="my-2 border-t border-violet-100" />
           <PriceRow
             label="최종 결제금액"
-            value={`${tierPrice.toLocaleString()}원`}
+            value={`${discountedTierPrice.toLocaleString()}원`}
             tone="bold"
+          />
+        </section>
+
+        {/* Kakao channel add-friend discount */}
+        <section className="mt-4">
+          <KakaoChannelDiscount
+            applied={kakaoDiscountApplied}
+            onApplied={() => setKakaoDiscountApplied(true)}
           />
         </section>
 
@@ -919,7 +943,7 @@ export default function CheckoutPage() {
           >
             {isSubmitting
               ? "결제 요청 중..."
-              : `${tierPrice.toLocaleString()}원 결제하기`}
+              : `${chargeAmount.toLocaleString()}원 결제하기`}
           </button>
           <p className="mt-3 text-center text-xs text-gray-400">
             위에서 원하는 결제수단을 선택한 뒤 결제를 진행해주세요.

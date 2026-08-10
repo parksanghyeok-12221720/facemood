@@ -7,6 +7,7 @@ import Container from "@/app/components/Container";
 const PENDING_PASSWORD_KEY = "facemood_pending_password";
 const PENDING_PHONE_KEY = "facemood_pending_phone";
 const PENDING_TIER_KEY = "facemood_pending_tier";
+const PENDING_KAKAO_DISCOUNT_KEY = "facemood_pending_kakao_discount";
 const REPORT_TIER_KEY = "facemood_report_tier";
 
 type ConfirmState =
@@ -37,6 +38,7 @@ export default function CheckoutSuccessPage() {
         pendingTier === "basic" || pendingTier === "premiumMatch"
           ? pendingTier
           : "premium";
+      const kakaoDiscount = sessionStorage.getItem(PENDING_KAKAO_DISCOUNT_KEY) === "1";
 
       if (!paymentKey || !orderId || !amount || !password) {
         if (!cancelled) {
@@ -59,6 +61,7 @@ export default function CheckoutSuccessPage() {
             password,
             phone,
             tier,
+            kakaoDiscount,
           }),
         });
         const data = await response.json();
@@ -70,6 +73,7 @@ export default function CheckoutSuccessPage() {
         sessionStorage.removeItem(PENDING_PASSWORD_KEY);
         sessionStorage.removeItem(PENDING_PHONE_KEY);
         sessionStorage.removeItem(PENDING_TIER_KEY);
+        sessionStorage.removeItem(PENDING_KAKAO_DISCOUNT_KEY);
         localStorage.setItem(REPORT_TIER_KEY, tier);
         window.fbq?.("track", "Purchase", {
           value: Number(amount),

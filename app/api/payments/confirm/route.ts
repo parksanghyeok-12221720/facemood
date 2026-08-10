@@ -7,6 +7,7 @@ import {
   PREMIUM_MATCH_PRICE_KRW,
   confirmTossPayment,
 } from "@/lib/payment";
+import { KAKAO_CHANNEL_DISCOUNT_KRW } from "@/lib/kakaoChannel";
 import { TEST_AMOUNT_KRW, isTestPhone } from "@/lib/testPayment";
 
 export const runtime = "nodejs";
@@ -22,6 +23,7 @@ export async function POST(request: NextRequest) {
     password?: string;
     phone?: string;
     tier?: string;
+    kakaoDiscount?: boolean;
   };
   try {
     body = await request.json();
@@ -32,7 +34,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { paymentKey, orderId, amount, password, phone } = body;
+  const { paymentKey, orderId, amount, password, phone, kakaoDiscount } = body;
   // "premiumMatch" is a separate SKU (Premium report + a free FACEMOOD
   // Match redemption code) but the report itself is always generated at
   // premium depth — the bundle flag lives on bundle_match_code, not tier.
@@ -72,14 +74,21 @@ export async function POST(request: NextRequest) {
   // confirm. The one exception is the internal test phone number, which
   // is allowed to charge TEST_AMOUNT_KRW instead (regardless of tier) so
   // the real Toss flow can be tested end-to-end without paying full price.
+  const tierPrice = isPremiumMatchBundle
+    ? PREMIUM_MATCH_PRICE_KRW
+    : tier === "basic"
+      ? BASIC_PRICE_KRW
+      : PREMIUM_PRICE_KRW;
+  // The Kakao channel discount is self-reported by the client (no
+  // server-verifiable proof the user actually finished adding the channel
+  // — see lib/kakaoChannel.ts) — same trust level as a coupon code, so it
+  // just needs to be an allowed alternate amount, not proof of anything.
   const expectedAmount =
     phone && isTestPhone(phone)
       ? TEST_AMOUNT_KRW
-      : isPremiumMatchBundle
-        ? PREMIUM_MATCH_PRICE_KRW
-        : tier === "basic"
-          ? BASIC_PRICE_KRW
-          : PREMIUM_PRICE_KRW;
+      : kakaoDiscount
+        ? tierPrice - KAKAO_CHANNEL_DISCOUNT_KRW
+        : tierPrice;
   if (amount !== expectedAmount) {
     return NextResponse.json(
       { error: "결제 금액이 올바르지 않습니다." },
