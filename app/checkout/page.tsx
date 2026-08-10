@@ -779,9 +779,17 @@ export default function CheckoutPage() {
                 추구미 · 얼굴형 · 헤어 · 메이크업 · 컬러 팔레트 등 핵심 8개
                 챕터
               </p>
-              <p className="mt-3 text-xl font-extrabold text-black">
-                {BASIC_PRICE_KRW.toLocaleString()}원
-              </p>
+              <div className="mt-3 flex items-baseline gap-2">
+                <span className="text-xl font-extrabold text-black">
+                  {BASIC_PRICE_KRW.toLocaleString()}원
+                </span>
+                <span className="text-xs text-gray-400 line-through decoration-gray-400">
+                  {BASIC_ORIGINAL_PRICE_KRW.toLocaleString()}원
+                </span>
+                <span className="text-xs font-bold text-violet-600">
+                  -{BASIC_DISCOUNT_PERCENT}%
+                </span>
+              </div>
             </button>
 
             <button
@@ -809,9 +817,17 @@ export default function CheckoutPage() {
                 Basic 전체 포함 + 동물상 · 액세서리 · 향수 · 상황별 전략 등
                 전체 17개 챕터 상세 분석
               </p>
-              <p className="mt-3 text-xl font-extrabold text-black">
-                {PREMIUM_PRICE_KRW.toLocaleString()}원
-              </p>
+              <div className="mt-3 flex items-baseline gap-2">
+                <span className="text-xl font-extrabold text-black">
+                  {PREMIUM_PRICE_KRW.toLocaleString()}원
+                </span>
+                <span className="text-xs text-gray-400 line-through decoration-gray-400">
+                  {PREMIUM_ORIGINAL_PRICE_KRW.toLocaleString()}원
+                </span>
+                <span className="text-xs font-bold text-violet-600">
+                  -{PREMIUM_DISCOUNT_PERCENT}%
+                </span>
+              </div>
             </button>
 
             <button
@@ -843,9 +859,17 @@ export default function CheckoutPage() {
                 받는 코드를 Match 결제 화면에서 입력하면 무료로 이용할 수
                 있어요.
               </p>
-              <p className="mt-3 text-xl font-extrabold text-black">
-                {PREMIUM_MATCH_PRICE_KRW.toLocaleString()}원
-              </p>
+              <div className="mt-3 flex items-baseline gap-2">
+                <span className="text-xl font-extrabold text-black">
+                  {PREMIUM_MATCH_PRICE_KRW.toLocaleString()}원
+                </span>
+                <span className="text-xs text-gray-400 line-through decoration-gray-400">
+                  {PREMIUM_MATCH_ORIGINAL_PRICE_KRW.toLocaleString()}원
+                </span>
+                <span className="text-xs font-bold text-violet-600">
+                  -{PREMIUM_MATCH_DISCOUNT_PERCENT}%
+                </span>
+              </div>
             </button>
           </div>
         </section>

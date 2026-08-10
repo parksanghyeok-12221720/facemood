@@ -11,8 +11,9 @@ const KAKAO_JS_KEY = process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
 // user to notice the inline KakaoChannelDiscount banner further down).
 // Same underlying Kakao.Channel.addChannel() flow — see that component's
 // comments for why this is a self-reported, not server-verified, discount.
-// Drop the real promo image at public/kakao-channel-banner.png (aspect
-// 4:3) to replace the placeholder.
+// Promo image lives at public/kakao-channel-banner.png (aspect 3:4,
+// portrait) — swap the file to change it, keeping that aspect ratio so
+// object-cover doesn't crop it.
 export default function KakaoChannelDiscountPopup({
   applied,
   onApplied,
@@ -64,7 +65,7 @@ export default function KakaoChannelDiscountPopup({
             ✕
           </button>
 
-          <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl">
+          <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl">
             <Image
               src="/kakao-channel-banner.png"
               alt="카카오 채널 추가 할인"
