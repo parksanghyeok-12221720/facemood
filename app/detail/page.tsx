@@ -5,7 +5,9 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import Container from "@/app/components/Container";
 import DiscountCountdownBar from "@/app/components/DiscountCountdownBar";
+import KakaoChannelDiscountPopup from "@/app/components/KakaoChannelDiscountPopup";
 import PccsColorChart from "@/app/components/PccsColorChart";
+import { KAKAO_DISCOUNT_APPLIED_KEY } from "@/lib/kakaoChannel";
 import { reviews } from "@/app/data/reviews";
 import { trendContents, trendUpdates } from "@/app/data/trendContent";
 import type { TrendUpdate } from "@/app/data/trendContent";
@@ -385,7 +387,31 @@ export default function DetailPage() {
   const [activeChapter, setActiveChapter] = useState("mood");
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [kakaoDiscountApplied, setKakaoDiscountApplied] = useState(false);
   const overview = trendContents.all;
+
+  // Reflects whatever was already set on another page (or an earlier
+  // visit) — localStorage isn't available during SSR, so this starts
+  // false and corrects itself right after mount.
+  useEffect(() => {
+    let cancelled = false;
+    // Push past a microtask boundary so this setState call is never
+    // synchronous relative to the effect body (react-hooks/set-state-in-effect).
+    Promise.resolve().then(() => {
+      if (cancelled) return;
+      if (localStorage.getItem(KAKAO_DISCOUNT_APPLIED_KEY) === "1") {
+        setKakaoDiscountApplied(true);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  function markKakaoDiscountApplied() {
+    localStorage.setItem(KAKAO_DISCOUNT_APPLIED_KEY, "1");
+    setKakaoDiscountApplied(true);
+  }
 
   useEffect(() => {
     const sections = chapters
@@ -451,6 +477,11 @@ export default function DetailPage() {
 
   return (
     <main className="min-h-screen bg-white pb-24 text-black">
+      <KakaoChannelDiscountPopup
+        applied={kakaoDiscountApplied}
+        eligible
+        onApplied={markKakaoDiscountApplied}
+      />
       <div className="sticky top-0 z-10 border-b border-violet-100 bg-white/90 backdrop-blur">
         <Container className="flex items-center justify-between py-4">
           <span className="text-sm font-bold tracking-[0.2em] text-violet-600">

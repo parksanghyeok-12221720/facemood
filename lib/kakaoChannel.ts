@@ -6,3 +6,10 @@
 // level as a coupon code.
 export const KAKAO_CHANNEL_PUBLIC_ID = "_fxaxbfX";
 export const KAKAO_CHANNEL_DISCOUNT_KRW = 5000;
+
+// Shared across /detail, /checkout, and /match/checkout via localStorage
+// (not sessionStorage — this needs to survive from an early page like
+// /detail all the way to whichever checkout page the user eventually
+// lands on) so adding the channel once, anywhere on the site, carries the
+// discount forward instead of asking again at checkout.
+export const KAKAO_DISCOUNT_APPLIED_KEY = "facemood_kakao_discount_applied";

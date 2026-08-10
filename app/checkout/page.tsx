@@ -7,7 +7,7 @@ import type { TossPaymentsWidgets } from "@tosspayments/tosspayments-sdk";
 import Container from "@/app/components/Container";
 import KakaoChannelDiscount from "@/app/components/KakaoChannelDiscount";
 import KakaoChannelDiscountPopup from "@/app/components/KakaoChannelDiscountPopup";
-import { KAKAO_CHANNEL_DISCOUNT_KRW } from "@/lib/kakaoChannel";
+import { KAKAO_CHANNEL_DISCOUNT_KRW, KAKAO_DISCOUNT_APPLIED_KEY } from "@/lib/kakaoChannel";
 import { TEST_AMOUNT_KRW, isTestPhone } from "@/lib/testPayment";
 
 const REPORT_ID_KEY = "facemood_report_id";
@@ -310,6 +310,29 @@ export default function CheckoutPage() {
   const [isRedeemingCode, setIsRedeemingCode] = useState(false);
 
   const [kakaoDiscountApplied, setKakaoDiscountApplied] = useState(false);
+
+  // Picks up "already added the channel" from another page (e.g.
+  // /detail) — localStorage isn't available during SSR, so this starts
+  // false and corrects itself right after mount.
+  useEffect(() => {
+    let cancelled = false;
+    // Push past a microtask boundary so this setState call is never
+    // synchronous relative to the effect body (react-hooks/set-state-in-effect).
+    Promise.resolve().then(() => {
+      if (cancelled) return;
+      if (localStorage.getItem(KAKAO_DISCOUNT_APPLIED_KEY) === "1") {
+        setKakaoDiscountApplied(true);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  function markKakaoDiscountApplied() {
+    localStorage.setItem(KAKAO_DISCOUNT_APPLIED_KEY, "1");
+    setKakaoDiscountApplied(true);
+  }
 
   const widgetsRef = useRef<TossPaymentsWidgets | null>(null);
   const phone = `${phonePrefix}-${phoneMiddle}-${phoneLast}`;
@@ -621,7 +644,7 @@ export default function CheckoutPage() {
       <KakaoChannelDiscountPopup
         applied={kakaoDiscountApplied}
         eligible={isKakaoDiscountEligibleTier}
-        onApplied={() => setKakaoDiscountApplied(true)}
+        onApplied={markKakaoDiscountApplied}
       />
       <Container className="mt-6">
         {/* Photo banner */}
@@ -915,7 +938,7 @@ export default function CheckoutPage() {
           <KakaoChannelDiscount
             applied={kakaoDiscountApplied}
             eligible={isKakaoDiscountEligibleTier}
-            onApplied={() => setKakaoDiscountApplied(true)}
+            onApplied={markKakaoDiscountApplied}
           />
         </section>
 
