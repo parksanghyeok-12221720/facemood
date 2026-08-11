@@ -22,13 +22,6 @@ const SERVICES: Service[] = [
     image: "/home-card-mood.png",
   },
   {
-    title: "그 사람과의 무드궁합",
-    subtitle: "두 사람의 얼굴 무드와 커플 케미 분석",
-    href: "/match/upload",
-    image: "/home-card-match.png",
-    badge: "NEW",
-  },
-  {
     title: "헤어 컨설팅",
     subtitle: "얼굴형부터 어울리는 헤어 방향까지",
     href: "/detail#section-hair",
