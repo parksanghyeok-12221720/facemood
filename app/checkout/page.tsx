@@ -7,6 +7,7 @@ import type { TossPaymentsWidgets } from "@tosspayments/tosspayments-sdk";
 import Container from "@/app/components/Container";
 import KakaoChannelDiscount from "@/app/components/KakaoChannelDiscount";
 import KakaoChannelDiscountPopup from "@/app/components/KakaoChannelDiscountPopup";
+import TodayAnalysisCounter from "@/app/components/TodayAnalysisCounter";
 import { KAKAO_CHANNEL_DISCOUNT_KRW, KAKAO_DISCOUNT_APPLIED_KEY } from "@/lib/kakaoChannel";
 import { TEST_AMOUNT_KRW, isTestPhone } from "@/lib/testPayment";
 
@@ -672,6 +673,8 @@ export default function CheckoutPage() {
             {TIER_DISCOUNT_PERCENT[tier]}% 할인
           </span>
         </div>
+
+        <TodayAnalysisCounter />
 
         {/* Contact */}
         <section className="mt-8">
