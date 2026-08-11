@@ -26,6 +26,20 @@ function CirclesIcon() {
   );
 }
 
+function ChevronRightIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M9 6l6 6-6 6"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export default function Home() {
   return (
     <main className="min-h-screen bg-white text-black">
@@ -74,12 +88,21 @@ export default function Home() {
         </div>
 
         {/* Product cards */}
-        <div className="mt-10 flex items-center gap-2">
-          <h2 className="text-base font-bold text-black">FACEMOOD 서비스</h2>
-          <span className="rounded-full bg-violet-600 px-2 py-0.5 text-[10px] font-bold text-white">
-            HOT
-          </span>
-          <HotLiveCounter />
+        <div className="mt-10 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h2 className="text-base font-bold text-black">FACEMOOD 서비스</h2>
+            <span className="rounded-full bg-violet-600 px-2 py-0.5 text-[10px] font-bold text-white">
+              HOT
+            </span>
+            <HotLiveCounter />
+          </div>
+          <Link
+            href="/services"
+            className="flex items-center gap-0.5 text-xs font-semibold text-gray-500"
+          >
+            더보기
+            <ChevronRightIcon />
+          </Link>
         </div>
 
         <ProductChoiceCards />
