@@ -216,9 +216,9 @@ const photoReviews: PhotoReview[] = [
 // now; drop in real before/after photos under the same filenames to
 // replace them — no code changes needed.
 const caseAssets = [
-  { photo: "/detail-case-male/case-1.png", ratio: "1536 / 1024" },
-  { photo: "/detail-case-male/case-2.png", ratio: "1313 / 1198" },
-  { photo: "/detail-case-male/case-3.png", ratio: "1315 / 1196" },
+  { photo: "/detail-case-male/case-1.png", ratio: "1122 / 1402" },
+  { photo: "/detail-case-male/case-2.png", ratio: "1086 / 1448" },
+  { photo: "/detail-case-male/case-3.png", ratio: "1086 / 1448" },
 ];
 
 type CaseTestimonial = { name: string; score: string; stars: string; text: string };
