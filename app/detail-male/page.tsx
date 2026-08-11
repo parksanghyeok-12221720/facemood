@@ -9,7 +9,7 @@ import KakaoChannelDiscountPopup from "@/app/components/KakaoChannelDiscountPopu
 import PccsColorChart from "@/app/components/PccsColorChart";
 import SiteFooter from "@/app/components/SiteFooter";
 import { KAKAO_DISCOUNT_APPLIED_KEY } from "@/lib/kakaoChannel";
-import { reviews } from "@/app/data/reviews";
+import type { Review } from "@/app/data/reviews";
 import { trendContents, trendUpdates } from "@/app/data/trendContent";
 import type { TrendUpdate } from "@/app/data/trendContent";
 import { REPORT_CHAPTERS } from "@/types/report";
@@ -222,6 +222,72 @@ const caseTestimonials: CaseTestimonial[] = [
     score: "5.0",
     stars: "★★★★★",
     text: "소개팅 앞두고 뭘 입어야 할지 감이 안 왔는데, 제 이미지에 맞는 톤이랑 아이템을 구체적으로 짚어줘서 그대로 따라 입었더니 반응이 확실히 달랐어요.",
+  },
+];
+
+// Local to this page (not the shared reviews.ts) — same reason as
+// caseTestimonials: the general REVIEWS section needs its own male-voiced
+// copy instead of the female page's.
+const maleReviews: Review[] = [
+  {
+    name: "김*준",
+    stars: "★★★★★",
+    score: "5.0",
+    text: "생각보다 엄청 자세해서 놀랐어요. 그냥 '댄디하시네요~' 이런 느낌일 줄 알았는데, 제 사진에서 보이는 분위기랑 제가 원하는 이미지 차이를 설명해줘서 좋았어요. 특히 정리해야 하는 부분이랑 살려야 하는 포인트가 현실적이었음.",
+  },
+  {
+    name: "min**",
+    stars: "★★★★★",
+    score: "5.0",
+    text: "퍼스널컬러를 딱 잘라서 말하는 게 아니라 “사진상으로는 이런 색감이 잘 맞아 보인다” 이런 식이라 오히려 더 믿음 갔어요. 조명 따라 달라질 수 있다는 말도 있어서 부담 없었고, 추천 컬러 팔레트가 생각보다 유용했어요.",
+  },
+  {
+    name: "이수*",
+    stars: "★★★★☆",
+    score: "4.0",
+    text: "처음엔 반신반의했는데 리포트 읽고 나니까 제가 왜 사진마다 분위기가 달라 보였는지 좀 알겠더라구요. 헤어랑 옷 색감이 따로 놀고 있다는 부분이 제일 공감됐어요. 결과가 조금 더 길었으면 더 좋았을 듯!",
+  },
+  {
+    name: "정*훈",
+    stars: "★★★★★",
+    score: "5.0",
+    text: "제가 원하는 건 세련되고 차분한 느낌이었는데, 지금 이미지는 너무 편한 캐주얼 쪽에 가깝다고 해서 뜨끔했어요ㅋㅋ 근데 말투가 기분 나쁘게 평가하는 게 아니라 방향을 잡아주는 느낌이라 좋았어요.",
+  },
+  {
+    name: "박준*",
+    stars: "★★★★★",
+    score: "5.0",
+    text: "코디 부분이 진짜 도움 됐어요. 평소에 그냥 무난한 옷만 골랐는데, 제 추구미랑 맞추려면 핏이랑 톤을 봐야 한다는 게 새로웠어요. 바로 옷 살 때 참고할 듯요.",
+  },
+  {
+    name: "hyun**",
+    stars: "★★★★☆",
+    score: "4.0",
+    text: "사진 올리는 게 살짝 민망했는데 외모 점수 이런 게 아니라 무드 분석이라 괜찮았어요. 결과도 막 단점 지적이 아니라 “이 방향으로 가면 더 가까워질 수 있다” 식이라 편하게 봤습니다.",
+  },
+  {
+    name: "재*원",
+    stars: "★★★★★",
+    score: "5.0",
+    text: "내가 원하는 분위기는 있는데 설명을 못 했거든요. 근데 리포트에서 그걸 말로 정리해준 느낌이었어요. 특히 댄디/캐주얼/시크한 느낌이 섞여 있는데 어느 쪽을 살리면 좋은지 알려줘서 좋았어요.",
+  },
+  {
+    name: "kevin**",
+    stars: "★★★★★",
+    score: "5.0",
+    text: "헤어 추천이 생각보다 좋았음… 앞머리랑 컬 방향이 분위기에 얼마나 영향 주는지 몰랐는데, 제 사진 기준으로 어떤 스타일이 더 잘 맞을지 설명해줘서 미용실 갈 때 참고하려고요.",
+  },
+  {
+    name: "최*수",
+    stars: "★★★★☆",
+    score: "4.0",
+    text: "무료 요약만 봤을 때도 꽤 괜찮았고, 상세 리포트는 확실히 더 구체적이었어요. 컬러, 코디, 헤어를 따로 보는 게 아니라 하나의 분위기로 맞춰주는 게 좋았습니다.",
+  },
+  {
+    name: "sh**89",
+    stars: "★★★★★",
+    score: "5.0",
+    text: "프로필 사진 바꾸려고 해봤는데 기대보다 만족했어요. 어떤 옷 색감이랑 배경이 제 분위기를 더 잘 살리는지 알려줘서 좋았고, 너무 AI 느낌보다는 스타일 컨설팅 받는 느낌이었어요.",
   },
 ];
 
@@ -756,7 +822,7 @@ export default function DetailPage() {
         <div className="mt-6 flex flex-col gap-3">
           {[
             "미용실에 연예인 사진 보여줬는데\n왜 다른 느낌이 나는지 모르겠어요 😭",
-            "분명 예쁜 옷인데\n제가 입으면 안 어울려요 😭",
+            "분명 남들 입으면 멋있는데\n제가 입으면 안 어울려요 😭",
             "사진 찍을 때마다\n어떤 느낌으로 나올지 감이 안 와요 😭",
             "내 스타일 기준이 뭔지\n설명을 못 하겠어요 😭",
           ].map((item) => (
@@ -808,7 +874,7 @@ export default function DetailPage() {
             },
             {
               title: "옷 고를 때 기준이 생기고",
-              body: "예뻐 보이는 게 아니라, 내 분위기에 맞는 컬러와 핏을 먼저 보게 돼요.",
+              body: "멋있어 보이는 게 아니라, 내 분위기에 맞는 컬러와 핏을 먼저 보게 돼요.",
             },
             {
               title: "사진 찍을 때 자신감이 생겨요",
@@ -1144,7 +1210,7 @@ export default function DetailPage() {
         </p>
 
         <div className="mt-6 flex flex-col gap-3">
-          {reviews.map((review) => (
+          {maleReviews.map((review) => (
             <div
               key={review.name}
               className="rounded-2xl border border-violet-100 bg-white p-5 shadow-sm shadow-violet-100/60"
