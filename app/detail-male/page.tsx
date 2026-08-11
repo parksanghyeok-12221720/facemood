@@ -628,7 +628,7 @@ export default function DetailPage() {
 
         <div className="relative mx-auto mt-8 aspect-[3/4] w-full max-w-xs overflow-hidden rounded-3xl border border-violet-100 shadow-sm shadow-violet-100/60">
           <Image
-            src="/detail-point/precision-analysis.png"
+            src="/detail-point/precision-analysis-male.png"
             alt="정밀 얼굴 분위기 분석 예시"
             fill
             sizes="320px"
