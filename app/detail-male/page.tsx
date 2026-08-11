@@ -16,23 +16,6 @@ import { REPORT_CHAPTERS } from "@/types/report";
 
 type Photo = { src: string; keyword: string };
 
-const makeupPhotos: Photo[] = [
-  { src: "/mood/makeup/makeup1.png", keyword: "#물광베이스" },
-  { src: "/mood/makeup/makeup2.png", keyword: "#소프트아이메이크업" },
-  { src: "/mood/makeup/makeup3.png", keyword: "#러블리블러셔" },
-  { src: "/mood/makeup/makeup4.png", keyword: "#글로시립" },
-  { src: "/mood/makeup/makeup5.png", keyword: "#포인트아이라인" },
-  { src: "/mood/makeup/makeup_굴로우베이스.png", keyword: "#글로우베이스" },
-  {
-    src: "/mood/makeup/션makeup_라이트 레이어링 파운데이.png",
-    keyword: "#라이트레이어링파운데이션",
-  },
-  { src: "/mood/makeup/makeup_절제된 컨투어.png", keyword: "#절제된컨투어" },
-  { src: "/mood/makeup/makeup_ 은은한 스모키.png", keyword: "#은은한스모키" },
-  { src: "/mood/makeup/makeup_실버포인트.png", keyword: "#실버포인트" },
-  { src: "/mood/makeup/makeup_고스트 래시.png", keyword: "#고스트래시" },
-];
-
 const hairPhotos: Photo[] = [
   { src: "/mood/hair/hair1.png", keyword: "#레이어드컷" },
   { src: "/mood/hair/hair_샌드펌.png", keyword: "#샌드펌" },
@@ -79,7 +62,7 @@ const premiumOnlyChapters = REPORT_CHAPTERS.filter((c) => c.tier === "premium");
 const outcomeHighlights = [
   { icon: "✨", text: "나에게 가장 잘 어울리는 분위기 찾기" },
   { icon: "💇", text: "미용실에서 바로 보여줄 수 있는 헤어 추천" },
-  { icon: "💄", text: "올리브영에서 바로 구매 가능한 메이크업 추천" },
+  { icon: "👕", text: "무신사에서 바로 참고 가능한 코디 추천" },
   { icon: "👕", text: "내 체형에 맞는 코디 가이드" },
   { icon: "📸", text: "사진에서도 더 잘 나오는 스타일 제안" },
 ];
@@ -88,7 +71,7 @@ const oldConsultingPoints = [
   {
     icon: "💬",
     title: "분야별로 따로 받아야 하는 컨설팅",
-    body: "퍼스널컬러 · 헤어 · 메이크업 · 스타일링 · 체형 · 액세서리, 각각 예약과 비용이 필요해요.",
+    body: "퍼스널컬러 · 헤어 · 코디 · 스타일링 · 체형 · 액세서리, 각각 예약과 비용이 필요해요.",
   },
   {
     icon: "⏳",
@@ -114,7 +97,7 @@ const premiumEventPoints = [
   },
   {
     title: "나에게 맞는 스타일을 한 번에 추천",
-    body: "헤어 · 메이크업 · 코디 · 액세서리 · 향수 · 컬러 모두 연결해서 추천해요.",
+    body: "헤어 · 코디 · 액세서리 · 향수 · 컬러 모두 연결해서 추천해요.",
   },
   {
     title: "Before → After 스타일 시뮬레이션",
@@ -132,7 +115,6 @@ const premiumEventPoints = [
 
 const premiumFeatureTags = [
   "헤어 추천",
-  "메이크업 추천",
   "코디 추천",
   "퍼스널컬러",
   "체형 분석",
@@ -152,7 +134,6 @@ const recommendedForList = [
 const chapters = [
   { key: "mood", label: "스타일", id: "section-mood" },
   { key: "color", label: "컬러", id: "section-color" },
-  { key: "makeup", label: "메이크업", id: "section-makeup" },
   { key: "hair", label: "헤어", id: "section-hair" },
 ];
 
@@ -172,43 +153,38 @@ const serviceBreakdown = [
   },
   {
     number: "03",
-    photo: "/detail-service/03-makeup.png",
-    title: "메이크업 컨설팅",
-    body: "원하는 무드에 맞는\n메이크업 방향을 제안해요",
-  },
-  {
-    number: "04",
     photo: "/detail-service/04-hair.png",
     title: "헤어 컨설팅",
     body: "분위기를 가장 크게 바꾸는\n헤어 방향을 알려드려요",
   },
   {
-    number: "05",
+    number: "04",
     photo: "/detail-service/05-face.png",
     title: "얼굴형 컨설팅",
     body: "사진상 얼굴형을 참고해\n어울리는 스타일을 제안해요",
   },
   {
-    number: "06",
+    number: "05",
     photo: "/detail-service/06-style.png",
     title: "스타일링 컨설팅",
     body: "지금 이미지와\n원하는 추구미를 하나로 정리해요",
   },
 ];
 
-type PhotoReview = { photo: string; stars: string; text: string };
+type PhotoReview = { photo: string; ratio: string; stars: string; text: string };
 
 // Photo at /public/detail-reviews-male/review-N.png (separate from the
-// female page's /detail-reviews folder). Placeholders (copies of the
-// female photos) are seeded there for now — drop real photos in under the
-// same filenames to replace them, no code changes needed.
+// female page's /detail-reviews folder). Real male photos are in — each
+// card uses its own `ratio` (matching that photo's real dimensions) since
+// they aren't all the same shape (some portrait outfit shots, one
+// landscape hair before/after).
 const photoReviews: PhotoReview[] = [
-  { photo: "/detail-reviews-male/review-1.png", stars: "★★★★★", text: "생각보다 엄청 자세해서 놀랐어요" },
-  { photo: "/detail-reviews-male/review-2.png", stars: "★★★★★", text: "사진상 색감이 잘 맞는다는 말이 더 믿음 갔어요" },
-  { photo: "/detail-reviews-male/review-3.png", stars: "★★★★★", text: "지금 이미지가 캐주얼하다고 해서 뜨끔했어요" },
-  { photo: "/detail-reviews-male/review-4.png", stars: "★★★★★", text: "메이크업 부분이 진짜 도움 됐어요" },
-  { photo: "/detail-reviews-male/review-5.png", stars: "★★★★★", text: "원하는 분위기를 말로 정리해준 느낌이었어요" },
-  { photo: "/detail-reviews-male/review-6.png", stars: "★★★★☆", text: "헤어 추천이 생각보다 좋았어요" },
+  { photo: "/detail-reviews-male/review-1.png", ratio: "1024 / 1536", stars: "★★★★★", text: "생각보다 엄청 자세해서 놀랐어요" },
+  { photo: "/detail-reviews-male/review-2.png", ratio: "1023 / 1537", stars: "★★★★★", text: "사진상 색감이 잘 맞는다는 말이 더 믿음 갔어요" },
+  { photo: "/detail-reviews-male/review-3.png", ratio: "1024 / 1536", stars: "★★★★★", text: "지금 이미지가 캐주얼하다고 해서 뜨끔했어요" },
+  { photo: "/detail-reviews-male/review-4.png", ratio: "1024 / 1536", stars: "★★★★★", text: "코디 부분이 진짜 도움 됐어요" },
+  { photo: "/detail-reviews-male/review-5.png", ratio: "1086 / 1448", stars: "★★★★★", text: "원하는 분위기를 말로 정리해준 느낌이었어요" },
+  { photo: "/detail-reviews-male/review-6.png", ratio: "1448 / 1086", stars: "★★★★☆", text: "헤어 추천이 생각보다 좋았어요" },
 ];
 
 // Each photo already contains both the before and after side in one image
@@ -319,7 +295,7 @@ function PhotoReviewMarquee({ items }: { items: PhotoReview[] }) {
             key={`${review.photo}-${index}`}
             className="w-36 shrink-0 overflow-hidden rounded-2xl border border-violet-100 bg-white shadow-sm shadow-violet-100/60"
           >
-            <div className="relative aspect-[3/4] w-full">
+            <div className="relative w-full" style={{ aspectRatio: review.ratio }}>
               <Image
                 src={review.photo}
                 alt={review.text}
@@ -583,7 +559,7 @@ export default function DetailPage() {
         <p className="mt-4 text-sm leading-relaxed text-gray-600">
           사진과 간단한 답변으로 추구미, 퍼스널컬러 방향,
           <br />
-          헤어·메이크업·스타일링까지 한 번에 정리해요.
+          헤어·코디·스타일링까지 한 번에 정리해요.
         </p>
         <p className="mt-2 text-xs leading-relaxed text-gray-400">
           외모 평가가 아닌,
@@ -648,7 +624,7 @@ export default function DetailPage() {
           나만을 위한
           <br />
           <span className="text-violet-600">
-            헤어·메이크업 방향과
+            헤어·코디 방향과
             <br />
             스타일 리포트
           </span>
@@ -1059,54 +1035,9 @@ export default function DetailPage() {
         )}
       </Container>
 
-      {/* Chapter: 메이크업 */}
-      <Container id="section-makeup" maxWidth="max-w-3xl" className="mt-14 scroll-mt-20 reveal">
-        <span className="text-xs font-bold tabular-nums text-violet-300">03</span>
-        <span className="ml-2 inline-flex items-center rounded-full bg-violet-100 px-3 py-1 text-[11px] font-semibold tracking-[0.15em] text-violet-600">
-          MAKEUP
-        </span>
-        <h2 className="mt-4 whitespace-pre-line text-lg font-bold leading-snug text-black">
-          {trendContents.makeup.title}
-        </h2>
-        <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-gray-500">
-          {trendContents.makeup.description}
-        </p>
-
-        <div className="mt-6">
-          <MarqueeRow photos={makeupPhotos} animationKey="makeup" />
-        </div>
-
-        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {trendContents.makeup.cards.map((card, index) => (
-            <div
-              key={card.title}
-              className="rounded-2xl border border-violet-100 bg-white p-5 shadow-sm shadow-violet-100/60"
-            >
-              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-violet-100 text-[11px] font-semibold text-violet-600">
-                {index + 1}
-              </span>
-              <p className="mt-3 text-sm font-semibold text-black">
-                {card.title}
-              </p>
-              <p className="mt-1 whitespace-pre-line text-xs leading-relaxed text-gray-500">
-                {card.content}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        {trendContents.makeup.footerNote && (
-          <div className="mt-6 rounded-2xl border border-violet-100 bg-violet-50/60 p-4">
-            <p className="text-xs leading-relaxed text-gray-500">
-              {trendContents.makeup.footerNote}
-            </p>
-          </div>
-        )}
-      </Container>
-
       {/* Chapter: 헤어 */}
       <Container id="section-hair" maxWidth="max-w-3xl" className="mt-14 scroll-mt-20 reveal">
-        <span className="text-xs font-bold tabular-nums text-violet-300">04</span>
+        <span className="text-xs font-bold tabular-nums text-violet-300">03</span>
         <span className="ml-2 inline-flex items-center rounded-full bg-violet-100 px-3 py-1 text-[11px] font-semibold tracking-[0.15em] text-violet-600">
           HAIR
         </span>
