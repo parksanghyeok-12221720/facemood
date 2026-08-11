@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { redeemBundleMatchCredit } from "@/lib/reports";
 import { getMatchReport, setMatchCheckoutPassword } from "@/lib/matchReports";
+import { redeemFreeCode } from "@/lib/freeCodes";
 
 export const runtime = "nodejs";
 
@@ -51,7 +52,23 @@ export async function POST(request: NextRequest) {
   }
 
   const redeemed = redeemBundleMatchCredit(code, matchReportId);
-  if (!redeemed) {
+  if (redeemed) {
+    setMatchCheckoutPassword(
+      matchReportId,
+      password,
+      { paymentKey: `code:${code}`, orderId: matchReportId, amount: 0 },
+      phone ?? null,
+      true,
+    );
+    return NextResponse.json({ ok: true });
+  }
+
+  // Not a Premium+Match bundle credit code — try an admin-issued free code
+  // (see /api/admin/free-codes) before giving up. `bundle: false` here
+  // (unlike the branch above) so a support-issued code can't itself be
+  // chained into another free bundle credit.
+  const freeCode = redeemFreeCode(code, "match", matchReportId);
+  if (!freeCode.ok) {
     return NextResponse.json(
       { error: "유효하지 않거나 이미 사용된 코드예요." },
       { status: 409 },
@@ -63,7 +80,7 @@ export async function POST(request: NextRequest) {
     password,
     { paymentKey: `code:${code}`, orderId: matchReportId, amount: 0 },
     phone ?? null,
-    true,
+    false,
   );
 
   return NextResponse.json({ ok: true });

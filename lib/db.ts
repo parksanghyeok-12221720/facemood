@@ -96,4 +96,20 @@ for (const [column, ddl] of [
   }
 }
 
+// Admin-issued free one-time codes — for customer-support cases (forgotten
+// password, a report that errored out mid-generation/delivery) where the
+// existing bundle-credit codes don't apply because no bundle was purchased.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS admin_free_codes (
+    id TEXT PRIMARY KEY,
+    code TEXT NOT NULL UNIQUE,
+    product TEXT NOT NULL,
+    tier TEXT,
+    note TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    redeemed_report_id TEXT,
+    redeemed_at TEXT
+  )
+`);
+
 export default db;

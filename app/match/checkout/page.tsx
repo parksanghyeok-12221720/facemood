@@ -456,8 +456,9 @@ export default function MatchCheckoutPage() {
                 무료 이용 코드 입력
               </p>
               <p className="mt-1 text-xs leading-relaxed text-gray-500">
-                FACEMOOD Premium + Match 번들 결제 시 문자로 받은 코드를
-                입력하면 결제 없이 바로 리포트를 받아보실 수 있어요.
+                FACEMOOD Premium + Match 번들 결제 시 문자로 받은 코드나,
+                고객센터에서 안내받은 코드를 입력하면 결제 없이 바로 리포트를
+                받아보실 수 있어요.
               </p>
               <input
                 type="text"

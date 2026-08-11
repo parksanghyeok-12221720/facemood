@@ -5,6 +5,8 @@ import { ADMIN_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/adminAuth";
 import { getRevenueStats, listPaidReports } from "@/lib/reports";
 import type { DailyRevenuePoint } from "@/lib/reports";
 import { getMatchRevenueStats, listPaidMatchReports } from "@/lib/matchReports";
+import { listFreeCodes } from "@/lib/freeCodes";
+import FreeCodeIssuer from "@/app/admin/FreeCodeIssuer";
 
 export const dynamic = "force-dynamic";
 
@@ -95,6 +97,7 @@ export default async function AdminPage() {
   const revenue = getRevenueStats();
   const paidMatchReports = listPaidMatchReports();
   const matchRevenue = getMatchRevenueStats();
+  const freeCodes = listFreeCodes();
 
   // Combined FACEMOOD + Match totals for the top summary cards — Match
   // sales used to only show up in their own section below and were
@@ -161,7 +164,62 @@ export default async function AdminPage() {
 
         <RevenueChart daily={combinedDaily} />
 
-        <div className="mt-6 overflow-x-auto rounded-2xl border border-white/10">
+        <div className="mt-10">
+          <h2 className="text-sm font-semibold text-white">무료 코드</h2>
+          <div className="mt-4">
+            <FreeCodeIssuer />
+          </div>
+
+          <div className="mt-4 overflow-x-auto rounded-2xl border border-white/10">
+            <table className="w-full min-w-[560px] text-left text-sm">
+              <thead>
+                <tr className="border-b border-white/10 text-xs text-gray-500">
+                  <th className="px-4 py-3 font-medium">코드</th>
+                  <th className="px-4 py-3 font-medium">상품</th>
+                  <th className="px-4 py-3 font-medium">메모</th>
+                  <th className="px-4 py-3 font-medium">발급일</th>
+                  <th className="px-4 py-3 font-medium">상태</th>
+                </tr>
+              </thead>
+              <tbody>
+                {freeCodes.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                      아직 발급한 코드가 없습니다.
+                    </td>
+                  </tr>
+                )}
+                {freeCodes.map((freeCode) => (
+                  <tr key={freeCode.id} className="border-b border-white/5 last:border-0">
+                    <td className="px-4 py-3 font-mono text-white">{freeCode.code}</td>
+                    <td className="px-4 py-3 text-gray-300">
+                      {freeCode.product === "match"
+                        ? "Match"
+                        : freeCode.tier === "basic"
+                          ? "FACEMOOD Basic"
+                          : "FACEMOOD Premium"}
+                    </td>
+                    <td className="px-4 py-3 text-gray-300">{freeCode.note ?? "-"}</td>
+                    <td className="px-4 py-3 text-gray-300">{formatDate(freeCode.createdAt)}</td>
+                    <td className="px-4 py-3">
+                      {freeCode.redeemedAt ? (
+                        <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-gray-300">
+                          사용됨 · {formatDate(freeCode.redeemedAt)}
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[11px] font-semibold text-emerald-300">
+                          미사용
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="mt-10 overflow-x-auto rounded-2xl border border-white/10">
           <table className="w-full min-w-[680px] text-left text-sm">
             <thead>
               <tr className="border-b border-white/10 text-xs text-gray-500">
