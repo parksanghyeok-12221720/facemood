@@ -137,36 +137,39 @@ const chapters = [
   { key: "hair", label: "헤어", id: "section-hair" },
 ];
 
-// Photo at /public/detail-service/0N-*.png — real photos already in place.
+// Photo at /public/detail-service-male/0N-*.png (separate from the female
+// page's /detail-service folder). Placeholders (copies of the female
+// photos) are seeded there for now — drop real photos in under the same
+// filenames to replace them, no code changes needed.
 const serviceBreakdown = [
   {
     number: "01",
-    photo: "/detail-service/01-body.png",
+    photo: "/detail-service-male/01-body.png",
     title: "체형 컨설팅",
     body: "체형을 평가하지 않고\n비율 좋아 보이는 핏과 실루엣을 제안해요",
   },
   {
     number: "02",
-    photo: "/detail-service/02-color.png",
+    photo: "/detail-service-male/02-color.png",
     title: "퍼스널컬러 컨설팅",
     body: "사진상 어울리는\n컬러 방향을 찾아드려요",
   },
   {
     number: "03",
-    photo: "/detail-service/04-hair.png",
+    photo: "/detail-service-male/03-hair.png",
     title: "헤어 컨설팅",
     body: "분위기를 가장 크게 바꾸는\n헤어 방향을 알려드려요",
   },
   {
     number: "04",
-    photo: "/detail-service/05-face.png",
-    title: "얼굴형 컨설팅",
+    photo: "/detail-service-male/04-face.png",
+    title: "얼굴분석 컨설팅",
     body: "사진상 얼굴형을 참고해\n어울리는 스타일을 제안해요",
   },
   {
     number: "05",
-    photo: "/detail-service/06-style.png",
-    title: "스타일링 컨설팅",
+    photo: "/detail-service-male/05-style.png",
+    title: "코디 컨설팅",
     body: "지금 이미지와\n원하는 추구미를 하나로 정리해요",
   },
 ];
