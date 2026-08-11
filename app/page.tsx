@@ -4,6 +4,7 @@ import AnalysisCounter from "@/app/components/AnalysisCounter";
 import Container from "@/app/components/Container";
 import HotLiveCounter from "@/app/components/HotLiveCounter";
 import ProductChoiceCards from "@/app/components/ProductChoiceCards";
+import SiteFooter from "@/app/components/SiteFooter";
 
 function FaceIcon() {
   return (
@@ -27,8 +28,8 @@ function CirclesIcon() {
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-white pb-16 text-black">
-      <Container maxWidth="max-w-md" className="pt-6">
+    <main className="min-h-screen bg-white text-black">
+      <Container maxWidth="max-w-md" className="pb-16 pt-6">
         <p className="text-sm font-bold tracking-[0.2em] text-violet-600">
           FACEMOOD
         </p>
@@ -85,6 +86,8 @@ export default function Home() {
 
         <AnalysisCounter />
       </Container>
+
+      <SiteFooter />
     </main>
   );
 }
