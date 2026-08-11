@@ -198,15 +198,17 @@ const serviceBreakdown = [
 
 type PhotoReview = { photo: string; stars: string; text: string };
 
-// Photo at /public/detail-reviews/review-N.png — placeholders are seeded
-// there for now; drop in real photos under the same filenames to replace.
+// Photo at /public/detail-reviews-male/review-N.png (separate from the
+// female page's /detail-reviews folder). Placeholders (copies of the
+// female photos) are seeded there for now — drop real photos in under the
+// same filenames to replace them, no code changes needed.
 const photoReviews: PhotoReview[] = [
-  { photo: "/detail-reviews/review-1.png", stars: "★★★★★", text: "생각보다 엄청 자세해서 놀랐어요" },
-  { photo: "/detail-reviews/review-2.png", stars: "★★★★★", text: "사진상 색감이 잘 맞는다는 말이 더 믿음 갔어요" },
-  { photo: "/detail-reviews/review-3.png", stars: "★★★★★", text: "지금 이미지가 캐주얼하다고 해서 뜨끔했어요" },
-  { photo: "/detail-reviews/review-4.png", stars: "★★★★★", text: "메이크업 부분이 진짜 도움 됐어요" },
-  { photo: "/detail-reviews/review-5.png", stars: "★★★★★", text: "원하는 분위기를 말로 정리해준 느낌이었어요" },
-  { photo: "/detail-reviews/review-6.png", stars: "★★★★☆", text: "헤어 추천이 생각보다 좋았어요" },
+  { photo: "/detail-reviews-male/review-1.png", stars: "★★★★★", text: "생각보다 엄청 자세해서 놀랐어요" },
+  { photo: "/detail-reviews-male/review-2.png", stars: "★★★★★", text: "사진상 색감이 잘 맞는다는 말이 더 믿음 갔어요" },
+  { photo: "/detail-reviews-male/review-3.png", stars: "★★★★★", text: "지금 이미지가 캐주얼하다고 해서 뜨끔했어요" },
+  { photo: "/detail-reviews-male/review-4.png", stars: "★★★★★", text: "메이크업 부분이 진짜 도움 됐어요" },
+  { photo: "/detail-reviews-male/review-5.png", stars: "★★★★★", text: "원하는 분위기를 말로 정리해준 느낌이었어요" },
+  { photo: "/detail-reviews-male/review-6.png", stars: "★★★★☆", text: "헤어 추천이 생각보다 좋았어요" },
 ];
 
 // Each photo already contains both the before and after side in one image
@@ -659,7 +661,7 @@ export default function DetailPage() {
 
         <div className="relative mx-auto mt-8 aspect-[3/2] w-full max-w-xs overflow-hidden rounded-3xl border border-violet-100 shadow-sm shadow-violet-100/60">
           <Image
-            src="/detail-point/style-report-mockup.png"
+            src="/detail-point/style-report-mockup-male.png"
             alt="스타일 리포트 예시"
             fill
             sizes="320px"
