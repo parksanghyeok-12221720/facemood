@@ -11,7 +11,7 @@ import SiteFooter from "@/app/components/SiteFooter";
 import { KAKAO_DISCOUNT_APPLIED_KEY } from "@/lib/kakaoChannel";
 import type { Review } from "@/app/data/reviews";
 import { trendContents } from "@/app/data/trendContent";
-import type { TrendTabContent, TrendUpdate } from "@/app/data/trendContent";
+import type { TrendCard, TrendTabContent, TrendUpdate } from "@/app/data/trendContent";
 import { REPORT_CHAPTERS } from "@/types/report";
 
 type Photo = { src: string; keyword: string };
@@ -37,17 +37,38 @@ const hairPhotos: Photo[] = [
   { src: "/mood/hair/hair_중단발 허쉬컷.png", keyword: "#중단발허쉬컷" },
 ];
 
-const moodCardPhotos: Record<string, string> = {
-  "청순 자연st": "/mood/cards/청순자연st.png",
-  "고급 도시st": "/mood/cards/고급도시st.png",
-  "차분 시크st": "/mood/cards/차분시크st.png",
-  "러블리 여리st": "/mood/cards/러블리 여리st.png",
-  "힙 트렌디st": "/mood/cards/힙 트렌디st.png",
-  "러블리 힙st": "/mood/cards/러블리 힙st.png",
-  "래퍼 여친st": "/mood/cards/래퍼 여친st.png",
-  "청순 에겐st": "/mood/cards/청순 에겐st.png",
-  "무채색 핀터걸st": "/mood/cards/무채색 핀터걸st.png",
-  "일본 여주st": "/mood/cards/일본여주st.png",
+// Local to this page (not shared trendContents.mood / moodCardPhotos) —
+// the female page's 10 mood archetypes (청순 자연st, 러블리 여리st, ...)
+// don't translate to men, so this is a separate 12-item male archetype
+// set with its own photos under /mood/cards-male/.
+const maleMoodCards: TrendCard[] = [
+  { title: "댄디st", content: "단정하고 깔끔한 스타일로, 누구에게나 호감 가는 세련된 분위기" },
+  { title: "미니멀st", content: "불필요한 요소를 줄이고 핏과 색감으로 완성하는 담백하고 세련된 스타일" },
+  { title: "시티보이st", content: "여유로운 실루엣과 레이어드로 표현하는 편안하고 감각적인 도시 스타일" },
+  { title: "너드/프레피st", content: "셔츠, 니트, 안경 등을 활용한 지적이고 귀여운 분위기의 스타일" },
+  { title: "스트릿st", content: "오버핏과 개성 있는 아이템을 활용한 자유롭고 힙한 스타일" },
+  { title: "모드st", content: "블랙과 무채색을 중심으로 날렵하고 시크하게 연출하는 스타일" },
+  { title: "빈티지st", content: "데님, 워싱, 레트로 아이템으로 자연스럽고 개성 있게 연출하는 스타일" },
+  { title: "클래식st", content: "셔츠, 재킷, 슬랙스처럼 기본에 충실하면서도 남성적인 분위기의 스타일" },
+  { title: "콰이어트 럭셔리st", content: "로고보다 소재와 핏에 집중한 절제되고 고급스러운 스타일" },
+  { title: "소년미st", content: "자연스러운 헤어와 가벼운 코디로 풋풋하고 부드러운 매력을 살린 스타일" },
+  { title: "아이돌st", content: "트렌디한 헤어와 포인트 아이템으로 세련되고 눈에 띄게 연출하는 스타일" },
+  { title: "남친룩st", content: "과하게 꾸미지 않으면서도 깔끔하고 호감 가는 데일리 스타일" },
+];
+
+const maleMoodCardPhotos: Record<string, string> = {
+  "댄디st": "/mood/cards-male/댄디st.png",
+  "미니멀st": "/mood/cards-male/미니멀st.png",
+  "시티보이st": "/mood/cards-male/시티보이st.png",
+  "너드/프레피st": "/mood/cards-male/너드_프레피st.png",
+  "스트릿st": "/mood/cards-male/스트릿st.png",
+  "모드st": "/mood/cards-male/모드st.png",
+  "빈티지st": "/mood/cards-male/빈티지st.png",
+  "클래식st": "/mood/cards-male/클래식st.png",
+  "콰이어트 럭셔리st": "/mood/cards-male/콰이어트 럭셔리st.png",
+  "소년미st": "/mood/cards-male/소년미st.png",
+  "아이돌st": "/mood/cards-male/아이돌st.png",
+  "남친룩st": "/mood/cards-male/남친룩st.png",
 };
 
 // Display-only teaser price for the PREMIUM EVENT promo card below —
@@ -1062,10 +1083,10 @@ export default function DetailPage() {
           STYLE
         </span>
         <h2 className="mt-4 text-lg font-bold leading-snug text-black">
-          {trendContents.mood.title}
+          요즘 많이 찾는 추구미
         </h2>
         <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-gray-500">
-          {trendContents.mood.description}
+          {"최근에는 하나의 정답 같은 스타일보다,\n내가 원하는 분위기를 먼저 정하고 그에 맞춰 헤어, 코디, 컬러를 조합하는 흐름이 강해지고 있어요."}
         </p>
 
         <div className="mt-6">
@@ -1074,10 +1095,10 @@ export default function DetailPage() {
               key="mood-cards"
               className="animate-marquee flex w-max gap-3"
               style={{
-                animationDuration: `${trendContents.mood.cards.length * 4}s`,
+                animationDuration: `${maleMoodCards.length * 4}s`,
               }}
             >
-              {[...trendContents.mood.cards, ...trendContents.mood.cards].map(
+              {[...maleMoodCards, ...maleMoodCards].map(
                 (card, index) => (
                   <div
                     key={`${card.title}-${index}`}
@@ -1085,7 +1106,7 @@ export default function DetailPage() {
                   >
                     <div className="relative aspect-square w-full">
                       <Image
-                        src={moodCardPhotos[card.title]}
+                        src={maleMoodCardPhotos[card.title]}
                         alt={card.title}
                         fill
                         sizes="192px"
@@ -1107,14 +1128,6 @@ export default function DetailPage() {
             </div>
           </div>
         </div>
-
-        {trendContents.mood.footerNote && (
-          <div className="mt-6 rounded-2xl border border-violet-100 bg-violet-50/60 p-4">
-            <p className="text-xs leading-relaxed text-gray-500">
-              {trendContents.mood.footerNote}
-            </p>
-          </div>
-        )}
       </Container>
 
       {/* Chapter: 컬러 */}
