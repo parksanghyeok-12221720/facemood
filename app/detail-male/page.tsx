@@ -16,25 +16,29 @@ import { REPORT_CHAPTERS } from "@/types/report";
 
 type Photo = { src: string; keyword: string };
 
+// Local to this page (not shared /mood/hair — those are female hairstyle
+// photos). Photos live at /mood/hair-male/<name>.png; the two 빈티지펌
+// entries are intentionally separate files (빈티지펌.png / 빈티지펌2.png)
+// since the user wants two different example photos under the same tag.
 const hairPhotos: Photo[] = [
-  { src: "/mood/hair/hair1.png", keyword: "#레이어드컷" },
-  { src: "/mood/hair/hair_샌드펌.png", keyword: "#샌드펌" },
-  { src: "/mood/hair/hair_시스루 뱅 보브.png", keyword: "#시스루뱅보브" },
-  { src: "/mood/hair/hair_히피펌.png", keyword: "#히피펌" },
-  { src: "/mood/hair/hair_박스 보브.png", keyword: "#박스보브" },
-  { src: "/mood/hair/hair2.png", keyword: "#윤기헤어" },
-  { src: "/mood/hair/hair_텍스처 웨이브.png", keyword: "#텍스처웨이브" },
-  { src: "/mood/hair/hair_중단발 레이어드.png", keyword: "#중단발레이어드" },
-  { src: "/mood/hair/hair_슬릭 보브.png", keyword: "#슬릭보브" },
-  { src: "/mood/hair/hair_허쉬컷.png", keyword: "#허쉬컷" },
-  { src: "/mood/hair/hair_ 뱅드 보브.png", keyword: "#뱅드보브" },
-  { src: "/mood/hair/hair_숏컷.png", keyword: "#숏컷" },
-  { src: "/mood/hair/hair_러블리보브.png", keyword: "#러블리보브" },
-  { src: "/mood/hair/hair_중단발 레이어드2.png", keyword: "#롱레이어드컷" },
-  { src: "/mood/hair/hair_S컬(지지컬).png", keyword: "#지지컬" },
-  { src: "/mood/hair/hair_시스루.png", keyword: "#시스루뱅" },
-  { src: "/mood/hair/hair_클라우드 보브.png", keyword: "#클라우드보브" },
-  { src: "/mood/hair/hair_중단발 허쉬컷.png", keyword: "#중단발허쉬컷" },
+  { src: "/mood/hair-male/가르마펌.png", keyword: "#가르마펌" },
+  { src: "/mood/hair-male/시스루댄디컷.png", keyword: "#시스루댄디컷" },
+  { src: "/mood/hair-male/시스루펌.png", keyword: "#시스루펌" },
+  { src: "/mood/hair-male/빈티지펌.png", keyword: "#빈티지펌" },
+  { src: "/mood/hair-male/세미리프컷.png", keyword: "#세미리프컷" },
+  { src: "/mood/hair-male/슬릭댄디컷.png", keyword: "#슬릭댄디컷" },
+  { src: "/mood/hair-male/슬릭백.png", keyword: "#슬릭백" },
+  { src: "/mood/hair-male/소프트레이어컷.png", keyword: "#소프트레이어컷" },
+  { src: "/mood/hair-male/포마드 리젠트.png", keyword: "#포마드리젠트" },
+  { src: "/mood/hair-male/셀릭컷.png", keyword: "#셀릭컷" },
+  { src: "/mood/hair-male/포인펌.png", keyword: "#포인펌" },
+  { src: "/mood/hair-male/시스루포인펌.png", keyword: "#시스루포인펌" },
+  { src: "/mood/hair-male/히피펌.png", keyword: "#히피펌" },
+  { src: "/mood/hair-male/스왈로펌.png", keyword: "#스왈로펌" },
+  { src: "/mood/hair-male/빈티지펌2.png", keyword: "#빈티지펌" },
+  { src: "/mood/hair-male/세미리프펌.png", keyword: "#세미리프펌" },
+  { src: "/mood/hair-male/텍스처컷.png", keyword: "#텍스처컷" },
+  { src: "/mood/hair-male/미디엄울프컷.png", keyword: "#미디엄울프컷" },
 ];
 
 // Local to this page (not shared trendContents.mood / moodCardPhotos) —
