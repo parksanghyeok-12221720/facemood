@@ -30,6 +30,32 @@ export default function ProductChoiceCards() {
           </p>
         </div>
       </Link>
+
+      <Link
+        href="/match/upload"
+        onClick={() => window.fbq?.("trackCustom", "StartMatch")}
+        className="group relative block overflow-hidden rounded-3xl"
+      >
+        <div className="relative aspect-[4/3] w-full">
+          <Image
+            src="/home-card-match.png"
+            alt="그 사람과의 무드궁합"
+            fill
+            sizes="(max-width: 480px) 100vw, 448px"
+            className="object-cover transition-transform duration-300 group-active:scale-105"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
+        </div>
+        <span className="absolute right-4 top-4 rounded-full bg-violet-600 px-2.5 py-1 text-[10px] font-bold text-white">
+          NEW
+        </span>
+        <div className="absolute inset-x-0 bottom-0 p-5">
+          <p className="text-lg font-bold text-white">그 사람과의 무드궁합</p>
+          <p className="mt-1 text-xs leading-relaxed text-white/80">
+            두 사람의 얼굴 무드와 커플 케미 분석
+          </p>
+        </div>
+      </Link>
     </div>
   );
 }
