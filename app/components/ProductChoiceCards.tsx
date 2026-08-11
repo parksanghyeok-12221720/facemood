@@ -55,7 +55,7 @@ export default function ProductChoiceCards() {
         <div className="absolute inset-x-0 bottom-0 p-5">
           <p className="text-lg font-bold text-white">토탈 스타일 컨설팅 (남성)</p>
           <p className="mt-1 text-xs leading-relaxed text-white/80">
-            내 얼굴에 어울리는 헤어·메이크업·스타일 분석
+            헤어·퍼스널컬러·코디 추천
           </p>
         </div>
       </Link>
