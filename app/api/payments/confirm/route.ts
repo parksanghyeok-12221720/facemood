@@ -5,6 +5,7 @@ import {
   BASIC_PRICE_KRW,
   PREMIUM_PRICE_KRW,
   PREMIUM_MATCH_PRICE_KRW,
+  MALE_PREMIUM_PRICE_KRW,
   confirmTossPayment,
 } from "@/lib/payment";
 import { KAKAO_CHANNEL_DISCOUNT_KRW } from "@/lib/kakaoChannel";
@@ -39,7 +40,8 @@ export async function POST(request: NextRequest) {
   // Match redemption code) but the report itself is always generated at
   // premium depth — the bundle flag lives on bundle_match_code, not tier.
   const isPremiumMatchBundle = body.tier === "premiumMatch";
-  const tier: ReportTier = body.tier === "basic" ? "basic" : "premium";
+  const tier: ReportTier =
+    body.tier === "basic" ? "basic" : body.tier === "male" ? "male" : "premium";
 
   if (!paymentKey || !orderId || typeof amount !== "number" || !password) {
     return NextResponse.json(
@@ -78,16 +80,19 @@ export async function POST(request: NextRequest) {
     ? PREMIUM_MATCH_PRICE_KRW
     : tier === "basic"
       ? BASIC_PRICE_KRW
-      : PREMIUM_PRICE_KRW;
+      : tier === "male"
+        ? MALE_PREMIUM_PRICE_KRW
+        : PREMIUM_PRICE_KRW;
   // The Kakao channel discount is self-reported by the client (no
   // server-verifiable proof the user actually finished adding the channel
   // — see lib/kakaoChannel.ts) — same trust level as a coupon code, so it
   // just needs to be an allowed alternate amount, not proof of anything.
-  // Available on Premium and the bundle — never on Basic.
+  // Available on Premium and the bundle — never on Basic or the male tier
+  // (the male checkout page doesn't offer the Kakao discount at all).
   const expectedAmount =
     phone && isTestPhone(phone)
       ? TEST_AMOUNT_KRW
-      : kakaoDiscount && tier !== "basic"
+      : kakaoDiscount && tier === "premium"
         ? tierPrice - KAKAO_CHANNEL_DISCOUNT_KRW
         : tierPrice;
   if (amount !== expectedAmount) {

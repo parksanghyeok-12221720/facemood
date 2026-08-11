@@ -393,7 +393,9 @@ export type ReportChapterKey =
   | "accessoryGuide"
   | "perfumeGuide";
 
-export type ReportTierName = "basic" | "premium";
+// "male" is the single male-audience tier (no separate basic/premium split
+// for men — see MALE_REPORT_CHAPTERS below).
+export type ReportTierName = "basic" | "premium" | "male";
 
 export const REPORT_CHAPTERS: {
   key: ReportChapterKey;
@@ -638,6 +640,240 @@ export const REPORT_CHAPTERS: {
   },
 ];
 
+// The male report — same overall depth as the female Premium report, minus
+// the dedicated makeupGuide chapter (dropped entirely) and with the
+// makeup-adjacent bullets inside the remaining chapters swapped for a
+// male-appropriate equivalent (코디, 헤어라인/수염, 액세서리, ...). There's
+// no separate basic/premium split for men, so every chapter here is tier
+// "male" and numbered 01-16 (see /api/generate-report and /report, which
+// both branch on tier === "male" to use this list instead of
+// REPORT_CHAPTERS).
+export const MALE_REPORT_CHAPTERS: {
+  key: ReportChapterKey;
+  number: string;
+  title: string;
+  tier: ReportTierName;
+  points: string[];
+}[] = [
+  {
+    key: "finalSummary",
+    number: "01",
+    title: "나에게 어울리는 추구미 최종 요약",
+    tier: "male",
+    points: [
+      "추천 추구미",
+      "보조 무드",
+      "전체 이미지 방향",
+      "핵심 키워드",
+      "한 줄 총평",
+      "앞으로의 스타일 방향",
+      "이 무드와 잘 어울리는 직업·업무 이미지 (직업을 단정하지 말고, 이 분위기가 잘 통하는 업무 환경이나 이미지를 가볍게 제안하는 정도로)",
+    ],
+  },
+  {
+    key: "currentImageMood",
+    number: "02",
+    title: "현재 이미지 무드 분석",
+    tier: "male",
+    points: [
+      "사진상으로 보이는 첫인상",
+      "현재 이미지가 주는 분위기",
+      "헤어, 코디, 옷 색감이 만드는 느낌",
+      "현재 이미지에서 잘 살아나는 포인트",
+      "전체적으로 어떤 무드에 가까운지",
+    ],
+  },
+  {
+    key: "faceShapeAnalysis",
+    number: "03",
+    title: "사진상 얼굴형 분석",
+    tier: "male",
+    points: [
+      `사진상으로 보이는 얼굴형 분류 (${FACE_SHAPE_CANDIDATES.join(" / ")} 중 하나)`,
+      "이 얼굴형에서 자주 느껴지는 인상",
+      "이 얼굴형과 잘 어울리는 헤어 라인 · 앞머리 방향",
+      "이 얼굴형과 잘 어울리는 수염 · 헤어라인 정리 방향",
+      "이 얼굴형과 잘 어울리는 안경 방향",
+      "확정적인 진단이 아니라는 안내",
+    ],
+  },
+  {
+    key: "gapAnalysis",
+    number: "04",
+    title: "원하는 추구미와 현재 이미지의 차이",
+    tier: "male",
+    points: [
+      "사용자가 원하는 추구미",
+      "현재 이미지와 가까운 부분",
+      "현재 이미지와 다른 부분",
+      "원하는 추구미에 가까워지기 위해 조정하면 좋은 요소",
+      "가장 먼저 바꿔보면 좋은 포인트",
+    ],
+  },
+  {
+    key: "hairGuide",
+    number: "05",
+    title: "헤어 스타일 방향",
+    tier: "male",
+    points: [
+      "추천 헤어 길이",
+      "앞머리 유무",
+      "펌/컬 방향",
+      "헤어 컬러 방향",
+      "현재 이미지와 어울릴 가능성이 높은 헤어",
+      "피하면 좋은 헤어",
+      "미용실에서 말하기 좋은 문장",
+    ],
+  },
+  {
+    key: "colorPalette",
+    number: "06",
+    title: "추천 컬러 팔레트",
+    tier: "male",
+    points: [
+      "추천 컬러 5~7개",
+      "각 컬러별 활용법",
+      "상의에 쓰면 좋은 색",
+      "포인트 아이템에 쓰면 좋은 색",
+      "아우터에 쓰면 좋은 색",
+      "피하면 좋은 컬러 조합",
+    ],
+  },
+  {
+    key: "finalChecklist",
+    number: "07",
+    title: "최종 스타일 체크리스트",
+    tier: "male",
+    points: [
+      "오늘 바로 바꿔볼 것",
+      "쇼핑할 때 확인할 것",
+      "미용실에서 말할 것",
+      "코디에서 바꿔볼 것",
+      "사진 찍을 때 신경 쓸 것",
+      "최종 한 줄 조언",
+    ],
+  },
+  {
+    key: "animalTypeAnalysis",
+    number: "08",
+    title: "사진상 동물상 분석",
+    tier: "male",
+    points: [
+      `사진상으로 보이는 동물상 분류 (${ANIMAL_TYPE_CANDIDATES.join(" / ")} 중 하나)`,
+      "이 동물상이 주는 인상과 매력 포인트",
+      "이 동물상과 잘 어울리는 스타일링 방향",
+      "이 동물상과 잘 어울리는 헤어 · 스타일링 방향",
+      "확정적인 진단이 아니라는 안내",
+    ],
+  },
+  {
+    key: "recommendedMoodDetail",
+    number: "09",
+    title: "추천 추구미 상세 해석",
+    tier: "male",
+    points: [
+      "추천 추구미가 어떤 분위기인지",
+      "이 추구미가 사용자에게 잘 맞을 수 있는 이유",
+      "이 무드를 완성하는 핵심 요소",
+      "잘 맞는 컬러, 헤어, 코디, 패션 방향",
+      "전체적인 이미지 전략",
+    ],
+  },
+  {
+    key: "firstImpression",
+    number: "10",
+    title: "이성이 봤을 때 첫인상 무드",
+    tier: "male",
+    points: [
+      "사진상으로 전달될 수 있는 첫인상",
+      "이성이 처음 봤을 때 느낄 수 있는 분위기",
+      "첫 3초 안에 남을 수 있는 이미지",
+      "호감이 쌓이는 방식",
+      "첫인상을 더 잘 살리는 방법",
+    ],
+  },
+  {
+    key: "stylingGuide",
+    number: "11",
+    title: "스타일링 세부 가이드",
+    tier: "male",
+    points: [
+      "추천 옷 색감",
+      "추천 실루엣",
+      "추천 소재",
+      "키와 체형 정보를 참고한 옷 길이와 핏 (체형 지적이 아니라 비율 스타일링 조언으로)",
+      "상의, 하의, 아우터, 신발, 가방 방향",
+      "데일리룩 예시",
+      "피하면 좋은 스타일링",
+    ],
+  },
+  {
+    key: "accessoryGuide",
+    number: "12",
+    title: "액세서리 스타일 가이드",
+    tier: "male",
+    points: [
+      "시계 · 목걸이 등 포인트 아이템 방향",
+      "가방 같은 데일리 아이템 톤",
+      "추구미에 맞는 골드 vs 실버 계열",
+      "과하지 않게 포인트 주는 법",
+    ],
+  },
+  {
+    key: "perfumeGuide",
+    number: "13",
+    title: "향수 무드 추천",
+    tier: "male",
+    points: [
+      "추구미에 어울리는 향 계열 (플로럴 · 우디 · 머스크 등)",
+      "상황별(데일리 · 데이트) 향 강도",
+      "향수 뿌리는 위치 · 양 팁",
+    ],
+  },
+  {
+    key: "colorMoodAnalysis",
+    number: "14",
+    title: "사진상 컬러 무드 분석",
+    tier: "male",
+    points: [
+      "사진 기준으로 보이는 컬러 흐름",
+      "밝기, 채도, 온도감, 선명도",
+      "어울릴 가능성이 높은 컬러 방향",
+      "조심하면 좋은 컬러 방향",
+      "퍼스널컬러 확정 진단이 아니라는 안내",
+      "옷, 헤어 컬러, 액세서리에 적용하는 방법",
+    ],
+  },
+  {
+    key: "avoidStyles",
+    number: "15",
+    title: "피하면 좋은 스타일 방향",
+    tier: "male",
+    points: [
+      "추천 추구미와 멀어질 수 있는 색감",
+      "과하게 보일 수 있는 액세서리·포인트",
+      "무드를 흐릴 수 있는 헤어",
+      "어색해질 수 있는 옷 실루엣",
+      "단점 지적이 아니라 원하는 분위기와 멀어질 수 있는 방향으로 부드럽게 설명",
+    ],
+  },
+  {
+    key: "situationGuide",
+    number: "16",
+    title: "상황별 이미지 전략",
+    tier: "male",
+    points: [
+      "소개팅/데이트",
+      "인스타 프로필 사진",
+      "데일리룩",
+      "출근/면접",
+      "친구 약속",
+      "사진 찍는 날",
+      "각 상황에서 어떤 옷, 헤어, 컬러를 선택하면 좋은지",
+    ],
+  },
+];
+
 // diagnosis/keywords/summary/tips/checklist are the premium-layout
 // fields added on top of the original long-form "body" — optional so
 // reports generated before this layout existed still render (renderer
@@ -667,6 +903,11 @@ export type FullReport = {
   animalType?: AnimalTypeCandidate | null;
   hairStyleType?: HairStyleCandidate | null;
   makeupStyleType?: MakeupStyleCandidate | null;
+  // Which chapter list generated this report — /report uses this to pick
+  // REPORT_CHAPTERS vs MALE_REPORT_CHAPTERS for the TOC/section numbering.
+  // Missing on reports generated before this field existed; treated as
+  // non-male (REPORT_CHAPTERS) in that case.
+  tier?: ReportTierName;
 };
 
 // ---------------------------------------------------------------------------

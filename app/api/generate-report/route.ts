@@ -5,6 +5,7 @@ import {
   FACE_SHAPE_CANDIDATES,
   HAIR_STYLE_CANDIDATES,
   MAKEUP_STYLE_CANDIDATES,
+  MALE_REPORT_CHAPTERS,
   MOOD_CANDIDATES,
   REPORT_CHAPTERS,
   buildPreviewResult,
@@ -40,19 +41,31 @@ export const runtime = "nodejs";
 // dropped entirely when the user skipped the photo step. Basic-tier
 // purchases only ever generate the 8 basic chapters — premium-only
 // chapters are never requested from OpenAI for them.
+// Male reports use a completely separate chapter list (no makeupGuide,
+// male-adjusted points — see MALE_REPORT_CHAPTERS) rather than a filtered
+// view of REPORT_CHAPTERS, since several of the female chapters' points
+// arrays themselves mention makeup and need different wording.
+function getChapterList(tier: ReportTierName) {
+  return tier === "male" ? MALE_REPORT_CHAPTERS : REPORT_CHAPTERS;
+}
+
 function getChapterGroups(
   hasImage: boolean,
   tier: ReportTierName,
 ): ReportChapterKey[][] {
-  return REPORT_CHAPTERS.filter(
-    (c) =>
-      (tier === "premium" || c.tier === "basic") &&
-      (hasImage ||
-        (c.key !== "faceShapeAnalysis" && c.key !== "animalTypeAnalysis")),
-  ).map((c) => [c.key]);
+  return getChapterList(tier)
+    .filter(
+      (c) =>
+        (tier === "male" || tier === "premium" || c.tier === "basic") &&
+        (hasImage ||
+          (c.key !== "faceShapeAnalysis" && c.key !== "animalTypeAnalysis")),
+    )
+    .map((c) => [c.key]);
 }
 
-const CHAPTER_BY_KEY = new Map(REPORT_CHAPTERS.map((c) => [c.key, c]));
+function getChapter(tier: ReportTierName, key: ReportChapterKey) {
+  return getChapterList(tier).find((c) => c.key === key)!;
+}
 
 // How many chapter requests run at once. Keep this low — OpenAI accounts
 // on lower usage tiers have fairly small tokens-per-minute limits, and
@@ -103,7 +116,15 @@ async function mapWithConcurrency<T, R>(
   return results;
 }
 
-const SYSTEM_PROMPT = `당신은 FACEMOOD의 퍼스널 이미지 무드 리포트를 작성하는 AI입니다.
+// Male reports skip makeupGuide entirely and never mention makeup in their
+// chapter points, but this base prompt is otherwise identical — only the
+// two audience-facing phrases below actually differ by tier.
+function getSystemPrompt(tier: ReportTierName): string {
+  const audiencePhrase = tier === "male" ? "20대~30대 남성이" : "20대~30대 여성이";
+  const groomingHabitWord = tier === "male" ? "그루밍 습관" : "메이크업 습관";
+  const photoMoodParen = tier === "male" ? "(헤어, 옷 색감, 전체 무드)" : "(헤어, 메이크업, 옷 색감, 전체 무드)";
+
+  return `당신은 FACEMOOD의 퍼스널 이미지 무드 리포트를 작성하는 AI입니다.
 
 FACEMOOD는 사용자가 입력한 기본 정보, 설문 답변, 업로드한 사진을 바탕으로
 사용자에게 어울리는 추구미, 퍼스널컬러 방향, 헤어, 메이크업, 스타일링, 첫인상 무드를 분석하는 서비스입니다.
@@ -114,8 +135,8 @@ FACEMOOD는 사용자가 입력한 기본 정보, 설문 답변, 업로드한 �
 작성 원칙:
 
 1. 사용자가 입력한 성별, 나이대, 키, 몸무게, 원하는 추구미, 피하고 싶은 이미지, 평소 스타일,
-자주 입는 색감, 메이크업 습관, 헤어 고민, 분석 목적과 업로드한 사진에서 보이는 분위기(헤어, 메이크업,
-옷 색감, 전체 무드)를 최대한 반영해서, 사람마다 결과가 다르게 나오도록 개인화해서 작성하세요.
+자주 입는 색감, ${groomingHabitWord}, 헤어 고민, 분석 목적과 업로드한 사진에서 보이는 분위기${photoMoodParen}
+를 최대한 반영해서, 사람마다 결과가 다르게 나오도록 개인화해서 작성하세요.
 같은 문장을 여러 사용자에게 반복하지 마세요.
 
 2. 키와 몸무게는 외모 평가나 체형 지적이 아니라 스타일링 참고 요소로만 사용하세요.
@@ -143,7 +164,7 @@ FACEMOOD는 사용자가 입력한 기본 정보, 설문 답변, 업로드한 �
 사용자에게 실제로 도움이 되는 내용만 골라서 쓰세요. 미사여구·같은 말 반복·군더더기 설명 없이,
 실질적인 분석과 조언만 담으세요. 분량은 사용자 메시지에 안내된 목표 글자 수를 넘기지 마세요.
 
-7. 문체는 너무 딱딱한 전문가 보고서 느낌보다, 20대~30대 여성이 읽었을 때 자연스럽고 설득력
+7. 문체는 너무 딱딱한 전문가 보고서 느낌보다, ${audiencePhrase} 읽었을 때 자연스럽고 설득력
 있게 느껴지는 말투로 작성하세요. 다만 너무 가볍거나 유치하지 않게, "뷰티 리포트 + 이미지
 컨설팅 + 스타일 가이드" 느낌으로 쓰세요.
 
@@ -176,11 +197,12 @@ summary, tips, checklist는 body의 내용을 요약/추출한 것이므로 body
 컨설턴트가 사용자 이름을 부르며 직접 조언해주듯이, 문장 길이에 변화를 주고 구체적인 관찰과
 디테일(색, 아이템, 상황)로 채우세요. 정보가 없다고 "정보가 제공되지 않았지만"처럼 AI가 데이터
 부족을 언급하는 듯한 문장도 쓰지 말고, 자연스럽게 일반적인 경향으로 이야기를 풀어가세요.`;
+}
 
-function buildChapterGuidance(keys: ReportChapterKey[]): string {
+function buildChapterGuidance(keys: ReportChapterKey[], tier: ReportTierName): string {
   return keys
     .map((key) => {
-      const chapter = CHAPTER_BY_KEY.get(key)!;
+      const chapter = getChapter(tier, key);
       const bullets = chapter.points.map((p) => `  - ${p}`).join("\n");
       return `${chapter.number}. ${chapter.title}\n${bullets}`;
     })
@@ -192,6 +214,7 @@ function buildUserPrompt(
   previewResult: PreviewResult | null,
   hasImage: boolean,
   group: ReportChapterKey[],
+  tier: ReportTierName,
 ) {
   const answerLines = Object.entries(answers ?? {}).map(
     ([key, value]) => `- ${key}: ${String(value)}`,
@@ -211,7 +234,9 @@ function buildUserPrompt(
     ...previewLines,
     "",
     hasImage
-      ? "사진이 첨부되어 있습니다. 사진에서 보이는 헤어, 메이크업, 옷 색감, 전체 분위기를 참고하세요."
+      ? tier === "male"
+        ? "사진이 첨부되어 있습니다. 사진에서 보이는 헤어, 옷 색감, 전체 분위기를 참고하세요."
+        : "사진이 첨부되어 있습니다. 사진에서 보이는 헤어, 메이크업, 옷 색감, 전체 분위기를 참고하세요."
       : "사진은 첨부되지 않았습니다. 답변 정보만으로 분석하세요.",
     "",
     "이번 응답에서는 아래 챕터의 body, diagnosis, keywords, summary, tips, checklist를",
@@ -224,7 +249,7 @@ function buildUserPrompt(
     "- 모든 소주제를 다루려 하지 말고, 사용자에게 가장 중요한 내용 위주로 선별해서",
     "  짧고 명확한 문장으로 전달하세요.",
     "",
-    buildChapterGuidance(group),
+    buildChapterGuidance(group, tier),
     ...(group.includes("faceShapeAnalysis") || group.includes("animalTypeAnalysis")
       ? [
           "",
@@ -364,14 +389,15 @@ async function expandChapterBody(
   client: OpenAI,
   key: ReportChapterKey,
   currentBody: string,
+  tier: ReportTierName,
 ): Promise<string> {
-  const chapter = CHAPTER_BY_KEY.get(key)!;
+  const chapter = getChapter(tier, key);
 
   const completion = await withRetry(() =>
     client.chat.completions.create({
       model: "gpt-5.4-nano",
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: getSystemPrompt(tier) },
         {
           role: "user",
           content: [
@@ -417,6 +443,7 @@ async function generateChapterGroup(
   answers: Record<string, unknown>,
   previewResult: PreviewResult | null,
   imageDataUrl: string | null,
+  tier: ReportTierName,
 ): Promise<Partial<Record<ReportChapterKey, RawChapterResult>>> {
   const attachImage =
     !!imageDataUrl && group.some((key) => VISION_CHAPTER_KEYS.includes(key));
@@ -427,7 +454,7 @@ async function generateChapterGroup(
   )[] = [
     {
       type: "text",
-      text: buildUserPrompt(answers, previewResult, attachImage, group),
+      text: buildUserPrompt(answers, previewResult, attachImage, group, tier),
     },
   ];
 
@@ -439,7 +466,7 @@ async function generateChapterGroup(
     client.chat.completions.create({
       model: "gpt-5.4-nano",
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: getSystemPrompt(tier) },
         { role: "user", content: userContent },
       ],
       max_completion_tokens: 4000,
@@ -467,7 +494,7 @@ async function generateChapterGroup(
     group.map(async (key) => {
       const chapter = parsed[key];
       if (chapter && chapter.body.length < MIN_CHAPTER_CHARS) {
-        chapter.body = await expandChapterBody(client, key, chapter.body);
+        chapter.body = await expandChapterBody(client, key, chapter.body, tier);
       }
     }),
   );
@@ -507,7 +534,8 @@ export async function POST(request: NextRequest) {
   // this matters is an in-flight session from just before this tier split
   // shipped, and it's safer to over-deliver than silently drop chapters
   // someone already paid for.
-  const tier: ReportTierName = body.tier === "basic" ? "basic" : "premium";
+  const tier: ReportTierName =
+    body.tier === "basic" ? "basic" : body.tier === "male" ? "male" : "premium";
 
   const client = new OpenAI({ apiKey });
 
@@ -517,7 +545,7 @@ export async function POST(request: NextRequest) {
       groups,
       CHAPTER_CONCURRENCY,
       (group) =>
-        generateChapterGroup(client, group, answers, previewResult, imageDataUrl),
+        generateChapterGroup(client, group, answers, previewResult, imageDataUrl, tier),
     );
 
     const merged = groupResults.reduce(
@@ -566,6 +594,7 @@ export async function POST(request: NextRequest) {
         (merged.hairGuide?.type as HairStyleCandidate | undefined) ?? null,
       makeupStyleType:
         (merged.makeupGuide?.type as MakeupStyleCandidate | undefined) ?? null,
+      tier,
     };
 
     return NextResponse.json({ report });

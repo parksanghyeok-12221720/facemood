@@ -9,6 +9,7 @@ import {
   FACE_SHAPE_IMAGES,
   HAIR_STYLE_IMAGES,
   MAKEUP_STYLE_IMAGES,
+  MALE_REPORT_CHAPTERS,
   REPORT_CHAPTERS,
   buildPreviewResult,
 } from "@/types/report";
@@ -19,6 +20,7 @@ import type {
   PreviewResult,
   ReportChapterContent,
   ReportChapterKey,
+  ReportTierName,
 } from "@/types/report";
 
 const FULL_REPORT_KEY = "facemood_full_report";
@@ -808,7 +810,7 @@ async function requestFullReport(
   answers: Record<string, unknown>,
   imageDataUrl: string | null,
   previewResult: PreviewResult | null,
-  tier: "basic" | "premium",
+  tier: ReportTierName,
 ): Promise<FullReport> {
   const response = await fetch("/api/generate-report", {
     method: "POST",
@@ -883,8 +885,9 @@ export default function ReportPage() {
       const imageDataUrl = localStorage.getItem(IMAGE_KEY);
       const previewRaw = localStorage.getItem(PREVIEW_RESULT_KEY);
       const reportId = localStorage.getItem(REPORT_ID_KEY) ?? idParam;
-      const tier =
-        localStorage.getItem(REPORT_TIER_KEY) === "basic" ? "basic" : "premium";
+      const storedTier = localStorage.getItem(REPORT_TIER_KEY);
+      const tier: ReportTierName =
+        storedTier === "basic" ? "basic" : storedTier === "male" ? "male" : "premium";
 
       try {
         const report = await requestFullReport(
@@ -971,7 +974,7 @@ export default function ReportPage() {
         data.answers ?? {},
         null,
         data.previewResult ?? null,
-        data.tier === "basic" ? "basic" : "premium",
+        data.tier === "basic" ? "basic" : data.tier === "male" ? "male" : "premium",
       );
       localStorage.setItem(FULL_REPORT_KEY, JSON.stringify(report));
       persistFullReportToServer(idParam, report);
@@ -1043,10 +1046,15 @@ export default function ReportPage() {
     return <GeneratingState />;
   }
 
-  // faceShapeAnalysis/animalTypeAnalysis are skipped entirely when no
-  // photo was uploaded, and older cached reports may predate a given
-  // chapter — filter once and reuse for both the TOC and the chapter list.
-  const visibleChapters = REPORT_CHAPTERS.filter((c) => Boolean(report[c.key]));
+  // Male reports were generated from MALE_REPORT_CHAPTERS (no makeupGuide,
+  // renumbered 01-16) — use that list for the TOC/numbering instead of the
+  // female REPORT_CHAPTERS, or the male report would render with a gap
+  // where 06 used to be. faceShapeAnalysis/animalTypeAnalysis are skipped
+  // entirely when no photo was uploaded, and older cached reports may
+  // predate a given chapter — filter once and reuse for both the TOC and
+  // the chapter list.
+  const chapterList = report.tier === "male" ? MALE_REPORT_CHAPTERS : REPORT_CHAPTERS;
+  const visibleChapters = chapterList.filter((c) => Boolean(report[c.key]));
 
   return (
     <main

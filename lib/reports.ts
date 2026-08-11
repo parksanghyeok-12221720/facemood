@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import db from "@/lib/db";
 import type { PreviewResult, FullReport } from "@/types/report";
 
-export type ReportTier = "basic" | "premium";
+export type ReportTier = "basic" | "premium" | "male";
 
 export type ReportRecord = {
   id: string;
@@ -49,7 +49,14 @@ function rowToRecord(row: ReportRow): ReportRecord {
     paymentKey: row.payment_key,
     phone: row.phone,
     reportSentAt: row.report_sent_at,
-    tier: row.tier === "premium" ? "premium" : row.tier === "basic" ? "basic" : null,
+    tier:
+      row.tier === "premium"
+        ? "premium"
+        : row.tier === "basic"
+          ? "basic"
+          : row.tier === "male"
+            ? "male"
+            : null,
     bundleMatchCode: row.bundle_match_code,
     bundleMatchRedeemedMatchReportId: row.bundle_match_redeemed_match_report_id,
     createdAt: row.created_at,
@@ -216,7 +223,14 @@ export function listPaidReports(): PaidReportSummary[] {
       weight,
       phone: row.phone,
       amount: row.amount,
-      tier: row.tier === "premium" ? "premium" : row.tier === "basic" ? "basic" : null,
+      tier:
+      row.tier === "premium"
+        ? "premium"
+        : row.tier === "basic"
+          ? "basic"
+          : row.tier === "male"
+            ? "male"
+            : null,
       bundleMatchCode: row.bundle_match_code,
       paidAt: row.paid_at,
       reportSentAt: row.report_sent_at,

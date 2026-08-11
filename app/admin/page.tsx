@@ -260,6 +260,10 @@ export default async function AdminPage() {
                       <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-gray-300">
                         베이직
                       </span>
+                    ) : report.tier === "male" ? (
+                      <span className="rounded-full bg-sky-500/20 px-2 py-0.5 text-[11px] font-semibold text-sky-300">
+                        남성 프리미엄
+                      </span>
                     ) : (
                       <span className="text-gray-500">-</span>
                     )}

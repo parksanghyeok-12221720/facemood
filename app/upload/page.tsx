@@ -210,10 +210,14 @@ export default function UploadPage() {
         console.warn("사진을 로컬에 저장하지 못했습니다 (용량 제한).");
       }
 
-      await createReportRecord(parseAnswers(savedAnswers));
+      const parsedAnswers = parseAnswers(savedAnswers);
+      await createReportRecord(parsedAnswers);
 
       window.fbq?.("track", "Lead");
-      window.location.href = "/loading";
+      // 남성 답변자는 아직 무료 미리보기 없이 /checkout-male로 바로 보낸다
+      // — 그 페이지는 facemood_report_id만 있으면 되고 미리보기 여부와는
+      // 무관하게 동작하므로 안전하게 건너뛸 수 있다.
+      window.location.href = parsedAnswers.gender === "남성" ? "/checkout-male" : "/loading";
     } catch (error) {
       const message =
         error instanceof Error
@@ -237,9 +241,10 @@ export default function UploadPage() {
       // was just submitted instead of silently reusing stale content.
       localStorage.removeItem("facemood_preview_result");
       localStorage.removeItem("facemood_full_report");
-      await createReportRecord(parseAnswers(savedAnswers));
+      const parsedAnswers = parseAnswers(savedAnswers);
+      await createReportRecord(parsedAnswers);
       window.fbq?.("track", "Lead");
-      window.location.href = "/loading";
+      window.location.href = parsedAnswers.gender === "남성" ? "/checkout-male" : "/loading";
     } catch (error) {
       const message =
         error instanceof Error

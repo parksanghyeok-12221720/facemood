@@ -35,7 +35,9 @@ export default function CheckoutSuccessPage() {
       const phone = sessionStorage.getItem(PENDING_PHONE_KEY);
       const pendingTier = sessionStorage.getItem(PENDING_TIER_KEY);
       const tier =
-        pendingTier === "basic" || pendingTier === "premiumMatch"
+        pendingTier === "basic" ||
+        pendingTier === "premiumMatch" ||
+        pendingTier === "male"
           ? pendingTier
           : "premium";
       const kakaoDiscount = sessionStorage.getItem(PENDING_KAKAO_DISCOUNT_KEY) === "1";
