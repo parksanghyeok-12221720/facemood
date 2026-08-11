@@ -10,8 +10,8 @@ import PccsColorChart from "@/app/components/PccsColorChart";
 import SiteFooter from "@/app/components/SiteFooter";
 import { KAKAO_DISCOUNT_APPLIED_KEY } from "@/lib/kakaoChannel";
 import type { Review } from "@/app/data/reviews";
-import { trendContents, trendUpdates } from "@/app/data/trendContent";
-import type { TrendUpdate } from "@/app/data/trendContent";
+import { trendContents } from "@/app/data/trendContent";
+import type { TrendTabContent, TrendUpdate } from "@/app/data/trendContent";
 import { REPORT_CHAPTERS } from "@/types/report";
 
 type Photo = { src: string; keyword: string };
@@ -294,6 +294,65 @@ const maleReviews: Review[] = [
   },
 ];
 
+// Local to this page (not shared trendContents.all) — same reason as the
+// other forked content: 예쁜 얼굴 -> 잘생긴 얼굴, 메이크업 card swapped
+// for 코디, and the 스타일 card's mood words rewritten for men.
+const overview: TrendTabContent = {
+  label: "전체",
+  title: "요즘 추구미는 '잘생긴 얼굴'보다 분위기 완성도에 가까워요",
+  description:
+    "최근 스타일 흐름은 단순히 한 가지 유행을 따라가는 것보다,\n내 이미지에 맞는 무드, 컬러, 헤어를 조합해\n하나의 분위기로 정리하는 방향에 가까워지고 있어요.",
+  updatedAt: "2026.07",
+  cards: [
+    {
+      title: "스타일",
+      content:
+        "댄디, 캐주얼, 미니멀, 스트릿 느낌처럼\n내가 어떤 분위기로 보이고 싶은지 먼저 정리해요.",
+    },
+    {
+      title: "컬러",
+      content:
+        "웜톤/쿨톤 하나로 단정하기보다\n사진상 밝기, 채도, 선명도, 옷 색감의 흐름을 함께 참고해요.",
+    },
+    {
+      title: "코디",
+      content:
+        "상의·하의·아우터의 핏과 톤을 맞춰\n전체적인 이미지 완성도를 높여요.",
+    },
+    {
+      title: "헤어",
+      content:
+        "기장, 앞머리, 펌, 컬러 톤이\n전체 이미지 무드를 크게 바꿔요.",
+    },
+  ],
+  footerNote:
+    "FACEMOOD는 외모를 평가하는 서비스가 아니라, 원하는 분위기에 가까워지는 스타일 방향을 제안하는 서비스입니다.",
+};
+
+// Local to this page (not shared trendUpdates) — swaps the makeup-themed
+// entry for a male grooming/hair one, keeping the other two as-is since
+// they're already gender-neutral.
+const maleTrendUpdates: TrendUpdate[] = [
+  {
+    date: "2026.08",
+    keyword: "컬 헤어 & 컬러 멜팅",
+    detail:
+      "2026년 헤어 트렌드는 길이보다 '컬'이 핵심이에요. 인위적이지 않은 자연스러운 웨이브·컬리 헤어가 그 어느 때보다 사랑받고 있고, 뿌리부터 끝까지 톤 변화를 자연스럽게 표현하는 '컬러 멜팅' 염색 기법도 함께 주목받고 있어요. 앞머리는 커튼처럼 양옆으로 갈라지는 '사이드뱅'이 대세이고, 긴 생머리보다는 결 살린 레이어드의 '중단발 꾸안꾸' 스타일도 다시 유행하고 있어요.",
+  },
+  {
+    date: "2026.08",
+    keyword: "미니멀 그루밍 & 클린 컷",
+    detail:
+      "2026년 남성 스타일 트렌드는 과한 스타일링보다 '정돈된 자연스러움'이 핵심이에요. 왁스나 스프레이로 힘주기보다 헤어 자체의 결과 볼륨을 살리는 클린 컷이 인기이고, 수염은 아예 밀거나 짧게 다듬어 깔끔한 인상을 주는 방향이 대세예요. 향수도 무겁지 않은 시트러스·우디 계열로 산뜻하게 마무리하는 조합이 주목받고 있어요.",
+  },
+  {
+    date: "2026.08",
+    keyword: "퍼스널컬러 세분화",
+    detail:
+      "퍼스널컬러 진단이 단순 웜톤/쿨톤 이분법에서 벗어나고 있어요. 개인 맞춤형 아름다움에 초점을 맞추면서, 얼굴형에 대한 과학적 이해와 퍼스널컬러 이론을 함께 고려한 스타일링이 강조되는 추세예요. 염색도 단순히 색만 바꾸는 게 아니라, 피부 톤과의 조화를 통해 얼굴에 생기를 더하는 역할까지 고려해서 선택하는 방향으로 가고 있어요.",
+  },
+];
+
 const faqItems = [
   {
     q: "사진만으로 정확한 분석이 가능한가요?",
@@ -356,7 +415,7 @@ function PhotoReviewMarquee({ items }: { items: PhotoReview[] }) {
   return (
     <div className="marquee-fade -mx-6 overflow-hidden px-6">
       <div
-        className="animate-marquee flex w-max gap-3"
+        className="animate-marquee flex w-max items-start gap-3"
         style={{ animationDuration: `${items.length * 4}s` }}
       >
         {[...items, ...items].map((review, index) => (
@@ -465,7 +524,6 @@ export default function DetailPage() {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [kakaoDiscountApplied, setKakaoDiscountApplied] = useState(false);
-  const overview = trendContents.all;
 
   // Reflects whatever was already set on another page (or an earlier
   // visit) — localStorage isn't available during SSR, so this starts
@@ -917,7 +975,7 @@ export default function DetailPage() {
           업데이트됩니다.
         </p>
 
-        <TrendUpdateCarousel updates={trendUpdates} />
+        <TrendUpdateCarousel updates={maleTrendUpdates} />
 
         <h2 className="mt-6 whitespace-pre-line text-lg font-bold leading-snug text-black">
           {overview.title}
