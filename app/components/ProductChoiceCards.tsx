@@ -31,11 +31,10 @@ export default function ProductChoiceCards() {
         </div>
       </Link>
 
-      {/* Male version — links to /detail same as the main card for now,
-          since there's no male-specific landing page yet even though
-          /test itself already asks for and adapts to gender. */}
+      {/* Male version — its own landing page (/detail-male), a copy of
+          /detail with male-specific CASE section copy/photos. */}
       <Link
-        href="/detail"
+        href="/detail-male"
         onClick={() => window.fbq?.("trackCustom", "StartAnalysis")}
         className="group relative block overflow-hidden rounded-3xl"
       >
