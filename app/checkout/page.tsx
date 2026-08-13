@@ -88,12 +88,17 @@ const TIER_LABEL: Record<Tier, string> = {
   basic: "Basic",
   premium: "Premium",
   premiumMatch: "Premium + Match",
-  hair: "헤어 컨설팅",
-  makeup: "메이크업 컨설팅",
-  color: "퍼스널컬러+코디",
+  hair: "Hair 컨설팅",
+  makeup: "Makeup 컨설팅",
+  color: "Color+Coordi 컨설팅",
 };
 
 const SINGLE_ITEM_TIERS: Tier[] = ["hair", "makeup", "color"];
+
+// Which /services single-item selection maps to which checkout tier — read
+// from localStorage ("facemood_selected_product", set by /test) to decide
+// which subset of the picker to show (see isTierVisible below).
+type SelectedProduct = "hair" | "makeup" | "color" | null;
 
 const phonePrefixOptions = ["010", "011", "016", "017", "018", "019"];
 
@@ -314,6 +319,7 @@ export default function CheckoutPage() {
   );
 
   const [tier, setTier] = useState<Tier>("premium");
+  const [selectedProduct, setSelectedProduct] = useState<SelectedProduct>(null);
   const [phonePrefix, setPhonePrefix] = useState("010");
   const [phoneMiddle, setPhoneMiddle] = useState("");
   const [phoneLast, setPhoneLast] = useState("");
@@ -331,6 +337,27 @@ export default function CheckoutPage() {
   const [isRedeemingCode, setIsRedeemingCode] = useState(false);
 
   const [kakaoDiscountApplied, setKakaoDiscountApplied] = useState(false);
+
+  // Narrows the tier picker when the user came in through a specific
+  // /services single-item card (헤어/메이크업/퍼스널컬러+코디) instead of
+  // the 토탈 flow — /test wrote this to localStorage when it detected
+  // ?product= on the way in. Also switches the default selected tier to
+  // that item instead of Premium, so the picker opens on what they
+  // actually clicked.
+  useEffect(() => {
+    let cancelled = false;
+    Promise.resolve().then(() => {
+      if (cancelled) return;
+      const product = localStorage.getItem("facemood_selected_product");
+      if (product === "hair" || product === "makeup" || product === "color") {
+        setSelectedProduct(product);
+        setTier(product);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Picks up "already added the channel" from another page (e.g.
   // /detail) — localStorage isn't available during SSR, so this starts
@@ -359,6 +386,12 @@ export default function CheckoutPage() {
   const phone = `${phonePrefix}-${phoneMiddle}-${phoneLast}`;
   const tierPrice = TIER_PRICE[tier];
   const isSingleItemTier = SINGLE_ITEM_TIERS.includes(tier);
+  // Coming in through a /services single-item card narrows the picker to
+  // just that item + Premium (an upsell option); the 토탈 flow (no
+  // selectedProduct) keeps its original three tiers, bundle included.
+  const visibleTiers: Tier[] = selectedProduct
+    ? ["premium", selectedProduct]
+    : ["basic", "premium", "premiumMatch"];
   // Kakao channel discount is available on Premium and the bundle, but
   // never on Basic or the single-item (단품) tiers — even if it was already
   // applied while on a different tier. The popup/banner themselves still
@@ -828,40 +861,42 @@ export default function CheckoutPage() {
             상품 선택
           </p>
           <div className="mt-3 flex flex-col gap-3">
-            <button
-              type="button"
-              onClick={() => setTier("basic")}
-              disabled={isSubmitting}
-              className={`rounded-2xl border-2 p-5 text-left transition-colors ${
-                tier === "basic"
-                  ? "border-violet-500 bg-violet-50/50"
-                  : "border-violet-100 bg-white"
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-black">Basic</span>
-                {tier === "basic" && (
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-500 text-[10px] font-bold text-white">
-                    ✓
+            {visibleTiers.includes("basic") && (
+              <button
+                type="button"
+                onClick={() => setTier("basic")}
+                disabled={isSubmitting}
+                className={`rounded-2xl border-2 p-5 text-left transition-colors ${
+                  tier === "basic"
+                    ? "border-violet-500 bg-violet-50/50"
+                    : "border-violet-100 bg-white"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-bold text-black">Basic</span>
+                  {tier === "basic" && (
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-500 text-[10px] font-bold text-white">
+                      ✓
+                    </span>
+                  )}
+                </div>
+                <p className="mt-1 text-xs text-gray-500">
+                  추구미 · 얼굴형 · 헤어 · 메이크업 · 컬러 팔레트 등 핵심 8개
+                  챕터
+                </p>
+                <div className="mt-3 flex items-baseline gap-2">
+                  <span className="text-xl font-extrabold text-black">
+                    {BASIC_PRICE_KRW.toLocaleString()}원
                   </span>
-                )}
-              </div>
-              <p className="mt-1 text-xs text-gray-500">
-                추구미 · 얼굴형 · 헤어 · 메이크업 · 컬러 팔레트 등 핵심 8개
-                챕터
-              </p>
-              <div className="mt-3 flex items-baseline gap-2">
-                <span className="text-xl font-extrabold text-black">
-                  {BASIC_PRICE_KRW.toLocaleString()}원
-                </span>
-                <span className="text-xs text-gray-400 line-through decoration-gray-400">
-                  {BASIC_ORIGINAL_PRICE_KRW.toLocaleString()}원
-                </span>
-                <span className="text-xs font-bold text-violet-600">
-                  -{BASIC_DISCOUNT_PERCENT}%
-                </span>
-              </div>
-            </button>
+                  <span className="text-xs text-gray-400 line-through decoration-gray-400">
+                    {BASIC_ORIGINAL_PRICE_KRW.toLocaleString()}원
+                  </span>
+                  <span className="text-xs font-bold text-violet-600">
+                    -{BASIC_DISCOUNT_PERCENT}%
+                  </span>
+                </div>
+              </button>
+            )}
 
             <button
               type="button"
@@ -901,95 +936,101 @@ export default function CheckoutPage() {
               </div>
             </button>
 
-            <button
-              type="button"
-              onClick={() => setTier("premiumMatch")}
-              disabled={isSubmitting}
-              className={`rounded-2xl border-2 p-5 text-left transition-colors ${
-                tier === "premiumMatch"
-                  ? "border-violet-500 bg-violet-50/50"
-                  : "border-violet-100 bg-white"
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="inline-flex items-center rounded-full bg-violet-600 px-2.5 py-1 text-[10px] font-bold text-white">
-                  BUNDLE
-                </span>
-                {tier === "premiumMatch" && (
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-500 text-[10px] font-bold text-white">
-                    ✓
-                  </span>
-                )}
-              </div>
-              <p className="mt-3 text-sm font-bold text-black">
-                Premium + FACEMOOD Match 번들
-              </p>
-              <p className="mt-1 text-xs text-gray-500">
-                Premium 리포트(17개 챕터) + 나와 상대방의 무드 궁합을 보는
-                FACEMOOD Match 무료 이용 코드까지 함께. 결제 완료 후 문자로
-                받는 코드를 Match 결제 화면에서 입력하면 무료로 이용할 수
-                있어요.
-              </p>
-              <div className="mt-3 flex items-baseline gap-2">
-                <span className="text-xl font-extrabold text-black">
-                  {PREMIUM_MATCH_PRICE_KRW.toLocaleString()}원
-                </span>
-                <span className="text-xs text-gray-400 line-through decoration-gray-400">
-                  {PREMIUM_MATCH_ORIGINAL_PRICE_KRW.toLocaleString()}원
-                </span>
-                <span className="text-xs font-bold text-violet-600">
-                  -{PREMIUM_MATCH_DISCOUNT_PERCENT}%
-                </span>
-              </div>
-            </button>
-
-            {/* Single-item (단품) purchases — one topic only, flat price,
-                no discount framing. */}
-            {(
-              [
-                {
-                  key: "hair" as const,
-                  desc: "얼굴형에 맞는 헤어 길이 · 앞머리 · 펌 방향만 집중 분석",
-                },
-                {
-                  key: "makeup" as const,
-                  desc: "베이스 · 눈매 · 립까지 나에게 맞는 메이크업 방향만 집중 분석",
-                },
-                {
-                  key: "color" as const,
-                  desc: "사진상 컬러 무드와 어울리는 코디 방향만 집중 분석",
-                },
-              ]
-            ).map((item) => (
+            {visibleTiers.includes("premiumMatch") && (
               <button
-                key={item.key}
                 type="button"
-                onClick={() => setTier(item.key)}
+                onClick={() => setTier("premiumMatch")}
                 disabled={isSubmitting}
                 className={`rounded-2xl border-2 p-5 text-left transition-colors ${
-                  tier === item.key
+                  tier === "premiumMatch"
                     ? "border-violet-500 bg-violet-50/50"
                     : "border-violet-100 bg-white"
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-black">
-                    {TIER_LABEL[item.key]}
+                  <span className="inline-flex items-center rounded-full bg-violet-600 px-2.5 py-1 text-[10px] font-bold text-white">
+                    BUNDLE
                   </span>
-                  {tier === item.key && (
+                  {tier === "premiumMatch" && (
                     <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-500 text-[10px] font-bold text-white">
                       ✓
                     </span>
                   )}
                 </div>
-                <p className="mt-1 text-xs text-gray-500">{item.desc}</p>
+                <p className="mt-3 text-sm font-bold text-black">
+                  Premium + FACEMOOD Match 번들
+                </p>
+                <p className="mt-1 text-xs text-gray-500">
+                  Premium 리포트(17개 챕터) + 나와 상대방의 무드 궁합을 보는
+                  FACEMOOD Match 무료 이용 코드까지 함께. 결제 완료 후 문자로
+                  받는 코드를 Match 결제 화면에서 입력하면 무료로 이용할 수
+                  있어요.
+                </p>
                 <div className="mt-3 flex items-baseline gap-2">
                   <span className="text-xl font-extrabold text-black">
-                    {TIER_PRICE[item.key].toLocaleString()}원
+                    {PREMIUM_MATCH_PRICE_KRW.toLocaleString()}원
+                  </span>
+                  <span className="text-xs text-gray-400 line-through decoration-gray-400">
+                    {PREMIUM_MATCH_ORIGINAL_PRICE_KRW.toLocaleString()}원
+                  </span>
+                  <span className="text-xs font-bold text-violet-600">
+                    -{PREMIUM_MATCH_DISCOUNT_PERCENT}%
                   </span>
                 </div>
               </button>
-            ))}
+            )}
+
+            {/* Single-item (단품) purchases — one topic only, flat price,
+                no discount framing. Only the one matching the /services
+                card the user actually clicked shows here (see
+                visibleTiers) — not all three. */}
+            {(
+              [
+                {
+                  key: "hair" as const,
+                  desc: "얼굴형에 맞는 헤어 길이 · 앞머리 · 펌 방향 집중 분석",
+                },
+                {
+                  key: "makeup" as const,
+                  desc: "베이스 · 눈매 · 립까지 나에게 맞는 메이크업 방향 집중 분석",
+                },
+                {
+                  key: "color" as const,
+                  desc: "사진상 컬러 무드와 어울리는 코디 방향 집중 분석",
+                },
+              ]
+            )
+              .filter((item) => visibleTiers.includes(item.key))
+              .map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => setTier(item.key)}
+                  disabled={isSubmitting}
+                  className={`rounded-2xl border-2 p-5 text-left transition-colors ${
+                    tier === item.key
+                      ? "border-violet-500 bg-violet-50/50"
+                      : "border-violet-100 bg-white"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-bold text-black">
+                      {TIER_LABEL[item.key]}
+                    </span>
+                    {tier === item.key && (
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-500 text-[10px] font-bold text-white">
+                        ✓
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">{item.desc}</p>
+                  <div className="mt-3 flex items-baseline gap-2">
+                    <span className="text-xl font-extrabold text-black">
+                      {TIER_PRICE[item.key].toLocaleString()}원
+                    </span>
+                  </div>
+                </button>
+              ))}
           </div>
         </section>
 

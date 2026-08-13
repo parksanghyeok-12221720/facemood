@@ -389,7 +389,27 @@ export default function DetailPage() {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [kakaoDiscountApplied, setKakaoDiscountApplied] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
   const overview = trendContents.all;
+
+  // Carries which /services card was clicked (?product=hair/makeup/color)
+  // through into the /test link so /checkout can later narrow its tier
+  // picker to just that item + Premium instead of showing every tier.
+  useEffect(() => {
+    let cancelled = false;
+    Promise.resolve().then(() => {
+      if (cancelled) return;
+      const product = new URLSearchParams(window.location.search).get("product");
+      if (product === "hair" || product === "makeup" || product === "color") {
+        setSelectedProduct(product);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const testHref = `/test?gender=여성${selectedProduct ? `&product=${selectedProduct}` : ""}`;
 
   // Reflects whatever was already set on another page (or an earlier
   // visit) — localStorage isn't available during SSR, so this starts
@@ -560,7 +580,7 @@ export default function DetailPage() {
           자연스럽게 어울리는 스타일 방향 제안이에요.
         </p>
         <Link
-          href="/test?gender=여성"
+          href={testHref}
           className="mt-8 inline-flex w-full items-center justify-center rounded-full bg-black px-8 py-4 text-sm font-semibold text-white"
         >
           내 추구미 분석 시작하기
@@ -1476,7 +1496,7 @@ export default function DetailPage() {
 
       {/* Sticky bottom CTA — stays visible while scrolling through the page */}
       <DiscountCountdownBar
-        href="/test?gender=여성"
+        href={testHref}
         ctaLabel="나의 추구미 무료 컨설팅 받기"
         darkColor="#000000"
         gradientFrom="#7c3aed"

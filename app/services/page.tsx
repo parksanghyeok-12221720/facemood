@@ -27,7 +27,7 @@ const SERVICES: Service[] = [
   {
     title: "헤어 컨설팅",
     subtitle: "얼굴형부터 어울리는 헤어 방향까지",
-    href: "/detail#section-hair",
+    href: "/detail?product=hair#section-hair",
     image: "/services/hair.png",
     badge: "NEW",
     price: 19900,
@@ -35,7 +35,7 @@ const SERVICES: Service[] = [
   {
     title: "메이크업 컨설팅",
     subtitle: "원하는 무드에 맞춘 메이크업 방향 제안",
-    href: "/detail#section-makeup",
+    href: "/detail?product=makeup#section-makeup",
     image: "/services/makeup.png",
     badge: "NEW",
     price: 19900,
@@ -43,7 +43,7 @@ const SERVICES: Service[] = [
   {
     title: "퍼스널컬러+코디",
     subtitle: "사진상 어울리는 컬러 무드와 코디 방향 제안",
-    href: "/detail#section-color",
+    href: "/detail?product=color#section-color",
     image: "/services/color.png",
     badge: "NEW",
     price: 19900,

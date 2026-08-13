@@ -243,6 +243,22 @@ export default function TestPage() {
     };
   }, []);
 
+  // Carries the /services single-item selection (?product=hair/makeup/color)
+  // through to /checkout, which uses it to narrow its tier picker down to
+  // just that item + Premium. A plain localStorage write, not React state —
+  // /test itself doesn't render anything differently based on this. Clears
+  // any stale value when arriving without the param (e.g. via /match/report's
+  // generic /test link) so an old single-item selection can't leak into an
+  // unrelated session and wrongly restrict /checkout later.
+  useEffect(() => {
+    const product = new URLSearchParams(window.location.search).get("product");
+    if (product === "hair" || product === "makeup" || product === "color") {
+      localStorage.setItem("facemood_selected_product", product);
+    } else {
+      localStorage.removeItem("facemood_selected_product");
+    }
+  }, []);
+
   const activeSteps = gender === "남성" ? maleSteps : steps;
   const isProfileStep = step === 0;
   const currentStep = !isProfileStep ? activeSteps[step - 1] : undefined;
