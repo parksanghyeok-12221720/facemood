@@ -181,3 +181,49 @@ body {
     animation: none;
   }
 }
+
+/* /loading's photo-scan effect — a bright line sweeps down the user's
+   uploaded photo on loop, like a scanner reading the image, to sell the
+   "AI is analyzing your photo right now" feeling while /result computes
+   locally in the background. */
+@keyframes scan-sweep {
+  0% {
+    top: -8%;
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    top: 104%;
+    opacity: 0;
+  }
+}
+
+.animate-scan-sweep {
+  animation: scan-sweep 2.6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+@keyframes scan-grid-pulse {
+  0%,
+  100% {
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.animate-scan-grid-pulse {
+  animation: scan-grid-pulse 2.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-scan-sweep,
+  .animate-scan-grid-pulse {
+    animation: none;
+  }
+}

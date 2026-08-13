@@ -43,6 +43,18 @@ function MoonIcon() {
 export default function LoadingPage() {
   const router = useRouter();
   const [progress, setProgress] = useState(0);
+  const [uploadedPhoto, setUploadedPhoto] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.resolve().then(() => {
+      if (cancelled) return;
+      setUploadedPhoto(localStorage.getItem("facemood_uploaded_image"));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -91,13 +103,51 @@ export default function LoadingPage() {
           FACEMOOD
         </p>
 
-        <div className="relative flex h-28 w-28 items-center justify-center">
-          <div className="absolute inset-0 animate-pulse rounded-full bg-violet-200/50 blur-2xl" />
-          <div className="absolute inset-0 rounded-full border-2 border-violet-100 border-t-violet-500 animate-spin" />
-          <div className="relative flex h-20 w-20 items-center justify-center rounded-full border border-violet-200 bg-violet-50 text-violet-600">
-            <MoonIcon />
+        {uploadedPhoto ? (
+          <div className="relative h-52 w-52 overflow-hidden rounded-[28px] border border-violet-200 shadow-lg shadow-violet-100">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={uploadedPhoto}
+              alt="분석 중인 사진"
+              className="h-full w-full object-cover"
+            />
+
+            {/* Faint scan-grid overlay to sell the "AI reading the photo" feel */}
+            <div
+              className="animate-scan-grid-pulse pointer-events-none absolute inset-0"
+              style={{
+                backgroundImage:
+                  "linear-gradient(rgba(139,92,246,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(139,92,246,0.5) 1px, transparent 1px)",
+                backgroundSize: "16px 16px",
+              }}
+            />
+
+            {/* Sweeping scan line */}
+            <div className="animate-scan-sweep pointer-events-none absolute inset-x-0 h-10 -translate-y-1/2 bg-gradient-to-b from-transparent via-violet-300/70 to-transparent" />
+            <div className="animate-scan-sweep pointer-events-none absolute inset-x-0 h-px -translate-y-1/2 bg-violet-400 shadow-[0_0_10px_2px_rgba(139,92,246,0.8)]" />
+
+            {/* Scanner-viewfinder corner brackets */}
+            <div className="pointer-events-none absolute left-2 top-2 h-5 w-5 rounded-tl-md border-l-2 border-t-2 border-white/90" />
+            <div className="pointer-events-none absolute right-2 top-2 h-5 w-5 rounded-tr-md border-r-2 border-t-2 border-white/90" />
+            <div className="pointer-events-none absolute bottom-2 left-2 h-5 w-5 rounded-bl-md border-b-2 border-l-2 border-white/90" />
+            <div className="pointer-events-none absolute bottom-2 right-2 h-5 w-5 rounded-br-md border-b-2 border-r-2 border-white/90" />
+
+            <div className="pointer-events-none absolute left-2.5 top-2.5 flex items-center gap-1.5 rounded-full bg-black/50 px-2.5 py-1 backdrop-blur-sm">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-violet-300" />
+              <span className="text-[10px] font-semibold tracking-wide text-white">
+                분석 중
+              </span>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="relative flex h-28 w-28 items-center justify-center">
+            <div className="absolute inset-0 animate-pulse rounded-full bg-violet-200/50 blur-2xl" />
+            <div className="absolute inset-0 rounded-full border-2 border-violet-100 border-t-violet-500 animate-spin" />
+            <div className="relative flex h-20 w-20 items-center justify-center rounded-full border border-violet-200 bg-violet-50 text-violet-600">
+              <MoonIcon />
+            </div>
+          </div>
+        )}
 
         <div className="relative mt-12 w-full">
           <div className="absolute inset-0 -z-10 rounded-3xl bg-violet-100/50 blur-2xl" />
