@@ -8,6 +8,9 @@ type Service = {
   href: string;
   image: string;
   badge?: string;
+  // Single-item (단품) price — these don't get the 토탈 bundle's discount
+  // treatment, just a flat price.
+  price?: number;
 };
 
 // Reuses the two hero photos already on hand (home-card-mood.png /
@@ -28,6 +31,7 @@ const SERVICES: Service[] = [
     href: "/detail#section-hair",
     image: "/home-card-mood.png",
     badge: "NEW",
+    price: 19900,
   },
   {
     title: "메이크업 컨설팅",
@@ -35,6 +39,7 @@ const SERVICES: Service[] = [
     href: "/detail#section-makeup",
     image: "/home-card-mood.png",
     badge: "NEW",
+    price: 19900,
   },
   {
     title: "퍼스널컬러+코디",
@@ -42,6 +47,7 @@ const SERVICES: Service[] = [
     href: "/detail#section-color",
     image: "/home-card-mood.png",
     badge: "NEW",
+    price: 19900,
   },
   {
     title: "토탈 스타일 컨설팅 (남성)",
@@ -93,6 +99,16 @@ export default function ServicesPage() {
               <p className="mt-1 text-xs leading-relaxed text-gray-500">
                 {service.subtitle}
               </p>
+              {service.price != null && (
+                <div className="mt-2 flex items-center gap-1.5">
+                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-500">
+                    단품
+                  </span>
+                  <span className="text-sm font-bold text-black">
+                    {service.price.toLocaleString()}원
+                  </span>
+                </div>
+              )}
             </div>
           </Link>
         ))}
