@@ -100,10 +100,7 @@ export default function ServicesPage() {
                 {service.subtitle}
               </p>
               {service.price != null && (
-                <div className="mt-2 flex items-center gap-1.5">
-                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-500">
-                    단품
-                  </span>
+                <div className="mt-2">
                   <span className="text-sm font-bold text-black">
                     {service.price.toLocaleString()}원
                   </span>
