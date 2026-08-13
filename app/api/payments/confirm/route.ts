@@ -6,6 +6,9 @@ import {
   PREMIUM_PRICE_KRW,
   PREMIUM_MATCH_PRICE_KRW,
   MALE_PREMIUM_PRICE_KRW,
+  HAIR_PRICE_KRW,
+  MAKEUP_PRICE_KRW,
+  COLOR_PRICE_KRW,
   confirmTossPayment,
 } from "@/lib/payment";
 import { KAKAO_CHANNEL_DISCOUNT_KRW } from "@/lib/kakaoChannel";
@@ -41,7 +44,17 @@ export async function POST(request: NextRequest) {
   // premium depth — the bundle flag lives on bundle_match_code, not tier.
   const isPremiumMatchBundle = body.tier === "premiumMatch";
   const tier: ReportTier =
-    body.tier === "basic" ? "basic" : body.tier === "male" ? "male" : "premium";
+    body.tier === "basic"
+      ? "basic"
+      : body.tier === "male"
+        ? "male"
+        : body.tier === "hair"
+          ? "hair"
+          : body.tier === "makeup"
+            ? "makeup"
+            : body.tier === "color"
+              ? "color"
+              : "premium";
 
   if (!paymentKey || !orderId || typeof amount !== "number" || !password) {
     return NextResponse.json(
@@ -82,7 +95,13 @@ export async function POST(request: NextRequest) {
       ? BASIC_PRICE_KRW
       : tier === "male"
         ? MALE_PREMIUM_PRICE_KRW
-        : PREMIUM_PRICE_KRW;
+        : tier === "hair"
+          ? HAIR_PRICE_KRW
+          : tier === "makeup"
+            ? MAKEUP_PRICE_KRW
+            : tier === "color"
+              ? COLOR_PRICE_KRW
+              : PREMIUM_PRICE_KRW;
   // The Kakao channel discount is self-reported by the client (no
   // server-verifiable proof the user actually finished adding the channel
   // — see lib/kakaoChannel.ts) — same trust level as a coupon code, so it

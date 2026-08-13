@@ -394,8 +394,16 @@ export type ReportChapterKey =
   | "perfumeGuide";
 
 // "male" is the single male-audience tier (no separate basic/premium split
-// for men — see MALE_REPORT_CHAPTERS below).
-export type ReportTierName = "basic" | "premium" | "male";
+// for men — see MALE_REPORT_CHAPTERS below). "hair"/"makeup"/"color" are the
+// female single-item (단품) purchases — each a curated single-topic subset
+// of REPORT_CHAPTERS (see HAIR_REPORT_CHAPTERS etc. below).
+export type ReportTierName =
+  | "basic"
+  | "premium"
+  | "male"
+  | "hair"
+  | "makeup"
+  | "color";
 
 export const REPORT_CHAPTERS: {
   key: ReportChapterKey;
@@ -639,6 +647,58 @@ export const REPORT_CHAPTERS: {
     ],
   },
 ];
+
+// The three single-item (단품) purchases — each a curated, single-topic
+// subset of REPORT_CHAPTERS, renumbered 01, 02, 03... so the TOC doesn't
+// show gaps from the chapters that were dropped (e.g. a hair-only report
+// showing "02, 05" instead of "01, 02"). Reuses REPORT_CHAPTERS' existing
+// title/points as-is — no new copy needed, since /api/generate-report also
+// adds a tier-specific system-prompt instruction telling the AI to stay
+// strictly on that one topic and skip the others (several of the reused
+// generic chapters, like currentImageMood, have points that casually
+// mention 헤어/메이크업/컬러 together, so the prompt-level instruction is
+// what actually keeps an off-topic mention out of, say, a hair-only report).
+function buildSingleItemChapters(
+  tier: "hair" | "makeup" | "color",
+  keys: ReportChapterKey[],
+) {
+  return keys.map((key, index) => {
+    const source = REPORT_CHAPTERS.find((c) => c.key === key)!;
+    return {
+      ...source,
+      number: String(index + 1).padStart(2, "0"),
+      tier,
+    };
+  });
+}
+
+export const HAIR_REPORT_CHAPTERS = buildSingleItemChapters("hair", [
+  "finalSummary",
+  "currentImageMood",
+  "gapAnalysis",
+  "hairGuide",
+  "finalChecklist",
+]);
+
+export const MAKEUP_REPORT_CHAPTERS = buildSingleItemChapters("makeup", [
+  "finalSummary",
+  "currentImageMood",
+  "gapAnalysis",
+  "makeupGuide",
+  "finalChecklist",
+]);
+
+export const COLOR_REPORT_CHAPTERS = buildSingleItemChapters("color", [
+  "finalSummary",
+  "currentImageMood",
+  "gapAnalysis",
+  "colorMoodAnalysis",
+  "colorPalette",
+  "stylingGuide",
+  "avoidStyles",
+  "accessoryGuide",
+  "finalChecklist",
+]);
 
 // The male report — same overall depth as the female Premium report, minus
 // the dedicated makeupGuide chapter (dropped entirely) and with the

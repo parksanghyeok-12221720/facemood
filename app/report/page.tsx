@@ -6,8 +6,11 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Container from "@/app/components/Container";
 import {
   ANIMAL_TYPE_IMAGES,
+  COLOR_REPORT_CHAPTERS,
   FACE_SHAPE_IMAGES,
+  HAIR_REPORT_CHAPTERS,
   HAIR_STYLE_IMAGES,
+  MAKEUP_REPORT_CHAPTERS,
   MAKEUP_STYLE_IMAGES,
   MALE_HAIR_STYLE_IMAGES,
   MALE_REPORT_CHAPTERS,
@@ -1059,7 +1062,16 @@ export default function ReportPage() {
   // entirely when no photo was uploaded, and older cached reports may
   // predate a given chapter — filter once and reuse for both the TOC and
   // the chapter list.
-  const chapterList = report.tier === "male" ? MALE_REPORT_CHAPTERS : REPORT_CHAPTERS;
+  const chapterList =
+    report.tier === "male"
+      ? MALE_REPORT_CHAPTERS
+      : report.tier === "hair"
+        ? HAIR_REPORT_CHAPTERS
+        : report.tier === "makeup"
+          ? MAKEUP_REPORT_CHAPTERS
+          : report.tier === "color"
+            ? COLOR_REPORT_CHAPTERS
+            : REPORT_CHAPTERS;
   const visibleChapters = chapterList.filter((c) => Boolean(report[c.key]));
 
   return (

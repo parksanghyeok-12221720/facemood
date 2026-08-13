@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import {
   ANIMAL_TYPE_CANDIDATES,
+  COLOR_REPORT_CHAPTERS,
   FACE_SHAPE_CANDIDATES,
+  HAIR_REPORT_CHAPTERS,
   HAIR_STYLE_CANDIDATES,
+  MAKEUP_REPORT_CHAPTERS,
   MAKEUP_STYLE_CANDIDATES,
   MALE_HAIR_STYLE_CANDIDATES,
   MALE_MOOD_CANDIDATES,
@@ -48,11 +51,26 @@ export const runtime = "nodejs";
 // Male reports use a completely separate chapter list (no makeupGuide,
 // male-adjusted points — see MALE_REPORT_CHAPTERS) rather than a filtered
 // view of REPORT_CHAPTERS, since several of the female chapters' points
-// arrays themselves mention makeup and need different wording.
+// arrays themselves mention makeup and need different wording. The three
+// single-item (단품) tiers each use their own small, renumbered subset of
+// REPORT_CHAPTERS (see HAIR/MAKEUP/COLOR_REPORT_CHAPTERS in types/report.ts).
 function getChapterList(tier: ReportTierName) {
-  return tier === "male" ? MALE_REPORT_CHAPTERS : REPORT_CHAPTERS;
+  return tier === "male"
+    ? MALE_REPORT_CHAPTERS
+    : tier === "hair"
+      ? HAIR_REPORT_CHAPTERS
+      : tier === "makeup"
+        ? MAKEUP_REPORT_CHAPTERS
+        : tier === "color"
+          ? COLOR_REPORT_CHAPTERS
+          : REPORT_CHAPTERS;
 }
 
+// Basic-tier purchases only ever request the "basic"-tagged chapters out of
+// REPORT_CHAPTERS (the other tiers' chapter lists are already exactly the
+// set they should generate, with every entry tagged as that same tier —
+// premium mixes "basic"+"premium"-tagged entries together, so it still
+// needs the OR below rather than falling out of the basic-only filter).
 function getChapterGroups(
   hasImage: boolean,
   tier: ReportTierName,
@@ -60,7 +78,7 @@ function getChapterGroups(
   return getChapterList(tier)
     .filter(
       (c) =>
-        (tier === "male" || tier === "premium" || c.tier === "basic") &&
+        (tier !== "basic" || c.tier === "basic") &&
         (hasImage ||
           (c.key !== "faceShapeAnalysis" && c.key !== "animalTypeAnalysis")),
     )
@@ -131,6 +149,37 @@ function getSystemPrompt(tier: ReportTierName): string {
   // not the female one (청순 자연형/고급 도시형/...) — sharing MOOD_CANDIDATES
   // across both tiers was why male report bodies described a female mood.
   const moodCandidateList = tier === "male" ? MALE_MOOD_CANDIDATES : MOOD_CANDIDATES;
+
+  // Single-item (단품) purchases only cover one topic, but several reused
+  // chapters (currentImageMood, gapAnalysis, finalSummary) have points that
+  // casually mention all of 헤어/메이크업/컬러/코디 together — without an
+  // explicit topic lock, a "헤어 컨설팅" purchase could still end up with a
+  // stray sentence about makeup or personal color in its summary chapter.
+  const singleItemTopic =
+    tier === "hair"
+      ? "헤어 스타일링"
+      : tier === "makeup"
+        ? "메이크업"
+        : tier === "color"
+          ? "퍼스널컬러와 코디"
+          : null;
+  const singleItemOtherTopics =
+    tier === "hair"
+      ? "메이크업, 퍼스널컬러, 코디/패션 스타일링"
+      : tier === "makeup"
+        ? "헤어스타일, 퍼스널컬러, 코디/패션 스타일링"
+        : tier === "color"
+          ? "헤어스타일, 메이크업"
+          : null;
+  const singleItemScopeRule = singleItemTopic
+    ? `
+
+12. 이 리포트는 "${singleItemTopic}" 단품(單品) 리포트입니다. finalSummary나 currentImageMood처럼
+여러 주제를 다룰 수 있는 챕터를 포함해서, 모든 챕터의 모든 문장은 반드시 ${singleItemTopic}
+주제에만 집중해서 작성하세요. ${singleItemOtherTopics}처럼 이 리포트 범위 밖의 주제는 단
+한 문장도 언급하거나 추천하지 마세요. 예를 들어 헤어 리포트라면 옷차림이나 메이크업 방향을
+추천하지 말고, 어울리는 헤어 스타일과 그 이유에만 집중해서 쓰세요.`
+    : "";
 
   return `당신은 FACEMOOD의 퍼스널 이미지 무드 리포트를 작성하는 AI입니다.
 
@@ -204,7 +253,7 @@ summary, tips, checklist는 body의 내용을 요약/추출한 것이므로 body
 끝내는 습관, 모든 문단을 비슷한 길이·구조로 기계적으로 반복하는 것을 피하세요. 실제 친한 스타일
 컨설턴트가 사용자 이름을 부르며 직접 조언해주듯이, 문장 길이에 변화를 주고 구체적인 관찰과
 디테일(색, 아이템, 상황)로 채우세요. 정보가 없다고 "정보가 제공되지 않았지만"처럼 AI가 데이터
-부족을 언급하는 듯한 문장도 쓰지 말고, 자연스럽게 일반적인 경향으로 이야기를 풀어가세요.`;
+부족을 언급하는 듯한 문장도 쓰지 말고, 자연스럽게 일반적인 경향으로 이야기를 풀어가세요.${singleItemScopeRule}`;
 }
 
 function buildChapterGuidance(keys: ReportChapterKey[], tier: ReportTierName): string {
@@ -554,7 +603,17 @@ export async function POST(request: NextRequest) {
   // shipped, and it's safer to over-deliver than silently drop chapters
   // someone already paid for.
   const tier: ReportTierName =
-    body.tier === "basic" ? "basic" : body.tier === "male" ? "male" : "premium";
+    body.tier === "basic"
+      ? "basic"
+      : body.tier === "male"
+        ? "male"
+        : body.tier === "hair"
+          ? "hair"
+          : body.tier === "makeup"
+            ? "makeup"
+            : body.tier === "color"
+              ? "color"
+              : "premium";
 
   const client = new OpenAI({ apiKey });
 

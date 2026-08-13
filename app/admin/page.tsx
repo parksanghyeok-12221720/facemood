@@ -264,6 +264,18 @@ export default async function AdminPage() {
                       <span className="rounded-full bg-sky-500/20 px-2 py-0.5 text-[11px] font-semibold text-sky-300">
                         남성 프리미엄
                       </span>
+                    ) : report.tier === "hair" ? (
+                      <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[11px] font-semibold text-amber-300">
+                        헤어 단품
+                      </span>
+                    ) : report.tier === "makeup" ? (
+                      <span className="rounded-full bg-rose-500/20 px-2 py-0.5 text-[11px] font-semibold text-rose-300">
+                        메이크업 단품
+                      </span>
+                    ) : report.tier === "color" ? (
+                      <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[11px] font-semibold text-emerald-300">
+                        퍼스널컬러+코디 단품
+                      </span>
                     ) : (
                       <span className="text-gray-500">-</span>
                     )}

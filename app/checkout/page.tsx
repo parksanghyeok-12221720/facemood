@@ -29,7 +29,7 @@ function getServerSnapshot() {
   return null;
 }
 
-type Tier = "basic" | "premium" | "premiumMatch";
+type Tier = "basic" | "premium" | "premiumMatch" | "hair" | "makeup" | "color";
 
 const BASIC_PRICE_KRW = 34900;
 const PREMIUM_PRICE_KRW = 49900;
@@ -52,28 +52,48 @@ const PREMIUM_MATCH_DISCOUNT_PERCENT = Math.round(
     PREMIUM_MATCH_ORIGINAL_PRICE_KRW) *
     100,
 );
+// Single-item (단품) purchases — flat price, no discount framing at all
+// (original price == price, 0% discount) rather than sharing the
+// strikethrough/얼리버드 treatment the bundled tiers get.
+const HAIR_PRICE_KRW = 19900;
+const MAKEUP_PRICE_KRW = 19900;
+const COLOR_PRICE_KRW = 19900;
 
 const TIER_PRICE: Record<Tier, number> = {
   basic: BASIC_PRICE_KRW,
   premium: PREMIUM_PRICE_KRW,
   premiumMatch: PREMIUM_MATCH_PRICE_KRW,
+  hair: HAIR_PRICE_KRW,
+  makeup: MAKEUP_PRICE_KRW,
+  color: COLOR_PRICE_KRW,
 };
 const TIER_ORIGINAL_PRICE: Record<Tier, number> = {
   basic: BASIC_ORIGINAL_PRICE_KRW,
   premium: PREMIUM_ORIGINAL_PRICE_KRW,
   premiumMatch: PREMIUM_MATCH_ORIGINAL_PRICE_KRW,
+  hair: HAIR_PRICE_KRW,
+  makeup: MAKEUP_PRICE_KRW,
+  color: COLOR_PRICE_KRW,
 };
 const TIER_DISCOUNT_PERCENT: Record<Tier, number> = {
   basic: BASIC_DISCOUNT_PERCENT,
   premium: PREMIUM_DISCOUNT_PERCENT,
   premiumMatch: PREMIUM_MATCH_DISCOUNT_PERCENT,
+  hair: 0,
+  makeup: 0,
+  color: 0,
 };
 
 const TIER_LABEL: Record<Tier, string> = {
   basic: "Basic",
   premium: "Premium",
   premiumMatch: "Premium + Match",
+  hair: "헤어 컨설팅",
+  makeup: "메이크업 컨설팅",
+  color: "퍼스널컬러+코디",
 };
+
+const SINGLE_ITEM_TIERS: Tier[] = ["hair", "makeup", "color"];
 
 const phonePrefixOptions = ["010", "011", "016", "017", "018", "019"];
 
@@ -338,11 +358,13 @@ export default function CheckoutPage() {
   const widgetsRef = useRef<TossPaymentsWidgets | null>(null);
   const phone = `${phonePrefix}-${phoneMiddle}-${phoneLast}`;
   const tierPrice = TIER_PRICE[tier];
+  const isSingleItemTier = SINGLE_ITEM_TIERS.includes(tier);
   // Kakao channel discount is available on Premium and the bundle, but
-  // never on Basic — even if it was already applied while on a different
-  // tier. The popup/banner themselves still show regardless of tier (see
-  // render below); this only gates whether the discount actually applies.
-  const isKakaoDiscountEligibleTier = tier !== "basic";
+  // never on Basic or the single-item (단품) tiers — even if it was already
+  // applied while on a different tier. The popup/banner themselves still
+  // show regardless of tier (see render below); this only gates whether the
+  // discount actually applies.
+  const isKakaoDiscountEligibleTier = tier !== "basic" && !isSingleItemTier;
   const discountedTierPrice =
     kakaoDiscountApplied && isKakaoDiscountEligibleTier
       ? tierPrice - KAKAO_CHANNEL_DISCOUNT_KRW
@@ -660,18 +682,33 @@ export default function CheckoutPage() {
           />
         </div>
 
-        {/* Promo banner */}
+        {/* Promo banner — single-item (단품) tiers get a flat price with no
+            discount framing at all, so this shows plain product copy
+            instead of the 얼리버드 할인 badge. */}
         <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 p-5 text-white shadow-lg shadow-violet-200">
-          <p className="text-[11px] font-semibold tracking-wide text-violet-100">
-            결제 혜택 놓치지 마세요
-          </p>
-          <p className="mt-1 text-lg font-extrabold leading-snug">
-            런칭 기념 얼리버드 할인
-          </p>
-          <span className="mt-3 inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold">
-            오늘 결제 시{" "}
-            {TIER_DISCOUNT_PERCENT[tier]}% 할인
-          </span>
+          {isSingleItemTier ? (
+            <>
+              <p className="text-[11px] font-semibold tracking-wide text-violet-100">
+                궁금한 한 가지만 빠르게
+              </p>
+              <p className="mt-1 text-lg font-extrabold leading-snug">
+                {TIER_LABEL[tier]} 단품 리포트
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-[11px] font-semibold tracking-wide text-violet-100">
+                결제 혜택 놓치지 마세요
+              </p>
+              <p className="mt-1 text-lg font-extrabold leading-snug">
+                런칭 기념 얼리버드 할인
+              </p>
+              <span className="mt-3 inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold">
+                오늘 결제 시{" "}
+                {TIER_DISCOUNT_PERCENT[tier]}% 할인
+              </span>
+            </>
+          )}
         </div>
 
         <TodayAnalysisCounter />
@@ -905,21 +942,74 @@ export default function CheckoutPage() {
                 </span>
               </div>
             </button>
+
+            {/* Single-item (단품) purchases — one topic only, flat price,
+                no discount framing. */}
+            {(
+              [
+                {
+                  key: "hair" as const,
+                  desc: "얼굴형에 맞는 헤어 길이 · 앞머리 · 펌 방향만 집중 분석",
+                },
+                {
+                  key: "makeup" as const,
+                  desc: "베이스 · 눈매 · 립까지 나에게 맞는 메이크업 방향만 집중 분석",
+                },
+                {
+                  key: "color" as const,
+                  desc: "사진상 컬러 무드와 어울리는 코디 방향만 집중 분석",
+                },
+              ]
+            ).map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => setTier(item.key)}
+                disabled={isSubmitting}
+                className={`rounded-2xl border-2 p-5 text-left transition-colors ${
+                  tier === item.key
+                    ? "border-violet-500 bg-violet-50/50"
+                    : "border-violet-100 bg-white"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-bold text-black">
+                    {TIER_LABEL[item.key]}
+                  </span>
+                  {tier === item.key && (
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-500 text-[10px] font-bold text-white">
+                      ✓
+                    </span>
+                  )}
+                </div>
+                <p className="mt-1 text-xs text-gray-500">{item.desc}</p>
+                <div className="mt-3 flex items-baseline gap-2">
+                  <span className="text-xl font-extrabold text-black">
+                    {TIER_PRICE[item.key].toLocaleString()}원
+                  </span>
+                </div>
+              </button>
+            ))}
           </div>
         </section>
 
-        {/* Price breakdown */}
+        {/* Price breakdown — single-item (단품) tiers skip the 기준
+            가격/얼리버드 할인 rows entirely since there's no discount to show. */}
         <section className="mt-8 rounded-2xl border border-violet-100 bg-white p-5">
-          <PriceRow
-            label="기준 가격"
-            value={`${TIER_ORIGINAL_PRICE[tier].toLocaleString()}원`}
-            strike
-          />
-          <PriceRow
-            label="얼리버드 특별 할인"
-            value={`-${TIER_DISCOUNT_PERCENT[tier]}%`}
-            tone="accent"
-          />
+          {!isSingleItemTier && (
+            <>
+              <PriceRow
+                label="기준 가격"
+                value={`${TIER_ORIGINAL_PRICE[tier].toLocaleString()}원`}
+                strike
+              />
+              <PriceRow
+                label="얼리버드 특별 할인"
+                value={`-${TIER_DISCOUNT_PERCENT[tier]}%`}
+                tone="accent"
+              />
+            </>
+          )}
           {isKakaoDiscountEligibleTier && kakaoDiscountApplied && (
             <PriceRow
               label="카카오 채널 추가 할인"
