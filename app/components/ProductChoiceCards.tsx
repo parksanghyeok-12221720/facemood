@@ -23,6 +23,9 @@ export default function ProductChoiceCards() {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
         </div>
+        <span className="absolute right-4 top-4 rounded-full bg-violet-600 px-2.5 py-1 text-[10px] font-bold text-white">
+          HOT
+        </span>
         <div className="absolute inset-x-0 bottom-0 p-5">
           <p className="text-lg font-bold text-white">토탈 스타일 컨설팅</p>
           <p className="mt-1 text-xs leading-relaxed text-white/80">
