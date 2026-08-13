@@ -16,6 +16,12 @@ export const MATCH_BUNDLE_PRICE_KRW = 59900;
 // free FACEMOOD Match report (see /api/payments/confirm and
 // /api/payments/redeem-match-code).
 export const PREMIUM_MATCH_PRICE_KRW = 59900;
+// Male + female bundle — buying from either /checkout (female, at premium
+// depth) or /checkout-male grants a one-time redemption code for a free
+// report of the OTHER gender's tier, for a partner to redeem on their own
+// checkout page (see /api/payments/confirm and
+// /api/payments/redeem-bundle-code).
+export const GENDER_BUNDLE_PRICE_KRW = 66900;
 
 export type TossConfirmResult =
   | { ok: true; payment: Record<string, unknown> }

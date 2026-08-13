@@ -48,6 +48,11 @@ for (const [column, ddl] of [
   ["report_sent_at", "ALTER TABLE reports ADD COLUMN report_sent_at TEXT"],
   ["tier", "ALTER TABLE reports ADD COLUMN tier TEXT"],
   ["bundle_match_code", "ALTER TABLE reports ADD COLUMN bundle_match_code TEXT"],
+  ["bundle_gender_code", "ALTER TABLE reports ADD COLUMN bundle_gender_code TEXT"],
+  [
+    "bundle_gender_redeemed_report_id",
+    "ALTER TABLE reports ADD COLUMN bundle_gender_redeemed_report_id TEXT",
+  ],
   [
     "bundle_match_redeemed_match_report_id",
     "ALTER TABLE reports ADD COLUMN bundle_match_redeemed_match_report_id TEXT",

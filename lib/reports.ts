@@ -36,6 +36,8 @@ export type ReportRecord = {
   tier: ReportTier | null;
   bundleMatchCode: string | null;
   bundleMatchRedeemedMatchReportId: string | null;
+  bundleGenderCode: string | null;
+  bundleGenderRedeemedReportId: string | null;
   createdAt: string;
 };
 
@@ -55,6 +57,8 @@ type ReportRow = {
   tier: string | null;
   bundle_match_code: string | null;
   bundle_match_redeemed_match_report_id: string | null;
+  bundle_gender_code: string | null;
+  bundle_gender_redeemed_report_id: string | null;
   created_at: string;
 };
 
@@ -71,6 +75,8 @@ function rowToRecord(row: ReportRow): ReportRecord {
     tier: normalizeTier(row.tier),
     bundleMatchCode: row.bundle_match_code,
     bundleMatchRedeemedMatchReportId: row.bundle_match_redeemed_match_report_id,
+    bundleGenderCode: row.bundle_gender_code,
+    bundleGenderRedeemedReportId: row.bundle_gender_redeemed_report_id,
     createdAt: row.created_at,
   };
 }
@@ -169,6 +175,53 @@ export function redeemBundleMatchCredit(
   return result.changes > 0;
 }
 
+// Called once, right after a male+female "gender bundle" payment is
+// confirmed (from either /checkout or /checkout-male) — generates and
+// stores a one-time redemption code for a free report of the OPPOSITE
+// gender's tier. Delivered via the report-ready SMS (see lib/notify.ts) and
+// redeemed on the other checkout page (see redeemBundleGenderCredit below).
+// Must be called after setCheckoutPassword has already persisted this row's
+// own tier, since that's what determines which tier the credit grants.
+export function grantBundleGenderCredit(id: string): string {
+  const code = generateBundleMatchCode();
+  db.prepare(`UPDATE reports SET bundle_gender_code = ? WHERE id = ?`).run(
+    code,
+    id,
+  );
+  return code;
+}
+
+// Consumes a gender-bundle credit against a specific (unpaid) reports.id on
+// the OTHER checkout page — one-time use, enforced by only succeeding while
+// bundle_gender_redeemed_report_id is still NULL. Returns the tier to grant
+// the target report (the opposite of whatever tier the original bundle
+// purchase was), or null if the code is invalid/already used.
+export function redeemBundleGenderCredit(
+  code: string,
+  targetReportId: string,
+): ReportTier | null {
+  const normalizedCode = code.trim().toUpperCase();
+  const origin = db
+    .prepare(
+      `SELECT tier FROM reports
+       WHERE bundle_gender_code = ? AND bundle_gender_redeemed_report_id IS NULL`,
+    )
+    .get(normalizedCode) as { tier: string | null } | undefined;
+  if (!origin) return null;
+
+  const targetTier: ReportTier = origin.tier === "male" ? "premium" : "male";
+
+  const result = db
+    .prepare(
+      `UPDATE reports
+       SET bundle_gender_redeemed_report_id = ?
+       WHERE bundle_gender_code = ? AND bundle_gender_redeemed_report_id IS NULL`,
+    )
+    .run(targetReportId, normalizedCode);
+
+  return result.changes > 0 ? targetTier : null;
+}
+
 export type PaidReportSummary = {
   id: string;
   name: string | null;
@@ -179,6 +232,7 @@ export type PaidReportSummary = {
   amount: number | null;
   tier: ReportTier | null;
   bundleMatchCode: string | null;
+  bundleGenderCode: string | null;
   paidAt: string | null;
   reportSentAt: string | null;
   createdAt: string;
@@ -191,6 +245,7 @@ type PaidReportRow = {
   phone: string | null;
   tier: string | null;
   bundle_match_code: string | null;
+  bundle_gender_code: string | null;
   paid_at: string | null;
   report_sent_at: string | null;
   created_at: string;
@@ -199,7 +254,7 @@ type PaidReportRow = {
 export function listPaidReports(): PaidReportSummary[] {
   const rows = db
     .prepare(
-      `SELECT id, answers, amount, phone, tier, bundle_match_code, paid_at, report_sent_at, created_at
+      `SELECT id, answers, amount, phone, tier, bundle_match_code, bundle_gender_code, paid_at, report_sent_at, created_at
        FROM reports WHERE paid = 1 ORDER BY paid_at DESC`,
     )
     .all() as PaidReportRow[];
@@ -237,6 +292,7 @@ export function listPaidReports(): PaidReportSummary[] {
       amount: row.amount,
       tier: normalizeTier(row.tier),
       bundleMatchCode: row.bundle_match_code,
+      bundleGenderCode: row.bundle_gender_code,
       paidAt: row.paid_at,
       reportSentAt: row.report_sent_at,
       createdAt: row.created_at,

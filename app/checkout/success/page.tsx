@@ -37,7 +37,9 @@ export default function CheckoutSuccessPage() {
       const tier =
         pendingTier === "basic" ||
         pendingTier === "premiumMatch" ||
-        pendingTier === "male"
+        pendingTier === "male" ||
+        pendingTier === "maleBundle" ||
+        pendingTier === "premiumBundle"
           ? pendingTier
           : "premium";
       const kakaoDiscount = sessionStorage.getItem(PENDING_KAKAO_DISCOUNT_KEY) === "1";
@@ -76,7 +78,13 @@ export default function CheckoutSuccessPage() {
         sessionStorage.removeItem(PENDING_PHONE_KEY);
         sessionStorage.removeItem(PENDING_TIER_KEY);
         sessionStorage.removeItem(PENDING_KAKAO_DISCOUNT_KEY);
-        localStorage.setItem(REPORT_TIER_KEY, tier);
+        // Report generation only cares about the real tier — "maleBundle"/
+        // "premiumBundle" are checkout-only SKUs that the confirm route
+        // already normalized to "male"/"premium" for storage; normalize the
+        // same way here so /report requests the right chapter set.
+        const realTier =
+          tier === "maleBundle" ? "male" : tier === "premiumBundle" ? "premium" : tier;
+        localStorage.setItem(REPORT_TIER_KEY, realTier);
         window.fbq?.("track", "Purchase", {
           value: Number(amount),
           currency: "KRW",

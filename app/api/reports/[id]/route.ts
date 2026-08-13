@@ -55,12 +55,18 @@ export async function PATCH(
 
     if (before && !before.fullReport && before.phone) {
       const reportUrl = `${resolveSiteOrigin(request)}/report?id=${id}`;
-      sendReportReadySms(
-        before.phone,
-        reportUrl,
-        before.bundleMatchCode,
-        "FACEMOOD Match 무료 이용",
-      )
+      // A row carries at most one of these — Match-bundle and gender-bundle
+      // are mutually exclusive checkout picks — so whichever is set (if
+      // any) is the one to deliver. The gender-bundle label names the
+      // opposite of this purchase's own tier, since that's what the code
+      // unlocks for the partner.
+      const bundleCode = before.bundleMatchCode ?? before.bundleGenderCode;
+      const bundleLabel = before.bundleMatchCode
+        ? "FACEMOOD Match 무료 이용"
+        : before.tier === "male"
+          ? "여자친구용 FACEMOOD Premium 무료 이용"
+          : "남자친구용 FACEMOOD 무료 이용";
+      sendReportReadySms(before.phone, reportUrl, bundleCode, bundleLabel)
         .then(() => markReportSent(id))
         .catch((error) => console.error("sendReportReadySms failed", error));
     }

@@ -252,6 +252,10 @@ export default async function AdminPage() {
                       <span className="rounded-full bg-fuchsia-500/20 px-2 py-0.5 text-[11px] font-semibold text-fuchsia-300">
                         프리미엄+Match
                       </span>
+                    ) : report.bundleGenderCode ? (
+                      <span className="rounded-full bg-pink-500/20 px-2 py-0.5 text-[11px] font-semibold text-pink-300">
+                        남녀 통합 번들 ({report.tier === "male" ? "남성" : "여성"})
+                      </span>
                     ) : report.tier === "premium" ? (
                       <span className="rounded-full bg-violet-500/20 px-2 py-0.5 text-[11px] font-semibold text-violet-300">
                         프리미엄
