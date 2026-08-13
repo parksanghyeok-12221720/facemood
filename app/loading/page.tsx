@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Container from "@/app/components/Container";
 
 const steps = [
@@ -15,6 +15,24 @@ const steps = [
 const messages = [
   "사진 속 전체 분위기를 확인하고 있어요.",
   "헤어와 메이크업의 무드를 정리하고 있어요.",
+  "사진상 컬러 흐름을 참고하고 있어요.",
+  "원하는 추구미와 현재 이미지의 차이를 비교하고 있어요.",
+  "상세 리포트 문장을 다듬고 있어요.",
+];
+
+// Male copy skips makeup entirely, per the male-audience content rule used
+// throughout the rest of the site (코디/헤어 대신 메이크업 언급 없음).
+const maleSteps = [
+  "답변 분석 중",
+  "사진 분위기 확인 중",
+  "컬러 무드 정리 중",
+  "추구미 방향 비교 중",
+  "헤어 · 코디 · 스타일 리포트 작성 중",
+];
+
+const maleMessages = [
+  "사진 속 전체 분위기를 확인하고 있어요.",
+  "헤어와 스타일의 무드를 정리하고 있어요.",
   "사진상 컬러 흐름을 참고하고 있어요.",
   "원하는 추구미와 현재 이미지의 차이를 비교하고 있어요.",
   "상세 리포트 문장을 다듬고 있어요.",
@@ -44,12 +62,26 @@ export default function LoadingPage() {
   const router = useRouter();
   const [progress, setProgress] = useState(0);
   const [uploadedPhoto, setUploadedPhoto] = useState<string | null>(null);
+  const [isMale, setIsMale] = useState(false);
+  // Gender is detected asynchronously (see effect below) but the redirect
+  // at the end of the progress animation needs the latest value without
+  // restarting the animation, so it's mirrored into a ref.
+  const isMaleRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
     Promise.resolve().then(() => {
       if (cancelled) return;
       setUploadedPhoto(localStorage.getItem("facemood_uploaded_image"));
+      try {
+        const answers = JSON.parse(localStorage.getItem("facemood_answers") ?? "{}");
+        const male = answers.gender === "남성";
+        isMaleRef.current = male;
+        setIsMale(male);
+      } catch {
+        isMaleRef.current = false;
+        setIsMale(false);
+      }
     });
     return () => {
       cancelled = true;
@@ -63,12 +95,16 @@ export default function LoadingPage() {
     // Purely a paced animation — /result computes its rule-based preview
     // locally, so there's nothing to fetch or wait on here. The free
     // preview never calls OpenAI; only the paid report does, after checkout.
+    // 남성 답변자는 무료 미리보기가 없으므로 이 애니메이션이 끝나면
+    // /checkout-male로, 그 외에는 기존대로 /result로 보낸다.
     function advance(current: number) {
       if (cancelled) return;
 
       if (current >= 100) {
         timeoutId = setTimeout(() => {
-          if (!cancelled) router.push("/result");
+          if (!cancelled) {
+            router.push(isMaleRef.current ? "/checkout-male" : "/result");
+          }
         }, 800);
         return;
       }
@@ -91,10 +127,12 @@ export default function LoadingPage() {
     };
   }, [router]);
 
-  const segment = 100 / steps.length;
-  const completedSteps = Math.min(steps.length, Math.floor(progress / segment));
+  const activeSteps = isMale ? maleSteps : steps;
+  const activeMessages = isMale ? maleMessages : messages;
+  const segment = 100 / activeSteps.length;
+  const completedSteps = Math.min(activeSteps.length, Math.floor(progress / segment));
   const activeMessage =
-    messages[Math.min(messages.length - 1, Math.floor(progress / segment))];
+    activeMessages[Math.min(activeMessages.length - 1, Math.floor(progress / segment))];
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-white py-16 text-black">
@@ -162,7 +200,7 @@ export default function LoadingPage() {
             </p>
 
             <ul className="mt-8 flex flex-col gap-3 text-left">
-              {steps.map((label, index) => {
+              {activeSteps.map((label, index) => {
                 const isDone = index < completedSteps;
                 const isActive = index === completedSteps;
                 return (

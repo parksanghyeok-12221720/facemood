@@ -214,10 +214,9 @@ export default function UploadPage() {
       await createReportRecord(parsedAnswers);
 
       window.fbq?.("track", "Lead");
-      // 남성 답변자는 아직 무료 미리보기 없이 /checkout-male로 바로 보낸다
-      // — 그 페이지는 facemood_report_id만 있으면 되고 미리보기 여부와는
-      // 무관하게 동작하므로 안전하게 건너뛸 수 있다.
-      window.location.href = parsedAnswers.gender === "남성" ? "/checkout-male" : "/loading";
+      // 남성 답변자도 /loading의 분석 모션을 거친 뒤, 그 끝에서
+      // /checkout-male로 보내진다 (무료 미리보기인 /result는 건너뛴다).
+      window.location.href = "/loading";
     } catch (error) {
       const message =
         error instanceof Error
@@ -244,7 +243,7 @@ export default function UploadPage() {
       const parsedAnswers = parseAnswers(savedAnswers);
       await createReportRecord(parsedAnswers);
       window.fbq?.("track", "Lead");
-      window.location.href = parsedAnswers.gender === "남성" ? "/checkout-male" : "/loading";
+      window.location.href = "/loading";
     } catch (error) {
       const message =
         error instanceof Error
