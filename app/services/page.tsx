@@ -37,15 +37,8 @@ const SERVICES: Service[] = [
     badge: "NEW",
   },
   {
-    title: "퍼스널 컨설팅",
-    subtitle: "지금 이미지와 원하는 추구미를 하나로 정리",
-    href: "/detail",
-    image: "/home-card-mood.png",
-    badge: "NEW",
-  },
-  {
-    title: "퍼스널 컬러",
-    subtitle: "사진상 어울리는 컬러 무드 방향 제안",
+    title: "퍼스널컬러+코디",
+    subtitle: "사진상 어울리는 컬러 무드와 코디 방향 제안",
     href: "/detail#section-color",
     image: "/home-card-mood.png",
     badge: "NEW",
