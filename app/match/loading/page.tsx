@@ -4,6 +4,9 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Container from "@/app/components/Container";
 
+const MY_PHOTO_KEY = "facemood_match_my_photo";
+const PARTNER_PHOTO_KEY = "facemood_match_partner_photo";
+
 const steps = [
   "관계와 사진 확인 중",
   "두 사람의 분위기 비교 중",
@@ -32,6 +35,22 @@ function CirclesIcon() {
 export default function MatchLoadingPage() {
   const router = useRouter();
   const [progress, setProgress] = useState(0);
+  const [photos, setPhotos] = useState<string[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.resolve().then(() => {
+      if (cancelled) return;
+      setPhotos(
+        [localStorage.getItem(MY_PHOTO_KEY), localStorage.getItem(PARTNER_PHOTO_KEY)].filter(
+          (photo): photo is string => Boolean(photo),
+        ),
+      );
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -100,22 +119,97 @@ export default function MatchLoadingPage() {
           FACEMOOD MATCH
         </span>
 
-        <div className="relative flex h-28 w-28 items-center justify-center">
-          <div
-            className="absolute inset-0 animate-pulse rounded-full blur-2xl"
-            style={{ backgroundColor: "var(--match-rose)", opacity: 0.3 }}
-          />
-          <div
-            className="absolute inset-0 animate-spin rounded-full border-2"
-            style={{ borderColor: "var(--match-beige)", borderTopColor: "var(--match-navy)" }}
-          />
-          <div
-            className="relative flex h-20 w-20 items-center justify-center rounded-full"
-            style={{ backgroundColor: "white", border: "1px solid var(--match-beige)" }}
-          >
-            <CirclesIcon />
+        {photos.length > 0 ? (
+          <div className="flex flex-col items-center gap-3">
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold tracking-wide"
+              style={{ backgroundColor: "var(--match-navy)", color: "var(--match-ivory)" }}
+            >
+              <span
+                className="h-1.5 w-1.5 animate-pulse rounded-full"
+                style={{ backgroundColor: "var(--match-rose)" }}
+              />
+              분석 중
+            </span>
+            <div className="flex items-center justify-center gap-3">
+              {photos.map((photo, index) => (
+                <div
+                  key={index}
+                  className="relative h-48 w-36 overflow-hidden rounded-[22px] shadow-lg"
+                  style={{ border: "1px solid var(--match-beige)" }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={photo}
+                    alt={index === 0 ? "내 사진 분석 중" : "상대방 사진 분석 중"}
+                    className="h-full w-full object-cover"
+                  />
+
+                  {/* Faint scan-grid overlay */}
+                  <div
+                    className="animate-scan-grid-pulse pointer-events-none absolute inset-0"
+                    style={{
+                      backgroundImage:
+                        "linear-gradient(rgba(30,42,58,0.45) 1px, transparent 1px), linear-gradient(90deg, rgba(30,42,58,0.45) 1px, transparent 1px)",
+                      backgroundSize: "14px 14px",
+                    }}
+                  />
+
+                  {/* Sweeping scan line */}
+                  <div
+                    className="animate-scan-sweep pointer-events-none absolute inset-x-0 h-8 -translate-y-1/2"
+                    style={{
+                      background:
+                        "linear-gradient(to bottom, transparent, rgba(201,160,160,0.75), transparent)",
+                    }}
+                  />
+                  <div
+                    className="animate-scan-sweep pointer-events-none absolute inset-x-0 h-px -translate-y-1/2"
+                    style={{
+                      backgroundColor: "var(--match-rose)",
+                      boxShadow: "0 0 10px 2px rgba(201,160,160,0.8)",
+                    }}
+                  />
+
+                  {/* Scanner-viewfinder corner brackets */}
+                  <div
+                    className="pointer-events-none absolute left-2 top-2 h-4 w-4 rounded-tl-md border-l-2 border-t-2"
+                    style={{ borderColor: "white" }}
+                  />
+                  <div
+                    className="pointer-events-none absolute right-2 top-2 h-4 w-4 rounded-tr-md border-r-2 border-t-2"
+                    style={{ borderColor: "white" }}
+                  />
+                  <div
+                    className="pointer-events-none absolute bottom-2 left-2 h-4 w-4 rounded-bl-md border-b-2 border-l-2"
+                    style={{ borderColor: "white" }}
+                  />
+                  <div
+                    className="pointer-events-none absolute bottom-2 right-2 h-4 w-4 rounded-br-md border-b-2 border-r-2"
+                    style={{ borderColor: "white" }}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="relative flex h-28 w-28 items-center justify-center">
+            <div
+              className="absolute inset-0 animate-pulse rounded-full blur-2xl"
+              style={{ backgroundColor: "var(--match-rose)", opacity: 0.3 }}
+            />
+            <div
+              className="absolute inset-0 animate-spin rounded-full border-2"
+              style={{ borderColor: "var(--match-beige)", borderTopColor: "var(--match-navy)" }}
+            />
+            <div
+              className="relative flex h-20 w-20 items-center justify-center rounded-full"
+              style={{ backgroundColor: "white", border: "1px solid var(--match-beige)" }}
+            >
+              <CirclesIcon />
+            </div>
+          </div>
+        )}
 
         <div className="relative mt-12 w-full">
           <div
