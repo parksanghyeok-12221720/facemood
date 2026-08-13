@@ -142,7 +142,7 @@ export default function LoadingPage() {
         </p>
 
         {uploadedPhoto ? (
-          <div className="relative h-52 w-52 overflow-hidden rounded-[28px] border border-violet-200 shadow-lg shadow-violet-100">
+          <div className="relative h-96 w-72 overflow-hidden rounded-[28px] border border-violet-200 shadow-lg shadow-violet-100">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={uploadedPhoto}
