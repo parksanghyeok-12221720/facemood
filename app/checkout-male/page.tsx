@@ -6,7 +6,7 @@ import { ANONYMOUS, loadTossPayments } from "@tosspayments/tosspayments-sdk";
 import type { TossPaymentsWidgets } from "@tosspayments/tosspayments-sdk";
 import Container from "@/app/components/Container";
 import TodayAnalysisCounter from "@/app/components/TodayAnalysisCounter";
-import { MALE_PREMIUM_PRICE_KRW } from "@/lib/payment";
+import { MALE_PREMIUM_ORIGINAL_PRICE_KRW, MALE_PREMIUM_PRICE_KRW } from "@/lib/payment";
 import { TEST_AMOUNT_KRW, isTestPhone } from "@/lib/testPayment";
 
 const REPORT_ID_KEY = "facemood_report_id";
@@ -15,6 +15,12 @@ const PENDING_PHONE_KEY = "facemood_pending_phone";
 const PENDING_TIER_KEY = "facemood_pending_tier";
 
 const phonePrefixOptions = ["010", "011", "016", "017", "018", "019"];
+
+const MALE_PREMIUM_DISCOUNT_PERCENT = Math.round(
+  ((MALE_PREMIUM_ORIGINAL_PRICE_KRW - MALE_PREMIUM_PRICE_KRW) /
+    MALE_PREMIUM_ORIGINAL_PRICE_KRW) *
+    100,
+);
 
 function RefundPolicyModal({
   onClose,
@@ -360,11 +366,14 @@ export default function MaleCheckoutPage() {
         {/* Promo banner */}
         <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 p-5 text-white shadow-lg shadow-violet-200">
           <p className="text-[11px] font-semibold tracking-wide text-violet-100">
-            FACEMOOD Premium
+            결제 혜택 놓치지 마세요
           </p>
           <p className="mt-1 text-lg font-extrabold leading-snug">
-            헤어 · 코디 · 퍼스널컬러 통합 리포트
+            런칭 기념 얼리버드 할인
           </p>
+          <span className="mt-3 inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold">
+            오늘 결제 시 {MALE_PREMIUM_DISCOUNT_PERCENT}% 할인
+          </span>
         </div>
 
         <TodayAnalysisCounter />
@@ -435,12 +444,23 @@ export default function MaleCheckoutPage() {
           />
         </section>
 
-        {/* Price */}
+        {/* Price breakdown */}
         <section className="mt-8 rounded-2xl border border-violet-100 bg-white p-5">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold text-black">
-              FACEMOOD Premium 리포트
+          <div className="flex items-center justify-between py-1.5 text-sm">
+            <span className="text-gray-500">기준 가격</span>
+            <span className="text-gray-500 line-through decoration-gray-400">
+              {MALE_PREMIUM_ORIGINAL_PRICE_KRW.toLocaleString()}원
             </span>
+          </div>
+          <div className="flex items-center justify-between py-1.5 text-sm">
+            <span className="text-gray-500">얼리버드 특별 할인</span>
+            <span className="font-semibold text-violet-600">
+              -{MALE_PREMIUM_DISCOUNT_PERCENT}%
+            </span>
+          </div>
+          <div className="my-2 border-t border-violet-100" />
+          <div className="flex items-center justify-between py-1.5 text-sm">
+            <span className="font-semibold text-black">최종 결제금액</span>
             <span className="text-lg font-bold text-black">
               {MALE_PREMIUM_PRICE_KRW.toLocaleString()}원
             </span>

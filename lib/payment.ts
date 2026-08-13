@@ -2,6 +2,7 @@ export const BASIC_PRICE_KRW = 34900;
 export const PREMIUM_PRICE_KRW = 49900;
 // The single male-audience tier (no basic/premium split for men).
 export const MALE_PREMIUM_PRICE_KRW = 35900;
+export const MALE_PREMIUM_ORIGINAL_PRICE_KRW = 89800;
 export const MATCH_PRICE_KRW = 34900;
 // Match + FACEMOOD Premium bundle — buying this also unlocks one FACEMOOD
 // Premium report (see /api/payments/match-confirm).

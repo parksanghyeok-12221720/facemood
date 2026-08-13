@@ -1583,7 +1583,7 @@ export default function DetailPage() {
       {/* Sticky bottom CTA — stays visible while scrolling through the page */}
       <DiscountCountdownBar
         href="/test"
-        ctaLabel="나의 추구미 무료 컨설팅 받기"
+        ctaLabel="추구미 컨설팅 받으러가기"
         darkColor="#000000"
         gradientFrom="#7c3aed"
         gradientTo="#c026d3"

@@ -23,27 +23,6 @@ const SERVICES: Service[] = [
     image: "/home-card-mood.png",
   },
   {
-    title: "토탈 스타일 컨설팅 (남성)",
-    subtitle: "헤어·퍼스널컬러·코디 추천",
-    href: "/detail-male",
-    image: "/home-card-mood-male.png",
-    badge: "NEW",
-  },
-  {
-    title: "헤어 컨설팅 (남성)",
-    subtitle: "얼굴형부터 어울리는 헤어 방향까지",
-    href: "/detail-male#section-hair",
-    image: "/home-card-mood-male.png",
-    badge: "NEW",
-  },
-  {
-    title: "코디 컨설팅 (남성)",
-    subtitle: "내 이미지에 맞는 코디 방향 제안",
-    href: "/detail-male#section-mood",
-    image: "/home-card-mood-male.png",
-    badge: "NEW",
-  },
-  {
     title: "헤어 컨설팅",
     subtitle: "얼굴형부터 어울리는 헤어 방향까지",
     href: "/detail#section-hair",
@@ -69,6 +48,13 @@ const SERVICES: Service[] = [
     subtitle: "사진상 어울리는 컬러 무드 방향 제안",
     href: "/detail#section-color",
     image: "/home-card-mood.png",
+    badge: "NEW",
+  },
+  {
+    title: "토탈 스타일 컨설팅 (남성)",
+    subtitle: "헤어·퍼스널컬러·코디 추천",
+    href: "/detail-male",
+    image: "/home-card-mood-male.png",
     badge: "NEW",
   },
 ];
