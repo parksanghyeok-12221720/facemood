@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Container from "@/app/components/Container";
 
 type SelectStep = {
@@ -115,6 +115,89 @@ const steps: Step[] = [
   },
 ];
 
+// Male version of the mood/style questions — the female options above
+// (청순, 러블리, ...) don't apply to men. preferredStyle reuses the real
+// archetype photos already shot for /detail-male's mood cards
+// (/mood/cards-male/) rather than a placeholder, since they already fit.
+const maleSteps: Step[] = [
+  {
+    type: "select",
+    key: "moodDirection",
+    title: "현재 당신의 스타일은 무엇인가요?",
+    options: [
+      "댄디하고 깔끔한 무드",
+      "미니멀하고 담백한 무드",
+      "시티보이 감성의 편안한 무드",
+      "스트릿하고 자유분방한 무드",
+      "클래식하고 포멀한 무드",
+      "모던하고 시크한 무드",
+      "아직 잘 모르겠어요",
+    ],
+  },
+  {
+    type: "photo",
+    key: "preferredStyle",
+    title: "선호하는 스타일이 있으신가요?",
+    subtitle: "최대 3개까지 고를 수 있어요.",
+    maxSelect: 3,
+    recommendLabel: "아직 잘 모르겠어요. 추천해 주세요!",
+    recommendSubtitle: "전문가가 회원님께 가장 잘 어울리는 무드를 찾아드릴게요",
+    celebrityLabel: "닮고 싶은 연예인이 있다면 입력해주세요",
+    celebritySubtitle: "스타일 무드 분석에 꼼꼼히 참고할게요",
+    celebrityPlaceholder: "예) 차은우, 송강, 박서준, 안보현, 정해인 등",
+    options: [
+      {
+        key: "dandy",
+        title: "댄디",
+        subtitle: "단정하고 세련된 무드",
+        photo: "/mood/cards-male/댄디st.png",
+      },
+      {
+        key: "minimal",
+        title: "미니멀",
+        subtitle: "담백하고 정돈된 무드",
+        photo: "/mood/cards-male/미니멀st.png",
+      },
+      {
+        key: "cityboy",
+        title: "시티보이",
+        subtitle: "편안하고 감각적인 무드",
+        photo: "/mood/cards-male/시티보이st.png",
+      },
+      {
+        key: "street",
+        title: "스트릿",
+        subtitle: "자유롭고 개성있는 무드",
+        photo: "/mood/cards-male/스트릿st.png",
+      },
+      {
+        key: "classic",
+        title: "클래식",
+        subtitle: "기본에 충실한 무드",
+        photo: "/mood/cards-male/클래식st.png",
+      },
+      {
+        key: "vintage",
+        title: "빈티지",
+        subtitle: "자연스럽고 개성있는 무드",
+        photo: "/mood/cards-male/빈티지st.png",
+      },
+    ],
+  },
+  {
+    type: "select",
+    key: "purpose",
+    title: "분석 목적은 무엇인가요?",
+    options: [
+      "소개팅",
+      "데이트",
+      "인스타 프로필",
+      "출근/면접",
+      "전체 이미지 개선",
+    ],
+  },
+];
+
 const TOTAL_STEPS = steps.length + 1;
 
 function ChevronLeftIcon() {
@@ -141,12 +224,28 @@ export default function TestPage() {
 
   const [name, setName] = useState("");
   const [gender, setGender] = useState("");
+  const [genderPreset, setGenderPreset] = useState(false);
   const [age, setAge] = useState("");
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
 
+  useEffect(() => {
+    const param = new URLSearchParams(window.location.search).get("gender");
+    if (param !== "여성" && param !== "남성") return;
+    let cancelled = false;
+    Promise.resolve().then(() => {
+      if (cancelled) return;
+      setGender(param);
+      setGenderPreset(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const activeSteps = gender === "남성" ? maleSteps : steps;
   const isProfileStep = step === 0;
-  const currentStep = !isProfileStep ? steps[step - 1] : undefined;
+  const currentStep = !isProfileStep ? activeSteps[step - 1] : undefined;
   const canSubmitProfile =
     name.trim() !== "" &&
     gender !== "" &&
@@ -273,27 +372,29 @@ export default function TestPage() {
                 />
               </div>
 
-              <div>
-                <p className="mb-3 text-xs tracking-[0.2em] text-gray-500">
-                  성별
-                </p>
-                <div className="grid grid-cols-2 gap-3">
-                  {genderOptions.map((option) => (
-                    <button
-                      key={option}
-                      type="button"
-                      onClick={() => setGender(option)}
-                      className={`rounded-2xl px-5 py-4 text-left text-sm font-medium transition-colors ${
-                        gender === option
-                          ? "bg-black text-white"
-                          : "border border-violet-100 bg-white text-gray-600 hover:border-violet-300"
-                      }`}
-                    >
-                      {option}
-                    </button>
-                  ))}
+              {!genderPreset && (
+                <div>
+                  <p className="mb-3 text-xs tracking-[0.2em] text-gray-500">
+                    성별
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {genderOptions.map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => setGender(option)}
+                        className={`rounded-2xl px-5 py-4 text-left text-sm font-medium transition-colors ${
+                          gender === option
+                            ? "bg-black text-white"
+                            : "border border-violet-100 bg-white text-gray-600 hover:border-violet-300"
+                        }`}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div>
                 <p className="mb-3 text-xs tracking-[0.2em] text-gray-500">

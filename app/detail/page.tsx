@@ -560,7 +560,7 @@ export default function DetailPage() {
           자연스럽게 어울리는 스타일 방향 제안이에요.
         </p>
         <Link
-          href="/test"
+          href="/test?gender=여성"
           className="mt-8 inline-flex w-full items-center justify-center rounded-full bg-black px-8 py-4 text-sm font-semibold text-white"
         >
           내 추구미 분석 시작하기
@@ -1476,7 +1476,7 @@ export default function DetailPage() {
 
       {/* Sticky bottom CTA — stays visible while scrolling through the page */}
       <DiscountCountdownBar
-        href="/test"
+        href="/test?gender=여성"
         ctaLabel="나의 추구미 무료 컨설팅 받기"
         darkColor="#000000"
         gradientFrom="#7c3aed"
