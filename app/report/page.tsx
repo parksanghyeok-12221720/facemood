@@ -9,14 +9,17 @@ import {
   FACE_SHAPE_IMAGES,
   HAIR_STYLE_IMAGES,
   MAKEUP_STYLE_IMAGES,
+  MALE_HAIR_STYLE_IMAGES,
   MALE_REPORT_CHAPTERS,
   REPORT_CHAPTERS,
+  buildMalePreviewResult,
   buildPreviewResult,
 } from "@/types/report";
 import type {
   FullReport,
   HairStyleCandidate,
   MakeupStyleCandidate,
+  MaleHairStyleCandidate,
   PreviewResult,
   ReportChapterContent,
   ReportChapterKey,
@@ -54,7 +57,8 @@ function ensureReportVisuals(report: FullReport): FullReport {
     const answers = answersRaw
       ? (JSON.parse(answersRaw) as Record<string, unknown>)
       : {};
-    const fallback = buildPreviewResult(answers);
+    const fallback =
+      report.tier === "male" ? buildMalePreviewResult(answers) : buildPreviewResult(answers);
     return {
       ...report,
       images: report.images ?? fallback.images,
@@ -643,7 +647,7 @@ function ChapterCard({
   images: PreviewResult["images"] | undefined;
   colorHint: PreviewResult["colorHint"] | undefined;
   typeValue?: string | null;
-  styleTypeValue?: HairStyleCandidate | MakeupStyleCandidate | null;
+  styleTypeValue?: HairStyleCandidate | MaleHairStyleCandidate | MakeupStyleCandidate | null;
   heroPickIndex: number;
 }) {
   const visual = CHAPTER_VISUALS[chapter.key];
@@ -663,7 +667,9 @@ function ChapterCard({
     visual === "hero"
       ? heroImage
       : visual === "hair"
-        ? (styleTypeValue && HAIR_STYLE_IMAGES[styleTypeValue as HairStyleCandidate]) ||
+        ? (styleTypeValue &&
+            (HAIR_STYLE_IMAGES[styleTypeValue as HairStyleCandidate] ||
+              MALE_HAIR_STYLE_IMAGES[styleTypeValue as MaleHairStyleCandidate])) ||
           images?.hair
         : visual === "makeup"
           ? (styleTypeValue &&

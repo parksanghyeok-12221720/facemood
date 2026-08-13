@@ -5,9 +5,12 @@ import {
   FACE_SHAPE_CANDIDATES,
   HAIR_STYLE_CANDIDATES,
   MAKEUP_STYLE_CANDIDATES,
+  MALE_HAIR_STYLE_CANDIDATES,
+  MALE_MOOD_CANDIDATES,
   MALE_REPORT_CHAPTERS,
   MOOD_CANDIDATES,
   REPORT_CHAPTERS,
+  buildMalePreviewResult,
   buildPreviewResult,
 } from "@/types/report";
 import type {
@@ -16,6 +19,7 @@ import type {
   FullReport,
   HairStyleCandidate,
   MakeupStyleCandidate,
+  MaleHairStyleCandidate,
   PreviewResult,
   ReportChapterContent,
   ReportChapterKey,
@@ -123,6 +127,10 @@ function getSystemPrompt(tier: ReportTierName): string {
   const audiencePhrase = tier === "male" ? "20대~30대 남성이" : "20대~30대 여성이";
   const groomingHabitWord = tier === "male" ? "그루밍 습관" : "메이크업 습관";
   const photoMoodParen = tier === "male" ? "(헤어, 옷 색감, 전체 무드)" : "(헤어, 메이크업, 옷 색감, 전체 무드)";
+  // Male reports must reference the male mood taxonomy (댄디/미니멀/...),
+  // not the female one (청순 자연형/고급 도시형/...) — sharing MOOD_CANDIDATES
+  // across both tiers was why male report bodies described a female mood.
+  const moodCandidateList = tier === "male" ? MALE_MOOD_CANDIDATES : MOOD_CANDIDATES;
 
   return `당신은 FACEMOOD의 퍼스널 이미지 무드 리포트를 작성하는 AI입니다.
 
@@ -168,8 +176,8 @@ FACEMOOD는 사용자가 입력한 기본 정보, 설문 답변, 업로드한 �
 있게 느껴지는 말투로 작성하세요. 다만 너무 가볍거나 유치하지 않게, "뷰티 리포트 + 이미지
 컨설팅 + 스타일 가이드" 느낌으로 쓰세요.
 
-8. recommendedMood와 subMood, 추구미 관련 언급은 반드시 아래 8개 후보 중에서만 선택하세요:
-${MOOD_CANDIDATES.map((m, i) => `${i + 1}. ${m}`).join("\n")}
+8. recommendedMood와 subMood, 추구미 관련 언급은 반드시 아래 ${moodCandidateList.length}개 후보 중에서만 선택하세요:
+${moodCandidateList.map((m, i) => `${i + 1}. ${m}`).join("\n")}
 
 9. 결과는 반드시 요청된 JSON 스키마에 맞춰 작성하세요. 각 챕터는 "body"(본문 전체, 문단 구분은
 줄바꿈 두 번)뿐 아니라 아래 필드도 함께 채워야 합니다. 제목은 별도로 만들지 마세요 (이미 정해져
@@ -317,7 +325,7 @@ const PREMIUM_LAYOUT_REQUIRED = [
   "checklist",
 ];
 
-function chapterSchema(key: ReportChapterKey) {
+function chapterSchema(key: ReportChapterKey, tier: ReportTierName) {
   if (key === "faceShapeAnalysis") {
     return {
       type: "object",
@@ -341,13 +349,22 @@ function chapterSchema(key: ReportChapterKey) {
     };
   }
   if (key === "hairGuide") {
+    // Male reports must pick from the male hairstyle photo set
+    // (MALE_HAIR_STYLE_CANDIDATES) — forcing the female enum here was why
+    // male hairGuide chapters showed a female hairstyle photo.
     return {
       type: "object",
       additionalProperties: false,
       required: [...PREMIUM_LAYOUT_REQUIRED, "type"],
       properties: {
         ...PREMIUM_LAYOUT_PROPERTIES,
-        type: { type: "string", enum: [...HAIR_STYLE_CANDIDATES] },
+        type: {
+          type: "string",
+          enum:
+            tier === "male"
+              ? [...MALE_HAIR_STYLE_CANDIDATES]
+              : [...HAIR_STYLE_CANDIDATES],
+        },
       },
     };
   }
@@ -370,12 +387,14 @@ function chapterSchema(key: ReportChapterKey) {
   };
 }
 
-function buildGroupSchema(group: ReportChapterKey[]) {
+function buildGroupSchema(group: ReportChapterKey[], tier: ReportTierName) {
   return {
     type: "object",
     additionalProperties: false,
     required: group,
-    properties: Object.fromEntries(group.map((key) => [key, chapterSchema(key)])),
+    properties: Object.fromEntries(
+      group.map((key) => [key, chapterSchema(key, tier)]),
+    ),
   } as const;
 }
 
@@ -475,7 +494,7 @@ async function generateChapterGroup(
         json_schema: {
           name: `report_chapters_${group.join("_")}`,
           strict: true,
-          schema: buildGroupSchema(group),
+          schema: buildGroupSchema(group, tier),
         },
       },
     }),
@@ -575,8 +594,12 @@ export async function POST(request: NextRequest) {
     // preview instead of asking the AI to pick them — no extra cost, and
     // guarantees the paid report visually matches what the user already
     // saw. Falls back to a fresh rule-based computation if the client
-    // didn't send its personalized preview along.
-    const visuals = previewResult ?? buildPreviewResult(answers);
+    // didn't send its personalized preview along — male users always hit
+    // this fallback since they skip /result (and its free preview) entirely,
+    // so it must build male visuals, not the female default.
+    const visuals =
+      previewResult ??
+      (tier === "male" ? buildMalePreviewResult(answers) : buildPreviewResult(answers));
 
     const report: FullReport = {
       ...chapters,
@@ -591,7 +614,10 @@ export async function POST(request: NextRequest) {
         visuals.animalType ??
         null,
       hairStyleType:
-        (merged.hairGuide?.type as HairStyleCandidate | undefined) ?? null,
+        (merged.hairGuide?.type as
+          | HairStyleCandidate
+          | MaleHairStyleCandidate
+          | undefined) ?? null,
       makeupStyleType:
         (merged.makeupGuide?.type as MakeupStyleCandidate | undefined) ?? null,
       tier,

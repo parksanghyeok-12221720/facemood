@@ -901,7 +901,7 @@ export type FullReport = {
   colorHint: PreviewResult["colorHint"];
   faceShapeType?: FaceShapeCandidate | null;
   animalType?: AnimalTypeCandidate | null;
-  hairStyleType?: HairStyleCandidate | null;
+  hairStyleType?: HairStyleCandidate | MaleHairStyleCandidate | null;
   makeupStyleType?: MakeupStyleCandidate | null;
   // Which chapter list generated this report — /report uses this to pick
   // REPORT_CHAPTERS vs MALE_REPORT_CHAPTERS for the TOC/section numbering.
@@ -1188,6 +1188,349 @@ export function buildPreviewResult(
     // The free preview never analyzes the photo (no OpenAI call), so it
     // has no way to classify face shape/animal type — only the paid
     // report (after checkout) fills these in.
+    faceShapeType: null,
+    animalType: null,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Male report visuals — a parallel system to MOOD_CANDIDATES/MOOD_PROFILES
+// above. Male users answer a completely different moodDirection question
+// (see app/test's maleSteps) and skip the free preview entirely, but the
+// paid report still needs mood-matched hero/hair photos and a
+// male-appropriate color hint. Reusing buildPreviewResult() for male tier
+// was the bug that made every male report render with female content and
+// photos: pickRecommendedMood() never matched any male answer string, so
+// it silently fell back to "청순 자연형" every time.
+// ---------------------------------------------------------------------------
+
+export const MALE_MOOD_CANDIDATES = [
+  "댄디",
+  "미니멀",
+  "시티보이",
+  "스트릿",
+  "클래식",
+  "모던",
+] as const;
+
+export type MaleMoodCandidate = (typeof MALE_MOOD_CANDIDATES)[number];
+
+export const MALE_HAIR_STYLE_CANDIDATES = [
+  "가르마펌",
+  "시스루펌",
+  "빈티지펌",
+  "세미리프컷",
+  "슬릭댄디컷",
+  "슬릭백",
+  "소프트레이어컷",
+  "포마드 리젠트",
+  "셀릭컷",
+  "포인펌",
+  "시스루포인펌",
+  "히피펌",
+  "스왈로펌",
+  "빈티지펌2",
+  "세미리프펌",
+  "텍스처컷",
+  "미디엄울프컷",
+  "시스루댄디컷",
+] as const;
+
+export type MaleHairStyleCandidate = (typeof MALE_HAIR_STYLE_CANDIDATES)[number];
+
+// AI picks one of the names above for the male hairGuide chapter's "type"
+// field — same mechanism as the female HAIR_STYLE_IMAGES.
+export const MALE_HAIR_STYLE_IMAGES: Record<MaleHairStyleCandidate, string> = {
+  가르마펌: "/mood/hair-male/가르마펌.png",
+  시스루펌: "/mood/hair-male/시스루펌.png",
+  빈티지펌: "/mood/hair-male/빈티지펌.png",
+  세미리프컷: "/mood/hair-male/세미리프컷.png",
+  슬릭댄디컷: "/mood/hair-male/슬릭댄디컷.png",
+  슬릭백: "/mood/hair-male/슬릭백.png",
+  소프트레이어컷: "/mood/hair-male/소프트레이어컷.png",
+  "포마드 리젠트": "/mood/hair-male/포마드 리젠트.png",
+  셀릭컷: "/mood/hair-male/셀릭컷.png",
+  포인펌: "/mood/hair-male/포인펌.png",
+  시스루포인펌: "/mood/hair-male/시스루포인펌.png",
+  히피펌: "/mood/hair-male/히피펌.png",
+  스왈로펌: "/mood/hair-male/스왈로펌.png",
+  빈티지펌2: "/mood/hair-male/빈티지펌2.png",
+  세미리프펌: "/mood/hair-male/세미리프펌.png",
+  텍스처컷: "/mood/hair-male/텍스처컷.png",
+  미디엄울프컷: "/mood/hair-male/미디엄울프컷.png",
+  시스루댄디컷: "/mood/hair-male/시스루댄디컷.png",
+};
+
+// Every reference photo prepared per male mood in public/mood/cards-male —
+// same 12-photo set used by /detail-male's mood cards, paired up two per
+// mood so the report's several hero-style chapters can vary the photo
+// instead of repeating the same one.
+const MALE_MOOD_HERO_GALLERY: Record<MaleMoodCandidate, string[]> = {
+  댄디: ["/mood/cards-male/댄디st.png", "/mood/cards-male/남친룩st.png"],
+  미니멀: [
+    "/mood/cards-male/미니멀st.png",
+    "/mood/cards-male/콰이어트 럭셔리st.png",
+  ],
+  시티보이: ["/mood/cards-male/시티보이st.png", "/mood/cards-male/소년미st.png"],
+  스트릿: ["/mood/cards-male/스트릿st.png", "/mood/cards-male/아이돌st.png"],
+  클래식: [
+    "/mood/cards-male/클래식st.png",
+    "/mood/cards-male/너드_프레피st.png",
+  ],
+  모던: ["/mood/cards-male/모드st.png", "/mood/cards-male/빈티지st.png"],
+};
+
+const MALE_HAIR_IMAGES = Object.values(MALE_HAIR_STYLE_IMAGES);
+
+function imagesForMaleMood(
+  mood: MaleMoodCandidate,
+  subMood: MaleMoodCandidate,
+): PreviewResult["images"] {
+  const moodCount = MALE_MOOD_CANDIDATES.length;
+  const combinedIndex =
+    MALE_MOOD_CANDIDATES.indexOf(mood) * moodCount +
+    MALE_MOOD_CANDIDATES.indexOf(subMood);
+  const heroGallery = MALE_MOOD_HERO_GALLERY[mood];
+  return {
+    hero: heroGallery[0],
+    heroGallery,
+    hair: MALE_HAIR_IMAGES[combinedIndex % MALE_HAIR_IMAGES.length],
+    // Male reports never include a makeupGuide chapter, so this is never
+    // actually read — left empty rather than pointing at an unrelated photo.
+    makeup: "",
+  };
+}
+
+const MALE_COLOR_CAUTION =
+  "사진상 컬러 무드 힌트는 확정적인 퍼스널컬러 진단이 아니라, 현재 사진의 조명과 색감 기준으로 제공되는 참고 의견입니다.";
+
+type MaleMoodProfile = {
+  subMood: MaleMoodCandidate;
+  tags: string[];
+  oneLineSummary: string;
+  currentMood: string[];
+  upgradePoints: string[];
+  colorHint: PreviewResult["colorHint"];
+};
+
+const MALE_MOOD_PROFILES: Record<MaleMoodCandidate, MaleMoodProfile> = {
+  댄디: {
+    subMood: "클래식",
+    tags: ["#댄디", "#클린컬러", "#단정헤어", "#포인트아이템"],
+    oneLineSummary:
+      "사진상으로는 단정하고 깔끔한 인상이 먼저 느껴져요. 정돈된 헤어와 클린한 컬러를 더하면 댄디한 무드가 더 살아날 수 있어요.",
+    currentMood: ["단정함", "깔끔함", "차분함"],
+    upgradePoints: ["조금 더 정돈된 헤어라인", "무채색 중심의 클린한 컬러", "슬림한 핏의 아우터"],
+    colorHint: {
+      title: "사진상 컬러 무드 힌트",
+      summary: "사진상으로는 정돈된 톤이 이미지를 더 단정하게 보여줄 가능성이 높아요.",
+      description:
+        "네이비, 화이트, 카멜처럼 정돈된 톤은 현재 이미지의 단정한 분위기를 더 살려줄 수 있어요. 반대로 너무 화려하거나 채도 높은 색감은 원하는 무드보다 산만해 보일 수 있습니다.",
+      palette: [
+        { name: "네이비", hex: "#2F3A4C", description: "단정하고 신뢰감 있는 인상을 만드는 컬러" },
+        { name: "화이트", hex: "#F5F5F3", description: "깔끔하고 정돈된 분위기를 더하는 컬러" },
+        { name: "카멜", hex: "#B08A5A", description: "부드럽고 따뜻한 무게감을 더하는 컬러" },
+        { name: "차콜", hex: "#4A4A4A", description: "차분하고 세련된 포인트를 더하는 컬러" },
+      ],
+      caution: MALE_COLOR_CAUTION,
+    },
+  },
+  미니멀: {
+    subMood: "모던",
+    tags: ["#미니멀", "#뉴트럴톤", "#담백한핏", "#슬릭헤어"],
+    oneLineSummary:
+      "사진상으로는 담백하고 절제된 분위기가 먼저 느껴져요. 불필요한 디테일을 덜어내면 미니멀한 무드가 더 살아날 수 있어요.",
+    currentMood: ["담백함", "절제됨", "차분함"],
+    upgradePoints: ["로고·패턴 없는 기본 아이템", "뉴트럴 톤 배색", "슬릭하게 정리한 헤어"],
+    colorHint: {
+      title: "사진상 컬러 무드 힌트",
+      summary: "사진상으로는 무채색에 가까운 톤이 이미지를 더 담백하게 보여줄 가능성이 높아요.",
+      description:
+        "그레이지, 화이트, 베이지처럼 무채색에 가까운 톤은 현재 이미지의 담백한 분위기를 더 살려줄 수 있어요. 반대로 패턴이 많거나 채도 높은 색감은 원하는 무드보다 복잡해 보일 수 있습니다.",
+      palette: [
+        { name: "그레이지", hex: "#B9B0A8", description: "절제되고 담백한 인상을 만드는 컬러" },
+        { name: "화이트", hex: "#F5F5F3", description: "깨끗하고 미니멀한 분위기를 더하는 컬러" },
+        { name: "베이지", hex: "#D8CBB8", description: "편안하고 자연스러운 톤을 더하는 컬러" },
+        { name: "블랙", hex: "#1C1C1C", description: "무게감 있는 포인트를 더하는 컬러" },
+      ],
+      caution: MALE_COLOR_CAUTION,
+    },
+  },
+  시티보이: {
+    subMood: "스트릿",
+    tags: ["#시티보이", "#레이어드", "#여유핏", "#감각적무드"],
+    oneLineSummary:
+      "사진상으로는 편안하면서도 감각적인 분위기가 먼저 느껴져요. 여유로운 실루엣을 더하면 시티보이 무드가 더 살아날 수 있어요.",
+    currentMood: ["편안함", "감각적임", "여유로움"],
+    upgradePoints: ["레이어드 스타일링", "뉴트럴 톤 코디", "자연스러운 텍스처 헤어"],
+    colorHint: {
+      title: "사진상 컬러 무드 힌트",
+      summary: "사진상으로는 자연스러운 톤이 이미지를 더 편안하게 보여줄 가능성이 높아요.",
+      description:
+        "카키, 브라운, 아이보리처럼 자연스러운 톤은 현재 이미지의 편안한 분위기를 더 살려줄 수 있어요. 반대로 너무 각지고 딱딱한 색 조합은 원하는 무드보다 경직돼 보일 수 있습니다.",
+      palette: [
+        { name: "카키", hex: "#6B6B4A", description: "편안하고 감각적인 인상을 만드는 컬러" },
+        { name: "브라운", hex: "#8A5A3C", description: "따뜻하고 자연스러운 분위기를 더하는 컬러" },
+        { name: "아이보리", hex: "#F2E9D8", description: "부드럽고 편안한 톤을 더하는 컬러" },
+        { name: "그레이", hex: "#8C8C8C", description: "차분한 균형감을 더하는 컬러" },
+      ],
+      caution: MALE_COLOR_CAUTION,
+    },
+  },
+  스트릿: {
+    subMood: "시티보이",
+    tags: ["#스트릿", "#오버핏", "#포인트아이템", "#자유분방"],
+    oneLineSummary:
+      "사진상으로는 자유롭고 개성 있는 분위기가 먼저 느껴져요. 오버핏 실루엣과 포인트 아이템을 더하면 스트릿 무드가 더 살아날 수 있어요.",
+    currentMood: ["개성 있음", "자유분방함", "트렌디함"],
+    upgradePoints: ["오버핏 아이템 활용", "포인트 컬러 매치", "볼륨감 있는 헤어 스타일링"],
+    colorHint: {
+      title: "사진상 컬러 무드 힌트",
+      summary: "사진상으로는 대비가 또렷한 색감이 이미지를 더 개성 있게 보여줄 가능성이 높아요.",
+      description:
+        "블랙, 카키에 포인트 컬러를 더한 조합은 현재 이미지의 개성 있는 분위기를 더 살려줄 수 있어요. 반대로 너무 무난하고 톤이 밋밋한 색감은 원하는 무드보다 심심해 보일 수 있습니다.",
+      palette: [
+        { name: "블랙", hex: "#1C1C1C", description: "개성 있는 무드의 기본이 되는 컬러" },
+        { name: "카키", hex: "#6B6B4A", description: "자유로운 분위기를 더하는 컬러" },
+        { name: "오렌지", hex: "#D97B3F", description: "볼드한 포인트를 만드는 컬러" },
+        { name: "화이트", hex: "#F5F5F3", description: "전체 톤을 정리해주는 컬러" },
+      ],
+      caution: MALE_COLOR_CAUTION,
+    },
+  },
+  클래식: {
+    subMood: "댄디",
+    tags: ["#클래식", "#포멀무드", "#기본템", "#남성적인분위기"],
+    oneLineSummary:
+      "사진상으로는 단정하고 포멀한 분위기가 먼저 느껴져요. 기본에 충실한 아이템을 더하면 클래식한 무드가 더 살아날 수 있어요.",
+    currentMood: ["단정함", "신뢰감", "차분함"],
+    upgradePoints: ["셔츠·재킷 중심의 코디", "정갈하게 정리한 헤어라인", "무게감 있는 다크톤 컬러"],
+    colorHint: {
+      title: "사진상 컬러 무드 힌트",
+      summary: "사진상으로는 무게감 있는 톤이 이미지를 더 단정하게 보여줄 가능성이 높아요.",
+      description:
+        "네이비, 차콜, 화이트처럼 무게감 있는 톤은 현재 이미지의 단정한 분위기를 더 살려줄 수 있어요. 반대로 너무 화사하거나 캐주얼한 색감은 원하는 무드보다 가벼워 보일 수 있습니다.",
+      palette: [
+        { name: "네이비", hex: "#2F3A4C", description: "포멀하고 신뢰감 있는 인상을 만드는 컬러" },
+        { name: "차콜", hex: "#4A4A4A", description: "단정하고 무게감 있는 분위기를 더하는 컬러" },
+        { name: "화이트", hex: "#F5F5F3", description: "깔끔한 대비를 만드는 컬러" },
+        { name: "버건디", hex: "#5C2A3A", description: "고급스러운 포인트를 더하는 컬러" },
+      ],
+      caution: MALE_COLOR_CAUTION,
+    },
+  },
+  모던: {
+    subMood: "미니멀",
+    tags: ["#모던", "#무채색톤", "#날렵한실루엣", "#시크한무드"],
+    oneLineSummary:
+      "사진상으로는 날렵하고 시크한 분위기가 먼저 느껴져요. 무채색 톤과 슬림한 실루엣을 더하면 모던한 무드가 더 살아날 수 있어요.",
+    currentMood: ["시크함", "세련됨", "절제됨"],
+    upgradePoints: ["블랙 중심의 무채색 코디", "슬림한 실루엣", "슬릭하게 정리한 헤어"],
+    colorHint: {
+      title: "사진상 컬러 무드 힌트",
+      summary: "사진상으로는 무채색 계열이 이미지를 더 시크하게 보여줄 가능성이 높아요.",
+      description:
+        "블랙, 차콜, 실버처럼 무채색 계열의 톤은 현재 이미지의 시크한 분위기를 더 살려줄 수 있어요. 반대로 너무 밝고 따뜻한 색감은 원하는 무드보다 부드러워 보일 수 있습니다.",
+      palette: [
+        { name: "블랙", hex: "#1C1C1C", description: "시크한 무드의 기본이 되는 컬러" },
+        { name: "차콜", hex: "#4A4A4A", description: "절제된 무게감을 더하는 컬러" },
+        { name: "실버", hex: "#B9BEC2", description: "날렵하고 세련된 포인트를 더하는 컬러" },
+        { name: "화이트", hex: "#F5F5F3", description: "깔끔한 대비를 만드는 컬러" },
+      ],
+      caution: MALE_COLOR_CAUTION,
+    },
+  },
+};
+
+const SHARED_MALE_MISSIONS = [
+  "상의는 무채색 위주로 깔끔하게 정리해보기",
+  "액세서리는 톤을 하나로 맞춰서 과하지 않게 매치해보기",
+  "머리는 이마와 헤어라인이 정리되도록 스타일링하기",
+];
+
+const SHARED_MALE_HINTS: PreviewResult["hints"] = {
+  styling: {
+    title: "스타일링 힌트",
+    content:
+      "무채색과 뉴트럴 톤을 중심으로, 핏이 정돈된 아이템이 오늘의 추구미와 잘 맞을 수 있어요.",
+  },
+  hair: {
+    title: "헤어 힌트",
+    content:
+      "이마 라인과 옆머리를 깔끔하게 정리하는 방향이 현재 무드와 잘 어울릴 가능성이 높아요.",
+  },
+  makeup: {
+    // 남성 리포트에는 메이크업 챕터가 없지만 PreviewResult.hints는 3개
+    // 필드 모두 필수라 그루밍 팁으로 대체 — 어차피 male 리포트 렌더러는
+    // 이 필드를 읽지 않는다 (makeupGuide 챕터 자체가 생성되지 않음).
+    title: "그루밍 힌트",
+    content:
+      "과하지 않은 피부 정돈과 눈썹 정리 정도로도 전체 인상이 훨씬 깔끔해질 수 있어요.",
+  },
+};
+
+const SHARED_MALE_LOCKED_SECTIONS = [
+  "추천 컬러 팔레트",
+  "어울리는 옷 색감과 실루엣",
+  "헤어 길이 · 헤어라인 · 펌 방향",
+  "액세서리 스타일 방향",
+  "피하면 좋은 스타일 방향",
+  "인스타/데이트/면접용 이미지 전략",
+  "퍼스널컬러 방향 힌트",
+  "피하면 좋은 색감",
+  "옷 색감 적용법",
+  "헤어 컬러 방향",
+  "사진상 얼굴형 분석",
+  "사진상 동물상 분석",
+];
+
+function pickMaleRecommendedMood(
+  answers: Record<string, unknown>,
+): MaleMoodCandidate {
+  const raw = String(answers?.["moodDirection"] ?? "");
+  if (raw.includes("댄디")) return "댄디";
+  if (raw.includes("미니멀")) return "미니멀";
+  if (raw.includes("시티보이")) return "시티보이";
+  if (raw.includes("스트릿")) return "스트릿";
+  if (raw.includes("클래식")) return "클래식";
+  if (raw.includes("모던")) return "모던";
+  return "댄디";
+}
+
+/**
+ * Male-tier equivalent of buildPreviewResult() — used by /api/generate-report
+ * as the visuals fallback when no client-side previewResult was sent (always
+ * the case for male tier, since male users skip /result entirely).
+ */
+export function buildMalePreviewResult(
+  answers: Record<string, unknown>,
+): PreviewResult {
+  const recommendedMood = pickMaleRecommendedMood(answers);
+  const profile = MALE_MOOD_PROFILES[recommendedMood];
+
+  const others = MALE_MOOD_CANDIDATES.filter(
+    (mood) => mood !== recommendedMood && mood !== profile.subMood,
+  );
+  const order: MaleMoodCandidate[] = [recommendedMood, profile.subMood, ...others];
+  const scores = [84, 71, 63, 55, 47, 40];
+  const moodSync = order.map((mood, index) => ({
+    mood,
+    score: scores[index] ?? 30,
+  }));
+
+  return {
+    recommendedMood,
+    subMood: profile.subMood,
+    oneLineSummary: profile.oneLineSummary,
+    tags: profile.tags,
+    moodSync,
+    colorHint: profile.colorHint,
+    currentMood: profile.currentMood,
+    upgradePoints: profile.upgradePoints,
+    missions: SHARED_MALE_MISSIONS,
+    hints: SHARED_MALE_HINTS,
+    lockedSections: SHARED_MALE_LOCKED_SECTIONS,
+    images: imagesForMaleMood(recommendedMood, profile.subMood),
     faceShapeType: null,
     animalType: null,
   };
