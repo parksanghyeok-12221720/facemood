@@ -14,10 +14,9 @@ type Service = {
 };
 
 // Reuses the two hero photos already on hand (home-card-mood.png /
-// home-card-match.png) — the sub-consulting items (헤어/메이크업/퍼스널
-// 컨설팅, 퍼스널컬러) don't have dedicated photos yet, so they borrow the
-// mood-analysis one as a placeholder until real product shots exist. Same
-// for the 남성 items, which reuse home-card-mood-male.png.
+// home-card-match.png) for 토탈 and 남성 — the three single-item cards
+// below each point at their own dedicated file under public/services/,
+// dropped in directly rather than sharing the mood-analysis placeholder.
 const SERVICES: Service[] = [
   {
     title: "토탈 스타일 컨설팅",
@@ -29,7 +28,7 @@ const SERVICES: Service[] = [
     title: "헤어 컨설팅",
     subtitle: "얼굴형부터 어울리는 헤어 방향까지",
     href: "/detail#section-hair",
-    image: "/home-card-mood.png",
+    image: "/services/hair.png",
     badge: "NEW",
     price: 19900,
   },
@@ -37,7 +36,7 @@ const SERVICES: Service[] = [
     title: "메이크업 컨설팅",
     subtitle: "원하는 무드에 맞춘 메이크업 방향 제안",
     href: "/detail#section-makeup",
-    image: "/home-card-mood.png",
+    image: "/services/makeup.png",
     badge: "NEW",
     price: 19900,
   },
@@ -45,7 +44,7 @@ const SERVICES: Service[] = [
     title: "퍼스널컬러+코디",
     subtitle: "사진상 어울리는 컬러 무드와 코디 방향 제안",
     href: "/detail#section-color",
-    image: "/home-card-mood.png",
+    image: "/services/color.png",
     badge: "NEW",
     price: 19900,
   },
