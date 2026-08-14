@@ -77,7 +77,7 @@ export default function Home() {
             <span className="flex h-16 w-16 items-center justify-center rounded-full bg-violet-50 text-violet-600">
               <FaceIcon />
             </span>
-            <span className="text-xs font-semibold text-black">추구미 찾기</span>
+            <span className="text-xs font-semibold text-black">스타일 컨설팅</span>
           </Link>
           <Link href="/match/upload" className="flex flex-col items-center gap-2">
             <span className="flex h-16 w-16 items-center justify-center rounded-full bg-violet-50 text-violet-600">

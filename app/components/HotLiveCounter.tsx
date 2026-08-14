@@ -58,21 +58,35 @@ export default function HotLiveCounter() {
   return (
     <span className="inline-flex items-center gap-1 text-base font-extrabold tracking-tight text-orange-500 sm:text-lg">
       <span className="text-lg sm:text-xl">🔥</span>
-      <span className="inline-flex items-baseline">
+      <span className="inline-flex items-baseline leading-none">
         {formatted.split("").map((char, index) => {
           const prevChar = prevPadded[index];
           if (char === prevChar) {
-            return <span key={`d-${index}`}>{char}</span>;
+            return (
+              <span key={`d-${index}`} className="inline-block leading-none">
+                {char}
+              </span>
+            );
           }
           return (
             <span
               key={`d-${index}-${count}`}
-              className="relative inline-block h-[1em] w-[0.62em] overflow-hidden align-baseline"
+              // leading-none matters here: the parent's text-lg utility sets
+              // a 28px line-height at an 18px font-size, but this box is
+              // pinned to exactly h-[1em] (18px) — without leading-none the
+              // glyph renders in a 28px line box and overflow-hidden crops
+              // ~10px off it, which read as a clipped/broken digit.
+              className="relative inline-block h-[1em] w-[0.62em] overflow-hidden align-baseline leading-none"
             >
-              <span className="absolute inset-0 animate-digit-roll-out" aria-hidden="true">
+              <span
+                className="absolute inset-0 flex items-center justify-center animate-digit-roll-out"
+                aria-hidden="true"
+              >
                 {prevChar}
               </span>
-              <span className="absolute inset-0 animate-digit-roll-in">{char}</span>
+              <span className="absolute inset-0 flex items-center justify-center animate-digit-roll-in">
+                {char}
+              </span>
             </span>
           );
         })}
