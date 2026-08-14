@@ -126,19 +126,19 @@ function GeneratingState() {
   return (
     <main
       className="flex min-h-screen flex-col items-center justify-center px-6 text-center"
-      style={{ backgroundColor: "#FAF9F6", color: "#1C1B22" }}
+      style={{ backgroundColor: "#FAF6EF", color: "#1A1613" }}
     >
       <Container maxWidth="max-w-sm" className="flex flex-col items-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-[#F1EDFB] border-t-[#6D4FC4]" />
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-[#F2ECFA] border-t-[#4E2A82]" />
 
         <div className="mt-6 w-full">
-          <div className="h-2 w-full overflow-hidden rounded-full bg-[#F1EDFB]">
+          <div className="h-2 w-full overflow-hidden rounded-full bg-[#F2ECFA]">
             <div
-              className="h-full rounded-full bg-[#6D4FC4] transition-all duration-700 ease-out"
+              className="h-full rounded-full bg-[#4E2A82] transition-all duration-700 ease-out"
               style={{ width: `${progress}%` }}
             />
           </div>
-          <p className="mt-2 text-xs font-semibold text-[#6D4FC4]">
+          <p className="mt-2 text-xs font-semibold text-[#4E2A82]">
             {progress}%
           </p>
         </div>
@@ -146,7 +146,7 @@ function GeneratingState() {
         <p className="mt-5 text-sm font-semibold">
           {GENERATING_STAGES[stageIndex]}
         </p>
-        <p className="mt-1 text-xs text-[#8A8580]">보통 1~2분 정도 걸려요.</p>
+        <p className="mt-1 text-xs text-[#726B62]">보통 1~2분 정도 걸려요.</p>
 
         <div className="mt-6 w-full rounded-[12px] border border-red-100 bg-red-50 px-4 py-3.5">
           <p className="text-xs font-bold text-red-500">화면을 나가지 마세요</p>
@@ -173,17 +173,17 @@ function ErrorState({
   return (
     <main
       className="flex min-h-screen flex-col items-center justify-center px-6 text-center"
-      style={{ backgroundColor: "#FAF9F6", color: "#1C1B22" }}
+      style={{ backgroundColor: "#FAF6EF", color: "#1A1613" }}
     >
       <p className="text-sm font-semibold">{message}</p>
       <button
         type="button"
         onClick={onRetry}
-        className="mt-6 flex h-[52px] items-center justify-center rounded-[12px] bg-[#6D4FC4] px-8 text-sm font-semibold text-white transition-colors hover:bg-[#4A3380]"
+        className="mt-6 flex h-[52px] items-center justify-center rounded-[12px] bg-[#4E2A82] px-8 text-sm font-semibold text-white transition-colors hover:bg-[#3A1F63]"
       >
         다시 시도
       </button>
-      <Link href="/upload" className="mt-4 text-xs text-[#8A8580] underline">
+      <Link href="/upload" className="mt-4 text-xs text-[#726B62] underline">
         처음부터 다시 진행하기
       </Link>
     </main>
@@ -204,7 +204,7 @@ function PasswordGate({
   return (
     <main
       className="flex min-h-screen flex-col items-center justify-center px-6 text-center"
-      style={{ backgroundColor: "#FAF9F6", color: "#1C1B22" }}
+      style={{ backgroundColor: "#FAF6EF", color: "#1A1613" }}
     >
       <p className="text-sm font-semibold">
         비밀번호를 입력하면 리포트를 다시 볼 수 있어요.
@@ -215,18 +215,18 @@ function PasswordGate({
         onChange={(event) => setPassword(event.target.value)}
         placeholder="비밀번호"
         disabled={isVerifying}
-        className="mt-5 h-[52px] w-full max-w-xs rounded-[12px] border border-[#E7E2D9] px-4 text-center text-sm outline-none focus:border-[#6D4FC4]"
+        className="mt-5 h-[52px] w-full max-w-xs rounded-[12px] border border-[#E4DACB] px-4 text-center text-sm outline-none focus:border-[#4E2A82]"
       />
       {error && <p className="mt-2 text-xs text-red-500">{error}</p>}
       <button
         type="button"
         onClick={() => onSubmit(password)}
         disabled={isVerifying || password.length === 0}
-        className="mt-5 flex h-[52px] items-center justify-center rounded-[12px] bg-[#6D4FC4] px-8 text-sm font-semibold text-white transition-colors hover:bg-[#4A3380] disabled:opacity-50"
+        className="mt-5 flex h-[52px] items-center justify-center rounded-[12px] bg-[#4E2A82] px-8 text-sm font-semibold text-white transition-colors hover:bg-[#3A1F63] disabled:opacity-50"
       >
         {isVerifying ? "확인 중..." : "리포트 확인하기"}
       </button>
-      <Link href="/upload" className="mt-4 text-xs text-[#8A8580] underline">
+      <Link href="/upload" className="mt-4 text-xs text-[#726B62] underline">
         처음부터 다시 진행하기
       </Link>
     </main>
@@ -356,8 +356,30 @@ function renderInlineMarkdown(text: string): React.ReactNode {
   );
 }
 
+// Renders the first paragraph's opening character oversized and floated,
+// like a magazine feature's drop cap — the rest of that paragraph flows
+// around it normally. Splitting on the raw character (not the
+// markdown-rendered output) keeps this simple; **bold** markers essentially
+// never open a paragraph in practice, so this doesn't need to handle that.
+function DropCapParagraph({ text }: { text: string }) {
+  const firstChar = text.slice(0, 1);
+  const rest = text.slice(1);
+  return (
+    <p className="mb-5 text-[16.5px] leading-[1.85] text-[var(--ink)] last:mb-0">
+      <span
+        className="float-left mr-2.5 mt-1 text-[54px] font-semibold leading-[0.78]"
+        style={{ fontFamily: "'Noto Serif KR', serif", color: "var(--plum)" }}
+      >
+        {firstChar}
+      </span>
+      {renderInlineMarkdown(rest)}
+    </p>
+  );
+}
+
 function ChapterBody({ text }: { text: string }) {
   const blocks = parseChapterBlocks(text);
+  const firstParagraphIndex = blocks.findIndex((b) => b.type === "paragraph");
 
   return (
     <div className="flex flex-col">
@@ -404,6 +426,9 @@ function ChapterBody({ text }: { text: string }) {
             </blockquote>
           );
         }
+        if (index === firstParagraphIndex) {
+          return <DropCapParagraph key={index} text={block.content} />;
+        }
         return (
           <p
             key={index}
@@ -439,21 +464,27 @@ function TableOfContents({
   chapters: (typeof REPORT_CHAPTERS)[number][];
 }) {
   return (
-    <Container className="reveal mt-16">
-      <span className="block text-[11px] font-semibold tracking-[0.16em] text-[var(--ink-soft)]">
-        TABLE OF CONTENTS
-      </span>
-      <h2
-        className="mt-2 text-[28px] font-semibold leading-tight text-[var(--ink)]"
-        style={{ fontFamily: "'Noto Serif KR', serif" }}
-      >
-        리포트 구성
-      </h2>
-      <p className="mb-7 mt-2.5 text-[15px] leading-relaxed text-[var(--ink-soft)]">
-        전체 {chapters.length}개 챕터로 이어집니다. 원하는 챕터를 눌러 바로
-        이동할 수 있어요.
+    <Container maxWidth="max-w-4xl" className="reveal mt-20">
+      <div className="flex items-baseline justify-between border-b-2 border-[var(--ink)] pb-4">
+        <div>
+          <span className="block text-[11px] font-semibold tracking-[0.2em] text-[var(--brass)]">
+            CONTENTS
+          </span>
+          <h2
+            className="mt-1.5 text-[30px] font-semibold leading-tight text-[var(--ink)]"
+            style={{ fontFamily: "'Noto Serif KR', serif" }}
+          >
+            리포트 목차
+          </h2>
+        </div>
+        <span className="hidden shrink-0 text-[12px] tracking-[0.1em] text-[var(--ink-soft)] sm:block">
+          전체 {chapters.length}개 챕터
+        </span>
+      </div>
+      <p className="mb-2 mt-3 text-[14px] leading-relaxed text-[var(--ink-soft)]">
+        원하는 챕터를 눌러 바로 이동할 수 있어요.
       </p>
-      <nav className="border-t border-[var(--hairline)]" aria-label="리포트 챕터 목차">
+      <nav aria-label="리포트 챕터 목차">
         {chapters.map((chapter) => (
           <a
             key={chapter.key}
@@ -462,18 +493,29 @@ function TableOfContents({
               event.preventDefault();
               scrollToChapter(chapter.key);
             }}
-            className="flex flex-col gap-1 border-b border-[var(--hairline)] py-4 no-underline transition-colors hover:bg-[var(--plum-tint)]/40"
+            className="group flex items-baseline gap-4 border-b border-[var(--hairline)] py-4 no-underline transition-colors hover:bg-[var(--plum-tint)]/40"
           >
-            <div className="flex items-baseline gap-3">
-              <span className="min-w-[26px] shrink-0 text-[13px] font-semibold text-[var(--plum)]">
-                {chapter.number}
-              </span>
-              <span className="flex-1 break-keep text-[15px] font-medium leading-snug text-[var(--ink)]">
-                {chapter.title}
-              </span>
-            </div>
-            <span className="break-keep pl-[38px] text-xs text-[var(--ink-soft)]">
-              {chapter.points.slice(0, 2).join(" · ")}
+            <span
+              className="w-[40px] shrink-0 text-[22px] font-semibold leading-none text-[var(--plum)]"
+              style={{ fontFamily: "'Noto Serif KR', serif" }}
+            >
+              {chapter.number}
+            </span>
+            <span className="flex-1 break-keep text-[15.5px] font-medium leading-snug text-[var(--ink)]">
+              {chapter.title}
+            </span>
+            <span
+              className="mx-1 hidden flex-1 border-b border-dotted border-[var(--hairline)] translate-y-[-4px] sm:block"
+              aria-hidden="true"
+            />
+            <span className="hidden shrink-0 max-w-[220px] break-keep text-right text-[12px] text-[var(--ink-soft)] sm:block">
+              {chapter.points.slice(0, 1).join("")}
+            </span>
+            <span
+              className="shrink-0 text-[var(--brass)] opacity-0 transition-opacity group-hover:opacity-100"
+              aria-hidden="true"
+            >
+              →
             </span>
           </a>
         ))}
@@ -482,33 +524,29 @@ function TableOfContents({
   );
 }
 
+// A "color story" swatch strip — large blocks of flat color in a row like
+// a magazine's paint/palette feature, instead of small icon-sized circles.
 function PaletteGrid({ palette }: { palette: PreviewResult["colorHint"]["palette"] }) {
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="flex flex-col gap-px overflow-hidden rounded-[4px] border border-[var(--hairline)] sm:flex-row">
       {palette.map((chip) => (
-        <div
-          key={chip.name}
-          className="rounded-[12px] border border-[var(--hairline)] bg-[var(--paper-raised)] p-3"
-        >
-          <div className="flex items-center gap-2">
-            <span
-              className="h-9 w-9 shrink-0 rounded-full border border-black/5"
-              style={{ backgroundColor: chip.hex }}
-            />
-            <div>
-              <p className="text-sm font-semibold text-[var(--ink)]">
-                {chip.name}
-              </p>
-              <p
-                className="text-[10px] tracking-wide text-[var(--ink-soft)]"
-              >
-                {chip.hex}
-              </p>
-            </div>
+        <div key={chip.name} className="flex flex-1 flex-col bg-[var(--paper-raised)]">
+          <div
+            className="h-16 w-full sm:h-24"
+            style={{ backgroundColor: chip.hex }}
+            aria-hidden="true"
+          />
+          <div className="p-3.5">
+            <p className="text-[13.5px] font-semibold text-[var(--ink)]">
+              {chip.name}
+            </p>
+            <p className="mt-0.5 text-[10px] tracking-[0.08em] text-[var(--ink-soft)]">
+              {chip.hex.toUpperCase()}
+            </p>
+            <p className="mt-2 text-[12px] leading-relaxed text-[var(--ink-soft)]">
+              {chip.description}
+            </p>
           </div>
-          <p className="mt-2 text-xs leading-relaxed text-[var(--ink-soft)]">
-            {chip.description}
-          </p>
         </div>
       ))}
     </div>
@@ -527,33 +565,43 @@ const SECTION_EYEBROWS: Record<string, string> = {
 function SectionLabel({ children }: { children: string }) {
   const eyebrow = SECTION_EYEBROWS[children];
   return (
-    <div className="mb-3">
-      {eyebrow && (
-        <span className="block text-[10.5px] font-semibold tracking-[0.16em] text-[var(--ink-soft)]">
-          {eyebrow}
+    <div className="mb-4 flex items-center gap-3">
+      <div>
+        {eyebrow && (
+          <span className="block text-[10.5px] font-semibold tracking-[0.2em] text-[var(--brass)]">
+            {eyebrow}
+          </span>
+        )}
+        <span className="mt-0.5 block text-[13.5px] font-semibold text-[var(--plum-deep)]">
+          {children}
         </span>
-      )}
-      <span className="mt-1 block text-[13px] font-semibold text-[var(--plum-deep)]">
-        {children}
-      </span>
+      </div>
+      <span className="h-px flex-1 bg-[var(--hairline)]" aria-hidden="true" />
     </div>
   );
 }
 
 function Divider() {
-  return <div className="my-7 h-px bg-[var(--hairline)]" aria-hidden="true" />;
+  return <div className="my-8 h-px bg-[var(--hairline)]" aria-hidden="true" />;
 }
 
-// The one-line "diagnosis" — a punchy verdict shown right under the
-// chapter title, before the reader commits to the long-form analysis.
+// The one-line "diagnosis" — rendered as an editorial pull-quote (oversized
+// serif, giant ghost quotation mark) instead of a plum info box, so the
+// verdict reads like a magazine callout rather than a UI alert.
 function DiagnosisLine({ text }: { text: string }) {
   return (
-    <div className="mt-6 flex items-start gap-2.5 rounded-[12px] bg-[var(--plum-tint)] px-4 py-3.5">
+    <div className="relative mt-7 border-l-2 border-[var(--plum)] py-1 pl-6">
       <span
-        className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--plum)]"
+        className="pointer-events-none absolute -left-2 -top-5 select-none text-[64px] leading-none text-[var(--plum)]/15"
+        style={{ fontFamily: "'Noto Serif KR', serif" }}
         aria-hidden="true"
-      />
-      <p className="text-[16px] font-semibold leading-[1.5] text-[var(--ink)] break-keep">
+      >
+        &ldquo;
+      </span>
+      <p
+        className="relative text-[20px] font-medium leading-[1.5] text-[var(--ink)] break-keep sm:text-[22px]"
+        style={{ fontFamily: "'Noto Serif KR', serif" }}
+      >
         {renderInlineMarkdown(text)}
       </p>
     </div>
@@ -566,7 +614,7 @@ function KeywordPills({ items }: { items: string[] }) {
       {items.map((item) => (
         <span
           key={item}
-          className="rounded-full bg-[var(--plum-tint)] px-3.5 py-1.5 text-[13px] font-medium text-[var(--plum-deep)]"
+          className="border border-[var(--plum)]/30 px-3 py-1.5 text-[12.5px] font-medium tracking-[0.02em] text-[var(--plum-deep)]"
         >
           {item}
         </span>
@@ -582,8 +630,11 @@ function SummaryCard({ lines }: { lines: string[] }) {
     <div className="mt-4 rounded-[12px] border border-[var(--hairline)] bg-[var(--paper-raised)] p-5">
       <ol className="flex flex-col gap-3">
         {lines.map((line, index) => (
-          <li key={index} className="flex items-start gap-3">
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--plum)] text-[11px] font-bold text-white">
+          <li key={index} className="flex items-start gap-3.5">
+            <span
+              className="w-4 shrink-0 text-[15px] font-semibold leading-[1.6] text-[var(--brass)]"
+              style={{ fontFamily: "'Noto Serif KR', serif" }}
+            >
               {index + 1}
             </span>
             <p className="text-[14.5px] leading-[1.6] text-[var(--ink)] break-keep">
@@ -644,6 +695,7 @@ function ChapterCard({
   typeValue,
   styleTypeValue,
   heroPickIndex,
+  isReversed,
 }: {
   chapter: (typeof REPORT_CHAPTERS)[number];
   content: ReportChapterContent;
@@ -652,6 +704,10 @@ function ChapterCard({
   typeValue?: string | null;
   styleTypeValue?: HairStyleCandidate | MaleHairStyleCandidate | MakeupStyleCandidate | null;
   heroPickIndex: number;
+  // Alternates which side the photo sits on for photo-led spreads, purely
+  // for visual rhythm — flips every time a photo chapter comes up (see the
+  // photoSpreadCounter in the parent map), not tied to chapter.number.
+  isReversed: boolean;
 }) {
   const visual = CHAPTER_VISUALS[chapter.key];
   // Several chapters share the "hero" visual — cycle through every "st"
@@ -689,102 +745,117 @@ function ChapterCard({
         : ANIMAL_TYPE_IMAGES[typeValue as keyof typeof ANIMAL_TYPE_IMAGES]
       : null;
   const isFinal = chapter.key === "finalChecklist";
+  // A big side-by-side photo spread only for the chapters that actually
+  // have a meaningful hero/hair/makeup photo — everything else (roughly
+  // 12 of 17 chapters) reads as a text-forward editorial page instead, so
+  // the report doesn't overpromise photography it doesn't have.
+  const hasBigPhoto = Boolean(imageSrc) && (visual === "hero" || visual === "hair" || visual === "makeup");
+
+  const textBlocks = (
+    <>
+      {content.diagnosis && <DiagnosisLine text={content.diagnosis} />}
+      {content.keywords && content.keywords.length > 0 && (
+        <KeywordPills items={content.keywords} />
+      )}
+      {content.summary && content.summary.length > 0 && (
+        <SummaryCard lines={content.summary} />
+      )}
+    </>
+  );
 
   return (
     <Container
       id={chapterAnchorId(chapter.key)}
-      maxWidth="max-w-3xl"
-      className="reveal mt-10 scroll-mt-6"
+      maxWidth="max-w-4xl"
+      className="reveal mt-20 scroll-mt-6"
     >
       <div
-        className={`overflow-hidden rounded-[12px] border ${
-          isFinal
-            ? "border-[var(--plum-tint)] bg-[var(--plum-tint)]"
-            : "border-[var(--hairline)] bg-[var(--paper-raised)]"
-        }`}
+        className={`relative border-t-2 pt-7 ${isFinal ? "border-[var(--plum)]" : "border-[var(--ink)]"}`}
       >
-        {imageSrc && (
-          <div className="relative aspect-[4/5] w-full overflow-hidden bg-[var(--plum-tint)] sm:aspect-[16/10]">
-            {/* Blurred, enlarged copy of the same photo fills the space
-                the sharp photo's own aspect ratio leaves empty, instead of
-                showing flat lavender bars beside it. */}
-            <Image
-              src={imageSrc}
-              alt=""
-              aria-hidden="true"
-              fill
-              sizes="(min-width: 768px) 768px, 100vw"
-              className="scale-110 object-cover opacity-40 blur-2xl"
-            />
-            <Image
-              src={imageSrc}
-              alt={chapter.title}
-              fill
-              sizes="(min-width: 768px) 768px, 100vw"
-              className="relative object-contain"
-            />
-          </div>
-        )}
+        {/* Oversized ghost numeral — the report's recurring signature
+            device, doing the job photography can't on the ~12 chapters
+            that don't have a dedicated image. */}
+        <span
+          className="pointer-events-none absolute -top-2 right-0 select-none text-[92px] font-semibold leading-none text-[var(--plum)] opacity-[0.07] sm:-top-4 sm:text-[136px]"
+          style={{ fontFamily: "'Noto Serif KR', serif" }}
+          aria-hidden="true"
+        >
+          {chapter.number}
+        </span>
 
-        <div className="p-7 pl-[26px] sm:p-8 sm:pl-[30px]" style={{ borderLeft: "3px solid var(--plum)" }}>
-          <span className="block text-[12px] font-semibold tracking-[0.1em] text-[var(--plum)]">
+        <div className="relative">
+          <span className="block text-[11px] font-semibold tracking-[0.2em] text-[var(--brass)]">
             CHAPTER {chapter.number}
           </span>
           <h2
-            className="mt-3 text-[28px] font-semibold leading-[1.3] tracking-[-0.005em] text-[var(--ink)] break-keep sm:text-[32px]"
+            className="mt-2.5 max-w-2xl text-[30px] font-semibold leading-[1.28] tracking-[-0.005em] text-[var(--ink)] break-keep sm:text-[38px]"
             style={{ fontFamily: "'Noto Serif KR', serif" }}
           >
             {chapter.title}
           </h2>
+        </div>
 
-          {visual === "palette" && colorHint?.palette && (
-            <div className="mt-6">
-              <PaletteGrid palette={colorHint.palette} />
+        {hasBigPhoto ? (
+          <div
+            className={`relative mt-8 flex flex-col gap-8 md:flex-row md:items-start ${
+              isReversed ? "md:flex-row-reverse" : ""
+            }`}
+          >
+            <div className="relative aspect-[4/5] w-full shrink-0 overflow-hidden md:w-[42%]">
+              <Image
+                src={imageSrc!}
+                alt={chapter.title}
+                fill
+                sizes="(min-width: 768px) 42vw, 100vw"
+                className="object-cover"
+              />
             </div>
-          )}
+            <div className="min-w-0 flex-1">{textBlocks}</div>
+          </div>
+        ) : (
+          <div className="relative mt-7 max-w-2xl">
+            {visual === "palette" && colorHint?.palette && (
+              <div className="mb-6">
+                <PaletteGrid palette={colorHint.palette} />
+              </div>
+            )}
 
-          {visual === "typeBadge" && typeValue && (
-            <div className="mt-6 rounded-[12px] border border-[var(--hairline)] bg-[var(--plum-tint)] p-5 text-center">
-              <p
-                className="text-xs font-semibold tracking-[0.08em] text-[var(--plum-deep)]"
-              >
-                사진상 분석 결과
-              </p>
-              {typeImageSrc && (
-                <div className="relative mx-auto mt-3 h-24 w-24 overflow-hidden rounded-full border-4 border-white">
-                  <Image
-                    src={typeImageSrc}
-                    alt={typeValue}
-                    fill
-                    sizes="96px"
-                    className="object-cover"
-                  />
+            {visual === "typeBadge" && typeValue && (
+              <div className="mb-6 flex items-center gap-4 border border-[var(--hairline)] bg-[var(--paper-raised)] p-5">
+                {typeImageSrc && (
+                  <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full">
+                    <Image
+                      src={typeImageSrc}
+                      alt={typeValue}
+                      fill
+                      sizes="80px"
+                      className="object-cover"
+                    />
+                  </div>
+                )}
+                <div>
+                  <p className="text-[11px] font-semibold tracking-[0.14em] text-[var(--brass)]">
+                    사진상 분석 결과
+                  </p>
+                  <p
+                    className="mt-1 text-[26px] font-bold leading-tight text-[var(--plum-deep)]"
+                    style={{ fontFamily: "'Noto Serif KR', serif" }}
+                  >
+                    {typeValue}
+                  </p>
+                  <p className="mt-0.5 text-xs text-[var(--ink-soft)]">
+                    에 가까운 인상으로 보여요
+                  </p>
                 </div>
-              )}
-              <p
-                className="mt-2 text-2xl font-bold text-[var(--plum-deep)]"
-                style={{ fontFamily: "'Noto Serif KR', serif" }}
-              >
-                {typeValue}
-              </p>
-              <p className="mt-1 text-xs text-[var(--ink-soft)]">
-                에 가까운 인상으로 보여요
-              </p>
-            </div>
-          )}
+              </div>
+            )}
 
-          {content.diagnosis && <DiagnosisLine text={content.diagnosis} />}
+            {textBlocks}
+          </div>
+        )}
 
-          {content.keywords && content.keywords.length > 0 && (
-            <KeywordPills items={content.keywords} />
-          )}
-
-          {content.summary && content.summary.length > 0 && (
-            <SummaryCard lines={content.summary} />
-          )}
-
+        <div className="relative mt-2 max-w-2xl">
           <Divider />
-
           <div>
             <SectionLabel>자세한 분석</SectionLabel>
             <ChapterBody text={content.body} />
@@ -1076,17 +1147,18 @@ export default function ReportPage() {
 
   return (
     <main
-      className="min-h-screen pb-16 pt-10"
+      className="min-h-screen pb-16 pt-8"
       style={
         {
-          "--ink": "#1C1B22",
-          "--ink-soft": "#4B4854",
-          "--paper": "#FAF9F6",
+          "--ink": "#1A1613",
+          "--ink-soft": "#726B62",
+          "--paper": "#FAF6EF",
           "--paper-raised": "#FFFFFF",
-          "--hairline": "#E7E2D9",
-          "--plum": "#6D4FC4",
-          "--plum-deep": "#4A3380",
-          "--plum-tint": "#F1EDFB",
+          "--hairline": "#E4DACB",
+          "--plum": "#4E2A82",
+          "--plum-deep": "#3A1F63",
+          "--plum-tint": "#F2ECFA",
+          "--brass": "#A9803D",
           backgroundColor: "var(--paper)",
           color: "var(--ink)",
           fontFamily:
@@ -1105,19 +1177,50 @@ export default function ReportPage() {
         href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css"
       />
 
-      <Container className="text-center">
-        <p
-          className="text-[13px] font-semibold tracking-[0.16em] text-[var(--plum-deep)]"
-        >
-          FACEMOOD REPORT
-        </p>
-        <h1
-          className="mt-5 text-[42px] font-bold leading-[1.15] text-[var(--ink)] sm:text-[52px]"
-          style={{ fontFamily: "'Noto Serif KR', serif" }}
-        >
-          상세 스타일 리포트
-        </h1>
-        <p className="mt-4 text-[15px] leading-relaxed text-[var(--ink-soft)]">
+      {/* Cover — a magazine issue front page instead of a plain centered
+          title block: masthead strip, then the mood's own hero photo with
+          the report title set as a cover line over it. */}
+      <Container maxWidth="max-w-4xl">
+        <div className="flex items-center justify-between border-b border-[var(--hairline)] pb-3">
+          <span className="text-[12px] font-bold tracking-[0.22em] text-[var(--ink)]">
+            FACEMOOD
+          </span>
+          <span className="text-[11px] font-semibold tracking-[0.16em] text-[var(--brass)]">
+            STYLE REPORT
+          </span>
+        </div>
+
+        <div className="relative mt-6 aspect-[4/5] w-full overflow-hidden sm:aspect-[16/9]">
+          {report.images?.hero && (
+            <>
+              <Image
+                src={report.images.hero}
+                alt=""
+                fill
+                priority
+                sizes="(min-width: 896px) 896px, 100vw"
+                className="object-cover object-top"
+              />
+              <div
+                className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent"
+                aria-hidden="true"
+              />
+            </>
+          )}
+          <div className="absolute inset-x-0 bottom-0 p-6 sm:p-10">
+            <span className="block text-[11px] font-semibold tracking-[0.2em] text-white/75">
+              PERSONAL STYLE ISSUE
+            </span>
+            <h1
+              className="mt-2 max-w-lg text-[36px] font-bold leading-[1.15] text-white break-keep sm:text-[54px]"
+              style={{ fontFamily: "'Noto Serif KR', serif" }}
+            >
+              상세 스타일 리포트
+            </h1>
+          </div>
+        </div>
+
+        <p className="mx-auto mt-6 max-w-lg text-center text-[14.5px] leading-relaxed text-[var(--ink-soft)]">
           이미지 컨설팅 관점에서 정리한 스타일 분석 흐름이에요.
           <br />
           사진과 답변을 바탕으로 한 참고용 리포트입니다.
@@ -1131,6 +1234,10 @@ export default function ReportPage() {
         // photo gallery (0, 1, 2, ...) so ChapterCard can cycle through
         // them instead of every one of these chapters showing photo #1.
         let heroCounter = 0;
+        // Separately counts every chapter that gets a big side-by-side
+        // photo spread (hero/hair/makeup) so ChapterCard can alternate
+        // which side the photo sits on for visual rhythm.
+        let photoSpreadCounter = 0;
         return visibleChapters.map((chapter) => {
           const chapterData = report[chapter.key]!;
 
@@ -1148,8 +1255,11 @@ export default function ReportPage() {
                 ? report.makeupStyleType
                 : undefined;
 
-          const heroPickIndex =
-            CHAPTER_VISUALS[chapter.key] === "hero" ? heroCounter++ : 0;
+          const visual = CHAPTER_VISUALS[chapter.key];
+          const heroPickIndex = visual === "hero" ? heroCounter++ : 0;
+          const isReversed =
+            (visual === "hero" || visual === "hair" || visual === "makeup") &&
+            photoSpreadCounter++ % 2 === 1;
 
           return (
             <ChapterCard
@@ -1161,6 +1271,7 @@ export default function ReportPage() {
               typeValue={typeValue}
               styleTypeValue={styleTypeValue}
               heroPickIndex={heroPickIndex}
+              isReversed={isReversed}
             />
           );
         });
