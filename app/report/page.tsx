@@ -891,11 +891,17 @@ async function requestFullReport(
   imageDataUrl: string | null,
   previewResult: PreviewResult | null,
   tier: ReportTierName,
+  // Passed through so the server can short-circuit to an already-generated
+  // report instead of calling OpenAI again — see the reportId check in
+  // /api/generate-report. Optional only because a couple of call sites
+  // (e.g. regenerating from the password gate without a local reportId)
+  // genuinely don't have one.
+  reportId: string | null,
 ): Promise<FullReport> {
   const response = await fetch("/api/generate-report", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ answers, imageDataUrl, previewResult, tier }),
+    body: JSON.stringify({ answers, imageDataUrl, previewResult, tier, reportId }),
   });
   const data = await response.json();
   if (!response.ok) {
@@ -931,9 +937,8 @@ export default function ReportPage() {
   const hasStartedRef = useRef(false);
 
   useEffect(() => {
-    // Already have a saved report — nothing to fetch.
-    if (cachedReportRaw) return;
-    // Guard against React Strict Mode's dev double-invoke firing this twice.
+    // Guard against React Strict Mode's dev double-invoke, and against
+    // this effect re-running at all across remounts of this component.
     if (hasStartedRef.current) return;
     hasStartedRef.current = true;
 
@@ -943,6 +948,16 @@ export default function ReportPage() {
       // Push everything below past a microtask boundary so no setState call
       // in this effect is ever synchronous relative to the effect body.
       await Promise.resolve();
+
+      // Re-check localStorage directly here rather than trusting the
+      // `cachedReportRaw` value captured at render time — useSyncExternalStore
+      // renders the SSR (null) snapshot during hydration and only re-syncs
+      // to the real client value afterward, so relying on the render-time
+      // value let a real (already-cached) report get silently overwritten
+      // by a brand new — and billed — generation call on a fast reload.
+      // Reading localStorage fresh, inside an effect that only ever runs
+      // client-side post-mount, has no such race.
+      if (localStorage.getItem(FULL_REPORT_KEY)) return;
 
       const answersRaw = localStorage.getItem(ANSWERS_KEY);
       const idParam = getIdParam();
@@ -967,7 +982,17 @@ export default function ReportPage() {
       const reportId = localStorage.getItem(REPORT_ID_KEY) ?? idParam;
       const storedTier = localStorage.getItem(REPORT_TIER_KEY);
       const tier: ReportTierName =
-        storedTier === "basic" ? "basic" : storedTier === "male" ? "male" : "premium";
+        storedTier === "basic"
+          ? "basic"
+          : storedTier === "male"
+            ? "male"
+            : storedTier === "hair"
+              ? "hair"
+              : storedTier === "makeup"
+                ? "makeup"
+                : storedTier === "color"
+                  ? "color"
+                  : "premium";
 
       try {
         const report = await requestFullReport(
@@ -975,6 +1000,7 @@ export default function ReportPage() {
           imageDataUrl,
           previewRaw ? (JSON.parse(previewRaw) as PreviewResult) : null,
           tier,
+          reportId,
         );
 
         localStorage.setItem(FULL_REPORT_KEY, JSON.stringify(report));
@@ -1000,7 +1026,10 @@ export default function ReportPage() {
     return () => {
       cancelled = true;
     };
-  }, [cachedReportRaw, retryTrigger]);
+    // cachedReportRaw is deliberately not a dependency — the effect now
+    // re-checks localStorage directly inside run() instead of reacting to
+    // this value, so it only needs to fire on mount and on manual retry.
+  }, [retryTrigger]);
 
   function handleRetry() {
     hasStartedRef.current = false;
@@ -1050,11 +1079,24 @@ export default function ReportPage() {
       // No stored report yet (shouldn't normally happen once paid) —
       // regenerate. The original photo isn't kept server-side, so this
       // pass runs without it.
+      const regenerateTier: ReportTierName =
+        data.tier === "basic"
+          ? "basic"
+          : data.tier === "male"
+            ? "male"
+            : data.tier === "hair"
+              ? "hair"
+              : data.tier === "makeup"
+                ? "makeup"
+                : data.tier === "color"
+                  ? "color"
+                  : "premium";
       const report = await requestFullReport(
         data.answers ?? {},
         null,
         data.previewResult ?? null,
-        data.tier === "basic" ? "basic" : data.tier === "male" ? "male" : "premium",
+        regenerateTier,
+        idParam,
       );
       localStorage.setItem(FULL_REPORT_KEY, JSON.stringify(report));
       persistFullReportToServer(idParam, report);

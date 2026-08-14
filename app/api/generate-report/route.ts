@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
+import { getReport } from "@/lib/reports";
 import {
   ANIMAL_TYPE_CANDIDATES,
   COLOR_REPORT_CHAPTERS,
@@ -584,6 +585,7 @@ export async function POST(request: NextRequest) {
     imageDataUrl?: string | null;
     previewResult?: PreviewResult | null;
     tier?: ReportTierName;
+    reportId?: string | null;
   };
 
   try {
@@ -593,6 +595,19 @@ export async function POST(request: NextRequest) {
       { error: "요청 형식을 읽을 수 없습니다." },
       { status: 400 },
     );
+  }
+
+  // Idempotency guard: the client is supposed to only ever call this once
+  // per report (it caches the result in localStorage first), but a fast
+  // reload/remount race — or simply two tabs open on the same report —
+  // could still fire a second real request before that cache is written.
+  // Once a report is already generated for this id, always serve the
+  // saved copy instead of paying for another OpenAI generation.
+  if (body.reportId) {
+    const existing = getReport(body.reportId);
+    if (existing?.fullReport) {
+      return NextResponse.json({ report: existing.fullReport });
+    }
   }
 
   const answers = body.answers ?? {};
