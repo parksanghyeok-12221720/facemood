@@ -103,18 +103,20 @@ function CheckIcon({ className = "" }: { className?: string }) {
 
 // A 6-axis radar/hexagon chart of the top 6 mood-sync scores — a visual
 // "stat hexagon" read for the mood-match data that's otherwise only shown
-// as a bar list. `progress` (0-1) draws the shape/labels/dots at that
-// fraction of their final value — driven by MoodBalanceSection's
-// sweep-then-reveal animation — and `sweeping` swaps the data shape out for
-// a rotating radar line while the "analysis" is still in progress.
+// as a bar list. `radii`/`displayScores` (one entry per axis, parent-owned)
+// drive the shape and labels every frame — while "analyzing" the parent
+// feeds in continuously wobbling values so the hexagon itself visibly
+// morphs, then crossfades those into the real, settled data shape.
 function HexagonMoodChart({
   points,
-  progress,
-  sweeping,
+  radii,
+  displayScores,
+  settled,
 }: {
   points: { mood: string; score: number }[];
-  progress: number;
-  sweeping: boolean;
+  radii: number[];
+  displayScores: number[];
+  settled: boolean;
 }) {
   const size = 260;
   const center = size / 2;
@@ -155,7 +157,7 @@ function HexagonMoodChart({
             fill="none"
             stroke="var(--hairline)"
             strokeWidth={1}
-            className={sweeping ? "animate-pulse" : undefined}
+            className={!settled ? "animate-pulse" : undefined}
           />
         ))}
         {points.map((_, i) => {
@@ -173,45 +175,31 @@ function HexagonMoodChart({
           );
         })}
 
-        {sweeping ? (
-          <g style={{ transformOrigin: `${center}px ${center}px` }} className="animate-spin">
-            <line
-              x1={center}
-              y1={center}
-              x2={center}
-              y2={center - maxRadius}
-              stroke="var(--rose-deep)"
-              strokeWidth={2}
-              strokeLinecap="round"
-              opacity={0.75}
+        <path
+          d={polygonPath((i) => radii[i])}
+          fill="var(--rose)"
+          fillOpacity={settled ? 0.25 : 0.14}
+          stroke="var(--rose-deep)"
+          strokeWidth={2}
+          strokeLinejoin="round"
+          strokeDasharray={settled ? undefined : "3 4"}
+          style={{ transition: settled ? "fill-opacity 0.4s ease" : undefined }}
+        />
+        {points.map((p, i) => {
+          const pt = pointAt(i, radii[i]);
+          return (
+            <circle
+              key={p.mood}
+              cx={pt.x}
+              cy={pt.y}
+              r={settled ? 3.5 : 2.5}
+              fill="var(--rose-deep)"
+              stroke="#fff"
+              strokeWidth={1.5}
+              opacity={settled ? 1 : 0.7}
             />
-          </g>
-        ) : (
-          <>
-            <path
-              d={polygonPath((i) => (points[i].score / 100) * maxRadius * progress)}
-              fill="var(--rose)"
-              fillOpacity={0.25}
-              stroke="var(--rose-deep)"
-              strokeWidth={2}
-              strokeLinejoin="round"
-            />
-            {points.map((p, i) => {
-              const pt = pointAt(i, (p.score / 100) * maxRadius * progress);
-              return (
-                <circle
-                  key={p.mood}
-                  cx={pt.x}
-                  cy={pt.y}
-                  r={3.5}
-                  fill="var(--rose-deep)"
-                  stroke="#fff"
-                  strokeWidth={1.5}
-                />
-              );
-            })}
-          </>
-        )}
+          );
+        })}
       </svg>
       {points.map((p, i) => {
         const pt = pointAt(i, labelRadius);
@@ -230,11 +218,11 @@ function HexagonMoodChart({
               {p.mood}
             </span>
             <span
-              className={`text-[10px] ${
+              className={`text-[10px] tabular-nums ${
                 isTop ? "font-bold text-[var(--rose-deep)]" : "text-[var(--ink-soft)]"
               }`}
             >
-              {Math.round(p.score * progress)}%
+              {Math.round(displayScores[i])}%
             </span>
           </div>
         );
@@ -243,12 +231,16 @@ function HexagonMoodChart({
   );
 }
 
+const HEX_MAX_RADIUS = 84;
+
 // Owns the sweep-then-reveal animation shared by the hexagon and the bar
 // list below it — starts once this section actually scrolls into view
 // (same IntersectionObserver-gated pattern as FirstImpressionCounter
-// further down this page), spins a radar line for a beat like it's
-// actively reading the photo, then grows the hexagon/bars and counts the
-// scores up together over ~750ms.
+// further down this page). While "analyzing" it drives each axis's radius
+// with its own out-of-phase sine wave so the hexagon's own outline keeps
+// morphing/wobbling (not a static shape with a spinning line over it),
+// then eases from wherever that wobble left off into the real, settled
+// data shape over ~700ms, counting the bar-list numbers up in step.
 function MoodBalanceSection({
   sortedMoodSync,
 }: {
@@ -256,10 +248,18 @@ function MoodBalanceSection({
 }) {
   const hexPoints = sortedMoodSync.slice(0, 6);
   const barPoints = sortedMoodSync.slice(0, 5);
+  const axisCount = hexPoints.length;
 
   const [phase, setPhase] = useState<"idle" | "sweeping" | "revealing" | "done">("idle");
-  const [progress, setProgress] = useState(0);
+  const [radii, setRadii] = useState<number[]>(() => Array(axisCount).fill(0));
+  const [barProgress, setBarProgress] = useState(0);
   const rootRef = useRef<HTMLDivElement>(null);
+  const radiiRef = useRef<number[]>(radii);
+
+  function updateRadii(next: number[]) {
+    radiiRef.current = next;
+    setRadii(next);
+  }
 
   useEffect(() => {
     const node = rootRef.current;
@@ -277,30 +277,56 @@ function MoodBalanceSection({
     return () => observer.disconnect();
   }, []);
 
+  // Sweeping: each axis wobbles between ~28%-92% of maxRadius on its own
+  // out-of-phase, differently-timed sine wave so the hexagon visibly
+  // changes shape rather than breathing in unison.
   useEffect(() => {
     if (phase !== "sweeping") return;
     let cancelled = false;
+    let raf = 0;
+    const startTime = performance.now();
+
+    function tick(now: number) {
+      if (cancelled) return;
+      const t = (now - startTime) / 1000;
+      const next = Array.from({ length: axisCount }, (_, i) => {
+        const wave = 0.5 + 0.5 * Math.sin(t * (1.6 + i * 0.35) + i * 1.3);
+        const wave2 = 0.5 + 0.5 * Math.sin(t * (2.7 + i * 0.21) + i * 0.7 + 2.1);
+        const blended = wave * 0.65 + wave2 * 0.35;
+        return (0.28 + 0.64 * blended) * HEX_MAX_RADIUS;
+      });
+      updateRadii(next);
+      raf = requestAnimationFrame(tick);
+    }
+
+    raf = requestAnimationFrame(tick);
     const timer = setTimeout(() => {
       if (!cancelled) setPhase("revealing");
-    }, 1100);
+    }, 1300);
     return () => {
       cancelled = true;
+      cancelAnimationFrame(raf);
       clearTimeout(timer);
     };
-  }, [phase]);
+  }, [phase, axisCount]);
 
+  // Revealing: ease from wherever the wobble left off into the real
+  // per-axis scores, and count the bar list up over the same window.
   useEffect(() => {
     if (phase !== "revealing") return;
     let cancelled = false;
-    const start = performance.now();
-    const duration = 750;
     let raf = 0;
+    const start = performance.now();
+    const duration = 700;
+    const from = radiiRef.current;
+    const to = hexPoints.map((p) => (p.score / 100) * HEX_MAX_RADIUS);
 
     function tick(now: number) {
       if (cancelled) return;
       const t = Math.min(1, (now - start) / duration);
       const eased = 1 - Math.pow(1 - t, 3);
-      setProgress(eased);
+      updateRadii(from.map((f, i) => f + (to[i] - f) * eased));
+      setBarProgress(eased);
       if (t < 1) {
         raf = requestAnimationFrame(tick);
       } else {
@@ -313,9 +339,11 @@ function MoodBalanceSection({
       cancelled = true;
       cancelAnimationFrame(raf);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
 
-  const sweeping = phase === "sweeping" || phase === "idle";
+  const settled = phase === "revealing" || phase === "done";
+  const displayScores = radii.map((r) => (r / HEX_MAX_RADIUS) * 100);
 
   return (
     <div ref={rootRef} className="mt-6 border-t border-[var(--hairline)] pt-5">
@@ -326,7 +354,12 @@ function MoodBalanceSection({
         사진상 무드 밸런스
       </p>
       <div className="mt-4">
-        <HexagonMoodChart points={hexPoints} progress={progress} sweeping={sweeping} />
+        <HexagonMoodChart
+          points={hexPoints}
+          radii={radii}
+          displayScores={displayScores}
+          settled={settled}
+        />
       </div>
 
       <div className="mt-6 flex flex-col gap-3.5 border-t border-[var(--hairline)] pt-5">
@@ -351,7 +384,7 @@ function MoodBalanceSection({
                       : "text-[var(--ink-soft)]"
                   }
                 >
-                  {Math.round(item.score * progress)}%
+                  {Math.round(item.score * barProgress)}%
                 </span>
               </div>
               <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-[var(--hairline)]">
@@ -359,7 +392,7 @@ function MoodBalanceSection({
                   className={`h-full rounded-full ${
                     index === 0 ? "bg-[var(--rose-deep)]" : "bg-[var(--rose-tint)]"
                   }`}
-                  style={{ width: `${item.score * progress}%` }}
+                  style={{ width: `${item.score * barProgress}%` }}
                 />
               </div>
             </div>
