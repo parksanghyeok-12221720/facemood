@@ -182,7 +182,6 @@ function HexagonMoodChart({
           stroke="var(--rose-deep)"
           strokeWidth={2}
           strokeLinejoin="round"
-          strokeDasharray={settled ? undefined : "3 4"}
           style={{ transition: settled ? "fill-opacity 0.4s ease" : undefined }}
         />
         {points.map((p, i) => {
