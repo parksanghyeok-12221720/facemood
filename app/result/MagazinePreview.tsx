@@ -814,7 +814,7 @@ export function MagazineBody({
       <ThreeSecondTimeline />
       <AmbiguousMomentGrid />
       <MagazineQuote>
-        내가 바꾸고 싶은 건 얼굴이 아니라, 나에게 맞는 분위기일지도 몰라요.
+        바꾸고 싶은 건 얼굴이 아니라, 나에게 맞는 분위기 — 그 자체예요.
       </MagazineQuote>
       <TodayMissions />
 
