@@ -2,30 +2,19 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-
-// Counts down to the next local midnight — an honest "today only" deadline
-// that genuinely recurs each day, rather than a fake per-visit timer that
-// would quietly reset on every reload.
-function getMsUntilMidnight(): number {
-  const now = new Date();
-  const midnight = new Date(now);
-  midnight.setHours(24, 0, 0, 0);
-  return midnight.getTime() - now.getTime();
-}
+import { getMsUntilMidnight } from "@/lib/discount";
 
 function pad(value: number): string {
   return String(value).padStart(2, "0");
 }
 
 function formatCountdown(ms: number): string {
-  const totalCentiseconds = Math.max(0, Math.floor(ms / 10));
-  const centiseconds = totalCentiseconds % 100;
-  const totalSeconds = Math.floor(totalCentiseconds / 100);
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
   const seconds = totalSeconds % 60;
   const totalMinutes = Math.floor(totalSeconds / 60);
   const minutes = totalMinutes % 60;
   const hours = Math.floor(totalMinutes / 60);
-  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}:${pad(centiseconds)}`;
+  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
 }
 
 export default function DiscountCountdownBar({
@@ -50,7 +39,7 @@ export default function DiscountCountdownBar({
     // First tick happens asynchronously via the interval itself rather than
     // a synchronous setState call here, per this codebase's
     // react-hooks/set-state-in-effect convention (see AnalysisCounter.tsx).
-    const id = setInterval(() => setRemainingMs(getMsUntilMidnight()), 50);
+    const id = setInterval(() => setRemainingMs(getMsUntilMidnight()), 1000);
     return () => clearInterval(id);
   }, []);
 
@@ -65,7 +54,7 @@ export default function DiscountCountdownBar({
             할인 혜택 마감까지
           </span>
           <span className="text-sm font-bold tabular-nums text-white">
-            {remainingMs === null ? "--:--:--:--" : formatCountdown(remainingMs)}
+            {remainingMs === null ? "--:--:--" : formatCountdown(remainingMs)}
           </span>
         </div>
         <Link
