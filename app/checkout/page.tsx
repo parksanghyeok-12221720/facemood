@@ -9,6 +9,7 @@ import KakaoChannelDiscount from "@/app/components/KakaoChannelDiscount";
 import KakaoChannelDiscountPopup from "@/app/components/KakaoChannelDiscountPopup";
 import TodayAnalysisCounter from "@/app/components/TodayAnalysisCounter";
 import { KAKAO_CHANNEL_DISCOUNT_KRW, KAKAO_DISCOUNT_APPLIED_KEY } from "@/lib/kakaoChannel";
+import { MALE_PREMIUM_PRICE_KRW } from "@/lib/payment";
 import { TEST_AMOUNT_KRW, isTestPhone } from "@/lib/testPayment";
 
 const REPORT_ID_KEY = "facemood_report_id";
@@ -67,10 +68,17 @@ const MAKEUP_PRICE_KRW = 19900;
 const COLOR_PRICE_KRW = 19900;
 // Male + female bundle bought from this (female) side — grants this
 // Premium report plus a free-report code for a partner to redeem at
-// /checkout-male. Flat price like the single-item tiers (no fabricated
-// strikethrough), but — unlike them — still eligible for the Kakao
-// discount (see isKakaoDiscountEligibleTier below).
+// /checkout-male. Priced against the real combined cost of buying both
+// reports separately at their own already-discounted prices (not a
+// fabricated "original" price) — still eligible for the Kakao discount
+// (see isKakaoDiscountEligibleTier below).
 const GENDER_BUNDLE_PRICE_KRW = 66900;
+const GENDER_BUNDLE_COMBINED_PRICE_KRW = PREMIUM_PRICE_KRW + MALE_PREMIUM_PRICE_KRW;
+const GENDER_BUNDLE_DISCOUNT_PERCENT = Math.round(
+  ((GENDER_BUNDLE_COMBINED_PRICE_KRW - GENDER_BUNDLE_PRICE_KRW) /
+    GENDER_BUNDLE_COMBINED_PRICE_KRW) *
+    100,
+);
 
 const TIER_PRICE: Record<Tier, number> = {
   basic: BASIC_PRICE_KRW,
@@ -88,7 +96,7 @@ const TIER_ORIGINAL_PRICE: Record<Tier, number> = {
   hair: HAIR_PRICE_KRW,
   makeup: MAKEUP_PRICE_KRW,
   color: COLOR_PRICE_KRW,
-  premiumBundle: GENDER_BUNDLE_PRICE_KRW,
+  premiumBundle: GENDER_BUNDLE_COMBINED_PRICE_KRW,
 };
 const TIER_DISCOUNT_PERCENT: Record<Tier, number> = {
   basic: BASIC_DISCOUNT_PERCENT,
@@ -97,7 +105,7 @@ const TIER_DISCOUNT_PERCENT: Record<Tier, number> = {
   hair: 0,
   makeup: 0,
   color: 0,
-  premiumBundle: 0,
+  premiumBundle: GENDER_BUNDLE_DISCOUNT_PERCENT,
 };
 
 const TIER_LABEL: Record<Tier, string> = {
@@ -111,9 +119,11 @@ const TIER_LABEL: Record<Tier, string> = {
 };
 
 const SINGLE_ITEM_TIERS: Tier[] = ["hair", "makeup", "color"];
-// Flat-price tiers that skip the 기준가격/얼리버드 할인 UI (single items +
-// the gender bundle) — a superset of SINGLE_ITEM_TIERS.
-const FLAT_PRICE_TIERS: Tier[] = ["hair", "makeup", "color", "premiumBundle"];
+// Flat-price tiers that skip the 기준가격/얼리버드 할인 UI — the single
+// items only, since they have no per-item "original" price to discount
+// from. The gender bundle DOES have a real combined price to discount
+// against (see GENDER_BUNDLE_COMBINED_PRICE_KRW above), so it's excluded.
+const FLAT_PRICE_TIERS: Tier[] = ["hair", "makeup", "color"];
 const KAKAO_ELIGIBLE_TIERS: Tier[] = ["premium", "premiumMatch", "premiumBundle"];
 
 // Which /services single-item selection maps to which checkout tier — read
@@ -737,9 +747,8 @@ export default function CheckoutPage() {
           />
         </div>
 
-        {/* Promo banner — flat-price tiers (single items + gender bundle)
-            skip the 얼리버드 할인 badge entirely, since there's no discount
-            to show. */}
+        {/* Promo banner — single-item tiers skip the 얼리버드 할인 badge
+            entirely, since there's no discount to show. */}
         <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 p-5 text-white shadow-lg shadow-violet-200">
           {isSingleItemTier ? (
             <>
@@ -758,6 +767,10 @@ export default function CheckoutPage() {
               <p className="mt-1 text-lg font-extrabold leading-snug">
                 남녀 통합 번들 리포트
               </p>
+              <span className="mt-3 inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold">
+                따로 사면 {GENDER_BUNDLE_COMBINED_PRICE_KRW.toLocaleString()}원, 번들로{" "}
+                {GENDER_BUNDLE_DISCOUNT_PERCENT}% 할인
+              </span>
             </>
           ) : (
             <>
@@ -1045,6 +1058,12 @@ export default function CheckoutPage() {
                   <span className="text-xl font-extrabold text-black">
                     {GENDER_BUNDLE_PRICE_KRW.toLocaleString()}원
                   </span>
+                  <span className="text-xs text-gray-400 line-through decoration-gray-400">
+                    {GENDER_BUNDLE_COMBINED_PRICE_KRW.toLocaleString()}원
+                  </span>
+                  <span className="text-xs font-bold text-violet-600">
+                    -{GENDER_BUNDLE_DISCOUNT_PERCENT}%
+                  </span>
                 </div>
               </button>
             )}
@@ -1103,9 +1122,8 @@ export default function CheckoutPage() {
           </div>
         </section>
 
-        {/* Price breakdown — flat-price tiers (단품 + 남녀 통합 번들) skip
-            the 기준가격/얼리버드 할인 rows entirely since there's no
-            discount to show. */}
+        {/* Price breakdown — single-item (단품) tiers skip the 기준가격/
+            얼리버드 할인 rows entirely since there's no discount to show. */}
         <section className="mt-8 rounded-2xl border border-violet-100 bg-white p-5">
           {!isFlatPriceTier && (
             <>

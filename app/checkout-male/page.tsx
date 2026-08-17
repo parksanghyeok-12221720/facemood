@@ -13,6 +13,7 @@ import {
   MALE_PREMIUM_ORIGINAL_PRICE_KRW,
   MALE_PREMIUM_PRICE_KRW,
   GENDER_BUNDLE_PRICE_KRW,
+  PREMIUM_PRICE_KRW,
 } from "@/lib/payment";
 import { TEST_AMOUNT_KRW, isTestPhone } from "@/lib/testPayment";
 
@@ -27,6 +28,15 @@ const phonePrefixOptions = ["010", "011", "016", "017", "018", "019"];
 const MALE_PREMIUM_DISCOUNT_PERCENT = Math.round(
   ((MALE_PREMIUM_ORIGINAL_PRICE_KRW - MALE_PREMIUM_PRICE_KRW) /
     MALE_PREMIUM_ORIGINAL_PRICE_KRW) *
+    100,
+);
+// Priced against the real combined cost of buying both reports separately
+// at their own already-discounted prices (not a fabricated "original"
+// price).
+const GENDER_BUNDLE_COMBINED_PRICE_KRW = MALE_PREMIUM_PRICE_KRW + PREMIUM_PRICE_KRW;
+const GENDER_BUNDLE_DISCOUNT_PERCENT = Math.round(
+  ((GENDER_BUNDLE_COMBINED_PRICE_KRW - GENDER_BUNDLE_PRICE_KRW) /
+    GENDER_BUNDLE_COMBINED_PRICE_KRW) *
     100,
 );
 
@@ -483,8 +493,7 @@ export default function MaleCheckoutPage() {
           />
         </div>
 
-        {/* Promo banner — the gender bundle is flat-priced, so it skips the
-            얼리버드 할인 badge in favor of plain couple-bundle copy. */}
+        {/* Promo banner */}
         <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 p-5 text-white shadow-lg shadow-violet-200">
           {tier === "maleBundle" ? (
             <>
@@ -494,6 +503,10 @@ export default function MaleCheckoutPage() {
               <p className="mt-1 text-lg font-extrabold leading-snug">
                 남녀 통합 번들 리포트
               </p>
+              <span className="mt-3 inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold">
+                따로 사면 {GENDER_BUNDLE_COMBINED_PRICE_KRW.toLocaleString()}원, 번들로{" "}
+                {GENDER_BUNDLE_DISCOUNT_PERCENT}% 할인
+              </span>
             </>
           ) : (
             <>
@@ -696,13 +709,18 @@ export default function MaleCheckoutPage() {
                 <span className="text-xl font-extrabold text-black">
                   {GENDER_BUNDLE_PRICE_KRW.toLocaleString()}원
                 </span>
+                <span className="text-xs text-gray-400 line-through decoration-gray-400">
+                  {GENDER_BUNDLE_COMBINED_PRICE_KRW.toLocaleString()}원
+                </span>
+                <span className="text-xs font-bold text-violet-600">
+                  -{GENDER_BUNDLE_DISCOUNT_PERCENT}%
+                </span>
               </div>
             </button>
           </div>
         </section>
 
-        {/* Price breakdown — the gender bundle is flat-priced, so it skips
-            the 기준가격/얼리버드 할인 rows entirely. */}
+        {/* Price breakdown */}
         <section className="mt-8 rounded-2xl border border-violet-100 bg-white p-5">
           {tier === "male" && (
             <>
@@ -716,6 +734,22 @@ export default function MaleCheckoutPage() {
                 <span className="text-gray-500">얼리버드 특별 할인</span>
                 <span className="font-semibold text-violet-600">
                   -{MALE_PREMIUM_DISCOUNT_PERCENT}%
+                </span>
+              </div>
+            </>
+          )}
+          {tier === "maleBundle" && (
+            <>
+              <div className="flex items-center justify-between py-1.5 text-sm">
+                <span className="text-gray-500">기준 가격</span>
+                <span className="text-gray-500 line-through decoration-gray-400">
+                  {GENDER_BUNDLE_COMBINED_PRICE_KRW.toLocaleString()}원
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-1.5 text-sm">
+                <span className="text-gray-500">번들 할인</span>
+                <span className="font-semibold text-violet-600">
+                  -{GENDER_BUNDLE_DISCOUNT_PERCENT}%
                 </span>
               </div>
             </>
