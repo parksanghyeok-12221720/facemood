@@ -11,20 +11,6 @@ export const MOOD_CANDIDATES = [
 
 export type MoodCandidate = (typeof MOOD_CANDIDATES)[number];
 
-// One illustrated "trading card" per mood for the free preview's share
-// card (see ResultShareCard in app/result/page.tsx) — each image already
-// has the mood name/tagline baked in, so the card just frames it.
-export const MOOD_SHARE_IMAGES: Record<MoodCandidate, string> = {
-  "청순 자연형": "/mood/share/청순자연형.png",
-  "고급 도시형": "/mood/share/고급도시형.png",
-  "차분 시크형": "/mood/share/차분시크형.png",
-  "러블리 여리형": "/mood/share/러블리여리형.png",
-  "힙 트렌디형": "/mood/share/힙트렌디형.png",
-  "러블리 힙형": "/mood/share/러블리힙합형.png",
-  "청순 에겐형": "/mood/share/청순에겐형.png",
-  "일본 여주형": "/mood/share/일본여주형.png",
-};
-
 export const FACE_SHAPE_CANDIDATES = [
   "계란형",
   "원형",
