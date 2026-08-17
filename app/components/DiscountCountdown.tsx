@@ -30,13 +30,12 @@ export default function DiscountCountdown() {
   const seconds = String(totalSeconds % 60).padStart(2, "0");
 
   return (
-    <div className="mb-4 flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-rose-600 to-red-500 px-4 py-2.5 shadow-md shadow-rose-500/40">
-      <span className="text-xs font-extrabold tracking-tight text-white">
-        오늘의 특별할인 <span className="text-base font-black">{DISCOUNT_PERCENT}%</span>
+    <p className="mb-2.5 text-center text-[12px] font-semibold text-rose-600">
+      오늘의 특별할인 <span className="font-extrabold">{DISCOUNT_PERCENT}%</span>
+      <span className="ml-1.5 font-mono tabular-nums text-rose-500">
+        {" "}
+        · {hours > 0 ? `${hours}:${minutes}:${seconds}` : `${minutes}:${seconds}`}
       </span>
-      <span className="rounded-md bg-white px-1.5 py-0.5 font-mono text-xs font-extrabold tabular-nums text-rose-600">
-        {hours > 0 ? `${hours}:${minutes}:${seconds}` : `${minutes}:${seconds}`}
-      </span>
-    </div>
+    </p>
   );
 }

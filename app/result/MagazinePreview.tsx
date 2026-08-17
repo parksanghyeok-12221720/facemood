@@ -127,8 +127,8 @@ function MagazineIntro() {
           분위기의 조합에서 시작돼요.
         </h2>
         <p className="mt-4 text-[14.5px] leading-relaxed text-[var(--ink-soft)]">
-          헤어의 흐름, 메이크업의 강도, 옷의 색감, 사진 속 분위기가 합쳐져
-          하나의 이미지가 만들어져요. FACEMOOD는 이 요소들을 바탕으로 나에게
+          헤어 텍스처, 메이크업 강도, 옷 컬러, 사진 속 라이팅이 합쳐져 하나의
+          이미지가 만들어져요. FACEMOOD는 이 요소들을 바탕으로 나에게
           자연스럽게 연결되는 추구미 방향을 정리해드려요.
         </p>
       </FadeInSection>
@@ -142,7 +142,7 @@ function MagazineIntro() {
 
 const MOOD_FACTORS = [
   {
-    label: "헤어의 흐름",
+    label: "헤어 텍스처",
     desc: "볼륨 자리 하나, 컬 방향 하나 — 그 디테일이 오늘의 무드를 결정해요.",
   },
   {
@@ -150,7 +150,7 @@ const MOOD_FACTORS = [
     desc: "쨍한 눈매 vs 뽀샤시 무쌍, 강도 하나로 &lsquo;또렷함&rsquo;과 &lsquo;여림&rsquo; 사이가 갈려요.",
   },
   {
-    label: "옷의 색감",
+    label: "옷 컬러",
     desc: "톤 하나 바꿨을 뿐인데 사진 속 분위기가 완전히 달라지는 마법.",
   },
   {
@@ -158,7 +158,7 @@ const MOOD_FACTORS = [
     desc: "핏이 떨어지는 라인, 그게 곧 무드 그 자체예요.",
   },
   {
-    label: "사진의 밝기",
+    label: "라이팅",
     desc: "같은 옷, 같은 얼굴도 조명 온도에 따라 완전히 다른 사람이 돼요.",
   },
 ] as const;
@@ -410,9 +410,9 @@ function MoodFormula({ previewResult }: { previewResult: PreviewResult }) {
 
   const ingredients = [
     { label: "컬러톤", value: tone?.name ?? "무드 컬러", swatch: tone?.hex },
-    { label: "헤어 흐름", value: "웨이브 리듬" },
+    { label: "헤어 텍스처", value: "웨이브 리듬" },
     { label: "메이크업 강도", value: "톤 밸런스" },
-    { label: "옷 실루엣", value: "라인 감각" },
+    { label: "핏감", value: "라인 감각" },
   ];
 
   function handleTap() {
