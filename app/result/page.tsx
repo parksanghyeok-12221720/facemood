@@ -103,12 +103,18 @@ function CheckIcon({ className = "" }: { className?: string }) {
 
 // A 6-axis radar/hexagon chart of the top 6 mood-sync scores — a visual
 // "stat hexagon" read for the mood-match data that's otherwise only shown
-// as a bar list. Axis labels beyond the #1 recommended mood stay blurred,
-// matching the existing paywall-teaser treatment on the bar list below it.
+// as a bar list. `progress` (0-1) draws the shape/labels/dots at that
+// fraction of their final value — driven by MoodBalanceSection's
+// sweep-then-reveal animation — and `sweeping` swaps the data shape out for
+// a rotating radar line while the "analysis" is still in progress.
 function HexagonMoodChart({
   points,
+  progress,
+  sweeping,
 }: {
   points: { mood: string; score: number }[];
+  progress: number;
+  sweeping: boolean;
 }) {
   const size = 260;
   const center = size / 2;
@@ -149,6 +155,7 @@ function HexagonMoodChart({
             fill="none"
             stroke="var(--hairline)"
             strokeWidth={1}
+            className={sweeping ? "animate-pulse" : undefined}
           />
         ))}
         {points.map((_, i) => {
@@ -165,28 +172,46 @@ function HexagonMoodChart({
             />
           );
         })}
-        <path
-          d={polygonPath((i) => (points[i].score / 100) * maxRadius)}
-          fill="var(--rose)"
-          fillOpacity={0.25}
-          stroke="var(--rose-deep)"
-          strokeWidth={2}
-          strokeLinejoin="round"
-        />
-        {points.map((p, i) => {
-          const pt = pointAt(i, (p.score / 100) * maxRadius);
-          return (
-            <circle
-              key={p.mood}
-              cx={pt.x}
-              cy={pt.y}
-              r={3.5}
-              fill="var(--rose-deep)"
-              stroke="#fff"
-              strokeWidth={1.5}
+
+        {sweeping ? (
+          <g style={{ transformOrigin: `${center}px ${center}px` }} className="animate-spin">
+            <line
+              x1={center}
+              y1={center}
+              x2={center}
+              y2={center - maxRadius}
+              stroke="var(--rose-deep)"
+              strokeWidth={2}
+              strokeLinecap="round"
+              opacity={0.75}
             />
-          );
-        })}
+          </g>
+        ) : (
+          <>
+            <path
+              d={polygonPath((i) => (points[i].score / 100) * maxRadius * progress)}
+              fill="var(--rose)"
+              fillOpacity={0.25}
+              stroke="var(--rose-deep)"
+              strokeWidth={2}
+              strokeLinejoin="round"
+            />
+            {points.map((p, i) => {
+              const pt = pointAt(i, (p.score / 100) * maxRadius * progress);
+              return (
+                <circle
+                  key={p.mood}
+                  cx={pt.x}
+                  cy={pt.y}
+                  r={3.5}
+                  fill="var(--rose-deep)"
+                  stroke="#fff"
+                  strokeWidth={1.5}
+                />
+              );
+            })}
+          </>
+        )}
       </svg>
       {points.map((p, i) => {
         const pt = pointAt(i, labelRadius);
@@ -199,9 +224,7 @@ function HexagonMoodChart({
           >
             <span
               className={`select-none whitespace-nowrap text-[11px] ${
-                isTop
-                  ? "font-bold text-[var(--rose-deep)]"
-                  : "text-[var(--ink-soft)] blur-[4px]"
+                isTop ? "font-bold text-[var(--rose-deep)]" : "text-[var(--ink-soft)]"
               }`}
             >
               {p.mood}
@@ -211,11 +234,142 @@ function HexagonMoodChart({
                 isTop ? "font-bold text-[var(--rose-deep)]" : "text-[var(--ink-soft)]"
               }`}
             >
-              {p.score}%
+              {Math.round(p.score * progress)}%
             </span>
           </div>
         );
       })}
+    </div>
+  );
+}
+
+// Owns the sweep-then-reveal animation shared by the hexagon and the bar
+// list below it — starts once this section actually scrolls into view
+// (same IntersectionObserver-gated pattern as FirstImpressionCounter
+// further down this page), spins a radar line for a beat like it's
+// actively reading the photo, then grows the hexagon/bars and counts the
+// scores up together over ~750ms.
+function MoodBalanceSection({
+  sortedMoodSync,
+}: {
+  sortedMoodSync: { mood: string; score: number }[];
+}) {
+  const hexPoints = sortedMoodSync.slice(0, 6);
+  const barPoints = sortedMoodSync.slice(0, 5);
+
+  const [phase, setPhase] = useState<"idle" | "sweeping" | "revealing" | "done">("idle");
+  const [progress, setProgress] = useState(0);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const node = rootRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setPhase("sweeping");
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.3 },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (phase !== "sweeping") return;
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      if (!cancelled) setPhase("revealing");
+    }, 1100);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [phase]);
+
+  useEffect(() => {
+    if (phase !== "revealing") return;
+    let cancelled = false;
+    const start = performance.now();
+    const duration = 750;
+    let raf = 0;
+
+    function tick(now: number) {
+      if (cancelled) return;
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setProgress(eased);
+      if (t < 1) {
+        raf = requestAnimationFrame(tick);
+      } else {
+        setPhase("done");
+      }
+    }
+
+    raf = requestAnimationFrame(tick);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf);
+    };
+  }, [phase]);
+
+  const sweeping = phase === "sweeping" || phase === "idle";
+
+  return (
+    <div ref={rootRef} className="mt-6 border-t border-[var(--hairline)] pt-5">
+      <span className="block text-center text-[11px] font-semibold tracking-[0.16em] text-[var(--rose-deep)]">
+        MOOD BALANCE
+      </span>
+      <p className="mt-1 text-center text-[13px] font-semibold text-[var(--ink)]">
+        사진상 무드 밸런스
+      </p>
+      <div className="mt-4">
+        <HexagonMoodChart points={hexPoints} progress={progress} sweeping={sweeping} />
+      </div>
+
+      <div className="mt-6 flex flex-col gap-3.5 border-t border-[var(--hairline)] pt-5">
+        {barPoints.map((item, index) => (
+          <div key={item.mood} className="flex items-center gap-3">
+            <span className="w-5 shrink-0 text-[11px] font-semibold text-[var(--ink-soft)]">
+              {String(index + 1).padStart(2, "0")}
+            </span>
+            <div className="flex-1">
+              <div className="flex items-center justify-between text-[13px]">
+                <span
+                  className={
+                    index === 0 ? "font-bold text-[var(--ink)]" : "text-[var(--ink-soft)]"
+                  }
+                >
+                  {item.mood}
+                </span>
+                <span
+                  className={
+                    index === 0
+                      ? "font-bold text-[var(--rose-deep)]"
+                      : "text-[var(--ink-soft)]"
+                  }
+                >
+                  {Math.round(item.score * progress)}%
+                </span>
+              </div>
+              <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-[var(--hairline)]">
+                <div
+                  className={`h-full rounded-full ${
+                    index === 0 ? "bg-[var(--rose-deep)]" : "bg-[var(--rose-tint)]"
+                  }`}
+                  style={{ width: `${item.score * progress}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[var(--ink)]/[0.05] px-4 py-2.5 text-[12px] font-medium text-[var(--ink-soft)]">
+        <LockIcon />
+        정확한 싱크로율은 상세 리포트에서 확인할 수 있어요
+      </div>
     </div>
   );
 }
@@ -475,8 +629,6 @@ export default function ResultPage() {
     (a, b) => b.score - a.score,
   );
 
-  const topMoodSync = sortedMoodSync.slice(0, 5);
-  const hexMoodSync = sortedMoodSync.slice(0, 6);
 
   return (
     <main
@@ -563,7 +715,7 @@ export default function ResultPage() {
           </span>
           <h2 className="mt-4 text-[19px] font-extrabold leading-[1.5] text-[var(--ink)] break-keep">
             당신에게는{" "}
-            <mark className="select-none rounded bg-[var(--rose-tint)] px-1.5 py-0.5 text-[var(--ink)] blur-[5px]">
+            <mark className="rounded bg-[var(--rose-tint)] px-1.5 py-0.5 text-[var(--ink)]">
               &lsquo;{previewResult.recommendedMood}&rsquo;
             </mark>{" "}
             무드가 잘 어울릴 가능성이 높아요
@@ -580,66 +732,14 @@ export default function ResultPage() {
             {previewResult.tags.map((tag) => (
               <span
                 key={tag}
-                className="select-none rounded-full bg-[var(--rose-tint)] px-3 py-1 text-[11.5px] font-medium text-[var(--rose-deep)] blur-[4px]"
+                className="rounded-full bg-[var(--rose-tint)] px-3 py-1 text-[11.5px] font-medium text-[var(--rose-deep)]"
               >
                 {tag}
               </span>
             ))}
           </div>
 
-          <div className="mt-6 border-t border-[var(--hairline)] pt-5">
-            <span className="block text-center text-[11px] font-semibold tracking-[0.16em] text-[var(--rose-deep)]">
-              MOOD BALANCE
-            </span>
-            <p className="mt-1 text-center text-[13px] font-semibold text-[var(--ink)]">
-              사진상 무드 밸런스
-            </p>
-            <div className="mt-4">
-              <HexagonMoodChart points={hexMoodSync} />
-            </div>
-          </div>
-
-          <div className="mt-6 flex flex-col gap-3.5 border-t border-[var(--hairline)] pt-5">
-            {topMoodSync.map((item, index) => (
-              <div key={item.mood} className="flex items-center gap-3">
-                <span className="w-5 shrink-0 text-[11px] font-semibold text-[var(--ink-soft)]">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between text-[13px]">
-                    <span
-                      className={`select-none blur-[5px] ${
-                        index === 0 ? "font-bold text-[var(--ink)]" : "text-[var(--ink-soft)]"
-                      }`}
-                    >
-                      {item.mood}
-                    </span>
-                    <span
-                      className={
-                        index === 0
-                          ? "font-bold text-[var(--rose-deep)]"
-                          : "text-[var(--ink-soft)]"
-                      }
-                    >
-                      {item.score}%
-                    </span>
-                  </div>
-                  <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-[var(--hairline)]">
-                    <div
-                      className={`h-full rounded-full ${
-                        index === 0 ? "bg-[var(--rose-deep)]" : "bg-[var(--rose-tint)]"
-                      }`}
-                      style={{ width: `${item.score}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[var(--ink)]/[0.05] px-4 py-2.5 text-[12px] font-medium text-[var(--ink-soft)]">
-            <LockIcon />
-            정확한 싱크로율은 상세 리포트에서 확인할 수 있어요
-          </div>
+          <MoodBalanceSection sortedMoodSync={sortedMoodSync} />
         </div>
         <p className="mt-3 text-center text-[11px] leading-relaxed text-[var(--ink-soft)]">
           무드 싱크로율은 사진과 답변을 바탕으로 한 스타일 방향 참고값입니다.
