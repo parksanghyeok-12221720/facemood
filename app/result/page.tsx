@@ -26,6 +26,20 @@ const PREVIEW_RESULT_KEY = "facemood_preview_result";
 const REPORT_ID_KEY = "facemood_report_id";
 const MOCK_MARKER = "__MOCK__";
 
+// Shared between the reveal gate and the main preview page below it so the
+// two screens read as one continuous experience.
+const RESULT_THEME_VARS = {
+  "--ink": "#1C1A1F",
+  "--ink-soft": "#6E6570",
+  "--rose": "#C96B82",
+  "--rose-tint": "#FBE4EA",
+  "--rose-deep": "#B65068",
+  "--lavender": "#EDE7F8",
+  "--lavender-deep": "#8A6FC9",
+  "--hairline": "#F0E7EC",
+  "--dark": "#17151C",
+} as React.CSSProperties;
+
 function subscribeToAnswers(callback: () => void) {
   window.addEventListener("storage", callback);
   return () => window.removeEventListener("storage", callback);
@@ -676,6 +690,57 @@ function MissionCarousel({ missions }: { missions: string[] }) {
   );
 }
 
+// Shown first, right after /loading finishes — a standalone "reveal"
+// moment for the share card (peak-excitement point to prompt a share)
+// before the full preview report unlocks behind the 다음 button.
+function RevealGate({
+  syncScore,
+  recommendedMood,
+  subMood,
+  tags,
+  onNext,
+}: {
+  syncScore: number;
+  recommendedMood: string;
+  subMood: string;
+  tags: string[];
+  onNext: () => void;
+}) {
+  return (
+    <main
+      className="flex min-h-screen flex-col items-center justify-center bg-white px-6 py-12 text-center text-[var(--ink)]"
+      style={RESULT_THEME_VARS}
+    >
+      <span className="text-[15px] font-extrabold tracking-tight text-[var(--ink)]">
+        FACE<span className="text-[var(--rose)]">MOOD</span>
+      </span>
+      <p className="mt-4 text-lg font-extrabold leading-snug text-[var(--ink)]">
+        무드 분석이 완성됐어요
+      </p>
+      <p className="mt-1.5 text-[13px] text-[var(--ink-soft)]">
+        결과 카드를 확인하고 공유해보세요
+      </p>
+
+      <div className="mt-8 w-full">
+        <ResultShareCard
+          syncScore={syncScore}
+          recommendedMood={recommendedMood}
+          subMood={subMood}
+          tags={tags}
+        />
+      </div>
+
+      <button
+        type="button"
+        onClick={onNext}
+        className="mt-8 flex w-full max-w-xs items-center justify-center rounded-full bg-[var(--ink)] px-8 py-4 text-sm font-semibold text-white"
+      >
+        다음
+      </button>
+    </main>
+  );
+}
+
 function EmptyResultState() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-white px-6 text-center text-black">
@@ -703,6 +768,7 @@ export default function ResultPage() {
     getPreviewSnapshot,
     getServerPreviewSnapshot,
   );
+  const [revealed, setRevealed] = useState(false);
 
   const previewResult = useMemo<PreviewResult | null>(() => {
     if (!answersRaw) return null;
@@ -752,23 +818,22 @@ export default function ResultPage() {
     (a, b) => b.score - a.score,
   );
 
+  if (!revealed) {
+    return (
+      <RevealGate
+        syncScore={sortedMoodSync[0].score}
+        recommendedMood={previewResult.recommendedMood}
+        subMood={previewResult.subMood}
+        tags={previewResult.tags}
+        onNext={() => setRevealed(true)}
+      />
+    );
+  }
 
   return (
     <main
       className="min-h-screen bg-white pb-44 pt-6 text-[var(--ink)]"
-      style={
-        {
-          "--ink": "#1C1A1F",
-          "--ink-soft": "#6E6570",
-          "--rose": "#C96B82",
-          "--rose-tint": "#FBE4EA",
-          "--rose-deep": "#B65068",
-          "--lavender": "#EDE7F8",
-          "--lavender-deep": "#8A6FC9",
-          "--hairline": "#F0E7EC",
-          "--dark": "#17151C",
-        } as React.CSSProperties
-      }
+      style={RESULT_THEME_VARS}
     >
       <MagazineHero />
 
@@ -868,12 +933,6 @@ export default function ResultPage() {
           무드 싱크로율은 사진과 답변을 바탕으로 한 스타일 방향 참고값입니다.
           외모 점수나 절대적인 평가는 아닙니다.
         </p>
-        <ResultShareCard
-          syncScore={sortedMoodSync[0].score}
-          recommendedMood={previewResult.recommendedMood}
-          subMood={previewResult.subMood}
-          tags={previewResult.tags}
-        />
       </Container>
 
       {/* Current vs target mood */}
