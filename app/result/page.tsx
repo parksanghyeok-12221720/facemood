@@ -406,6 +406,80 @@ function MoodBalanceSection({
   );
 }
 
+// Zero-dependency, screenshot-friendly result card — mirrors the pattern
+// already used for the Match report's ShareCard (see
+// app/match/MatchReportBody.tsx): no image-generation library, just a
+// self-contained gradient card the user can screenshot, plus
+// navigator.share where the browser supports it (falls back to the
+// screenshot hint text otherwise).
+function ResultShareCard({
+  syncScore,
+  recommendedMood,
+  subMood,
+  tags,
+}: {
+  syncScore: number;
+  recommendedMood: string;
+  subMood: string;
+  tags: string[];
+}) {
+  async function handleShare() {
+    const shareText = `내 추구미는 '${recommendedMood}' · 무드 싱크로율 ${syncScore}% — FACEMOOD에서 무료로 확인해보세요`;
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({
+          title: "FACEMOOD",
+          text: shareText,
+          url: typeof window !== "undefined" ? window.location.origin : undefined,
+        });
+      } catch {
+        // User cancelled the share sheet — nothing to do.
+      }
+    }
+  }
+
+  return (
+    <div className="mt-6">
+      <div
+        className="mx-auto w-full max-w-xs overflow-hidden rounded-[28px] p-7 text-center shadow-lg"
+        style={{ background: "linear-gradient(135deg, var(--rose), var(--rose-deep))" }}
+      >
+        <span className="text-[10px] font-bold tracking-[0.2em] text-white/90">
+          FACEMOOD
+        </span>
+        <p className="mt-5 text-xs font-semibold text-white/85">MOOD SYNC</p>
+        <p className="mt-1 text-4xl font-extrabold text-white">{syncScore}%</p>
+        <p className="mt-4 text-2xl font-bold text-white">&lsquo;{recommendedMood}&rsquo;</p>
+        {subMood && (
+          <p className="mt-1 text-[11px] font-semibold text-white/85">
+            {subMood} 분위기도 함께
+          </p>
+        )}
+        <div className="mt-4 flex flex-wrap justify-center gap-1.5">
+          {tags.slice(0, 3).map((tag) => (
+            <span
+              key={tag}
+              className="rounded-full bg-white/15 px-2.5 py-1 text-[10.5px] font-medium text-white"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={handleShare}
+        className="mx-auto mt-3 flex w-full max-w-xs items-center justify-center gap-2 rounded-full bg-[var(--ink)] px-6 py-3 text-xs font-semibold text-white"
+      >
+        내 무드 결과 공유하기
+      </button>
+      <p className="mt-2 text-center text-[11px] text-[var(--ink-soft)]">
+        이 카드를 캡처해서 저장하거나 공유해보세요.
+      </p>
+    </div>
+  );
+}
+
 const whyCards: { title: string; body: string }[] = [
   {
     title: "나에게 맞는 추구미를 먼저 찾기",
@@ -777,6 +851,12 @@ export default function ResultPage() {
           무드 싱크로율은 사진과 답변을 바탕으로 한 스타일 방향 참고값입니다.
           외모 점수나 절대적인 평가는 아닙니다.
         </p>
+        <ResultShareCard
+          syncScore={sortedMoodSync[0].score}
+          recommendedMood={previewResult.recommendedMood}
+          subMood={previewResult.subMood}
+          tags={previewResult.tags}
+        />
       </Container>
 
       {/* Current vs target mood */}
