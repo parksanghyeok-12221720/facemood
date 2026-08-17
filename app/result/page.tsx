@@ -13,9 +13,11 @@ import Container from "@/app/components/Container";
 import DiscountCountdown from "@/app/components/DiscountCountdown";
 import { MagazineHero, MagazineBody } from "@/app/result/MagazinePreview";
 import {
+  MOOD_SHARE_IMAGES,
   REPORT_CHAPTERS,
   buildPreviewResult,
   mockPreviewResult,
+  type MoodCandidate,
   type PreviewResult,
 } from "@/types/report";
 
@@ -438,32 +440,47 @@ function ResultShareCard({
     }
   }
 
+  const cardImage = MOOD_SHARE_IMAGES[recommendedMood as MoodCandidate] as string | undefined;
+
   return (
     <div className="mt-6">
       <div
-        className="mx-auto w-full max-w-xs overflow-hidden rounded-[28px] p-7 text-center shadow-lg"
+        className="mx-auto w-full max-w-xs overflow-hidden rounded-[28px] shadow-lg"
         style={{ background: "linear-gradient(135deg, var(--rose), var(--rose-deep))" }}
       >
-        <span className="text-[10px] font-bold tracking-[0.2em] text-white/90">
-          FACEMOOD
-        </span>
-        <p className="mt-5 text-xs font-semibold text-white/85">MOOD SYNC</p>
-        <p className="mt-1 text-4xl font-extrabold text-white">{syncScore}%</p>
-        <p className="mt-4 text-2xl font-bold text-white">&lsquo;{recommendedMood}&rsquo;</p>
-        {subMood && (
-          <p className="mt-1 text-[11px] font-semibold text-white/85">
-            {subMood} 분위기도 함께
-          </p>
+        {cardImage && (
+          <div className="relative aspect-[3/4] w-full">
+            <Image
+              src={cardImage}
+              alt={recommendedMood}
+              fill
+              sizes="320px"
+              className="object-cover"
+            />
+          </div>
         )}
-        <div className="mt-4 flex flex-wrap justify-center gap-1.5">
-          {tags.slice(0, 3).map((tag) => (
-            <span
-              key={tag}
-              className="rounded-full bg-white/15 px-2.5 py-1 text-[10.5px] font-medium text-white"
-            >
-              {tag}
-            </span>
-          ))}
+        <div className="p-7 text-center">
+          <span className="text-[10px] font-bold tracking-[0.2em] text-white/90">
+            FACEMOOD
+          </span>
+          <p className="mt-4 text-xs font-semibold text-white/85">MOOD SYNC</p>
+          <p className="mt-1 text-4xl font-extrabold text-white">{syncScore}%</p>
+          <p className="mt-3 text-2xl font-bold text-white">&lsquo;{recommendedMood}&rsquo;</p>
+          {subMood && (
+            <p className="mt-1 text-[11px] font-semibold text-white/85">
+              {subMood} 분위기도 함께
+            </p>
+          )}
+          <div className="mt-4 flex flex-wrap justify-center gap-1.5">
+            {tags.slice(0, 3).map((tag) => (
+              <span
+                key={tag}
+                className="rounded-full bg-white/15 px-2.5 py-1 text-[10.5px] font-medium text-white"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
       <button
