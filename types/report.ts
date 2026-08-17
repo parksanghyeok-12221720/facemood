@@ -336,17 +336,17 @@ export const mockPreviewResult: PreviewResult = {
   ],
   hints: {
     styling: {
-      title: "스타일링 힌트",
+      title: "스타일링 컨설팅",
       content:
         "화이트, 아이보리, 연한 베이지처럼 밝고 부드러운 색감을 중심으로, 셔츠, 니트, 가디건처럼 자연스러운 실루엣의 아이템이 잘 맞을 수 있어요.",
     },
     hair: {
-      title: "헤어 힌트",
+      title: "헤어 컨설팅",
       content:
         "너무 강한 컬보다 얼굴선을 부드럽게 감싸는 레이어드컷이나 자연스럽게 흐르는 웨이브가 현재 무드와 잘 어울릴 가능성이 높아요.",
     },
     makeup: {
-      title: "메이크업 힌트",
+      title: "메이크업 컨설팅",
       content:
         "진한 아이라인이나 과한 음영보다, 맑은 베이스, 자연스러운 눈매 강조, 소프트 핑크 계열 립이 부드러운 분위기를 살려줄 수 있어요.",
     },
@@ -1171,17 +1171,17 @@ const SHARED_MISSIONS = [
 
 const SHARED_HINTS: PreviewResult["hints"] = {
   styling: {
-    title: "스타일링 힌트",
+    title: "스타일링 컨설팅",
     content:
       "밝고 자연스러운 색감을 중심으로, 소재와 실루엣이 부드러운 아이템이 오늘의 추구미와 잘 맞을 수 있어요.",
   },
   hair: {
-    title: "헤어 힌트",
+    title: "헤어 컨설팅",
     content:
       "너무 강한 스타일링보다 얼굴선을 자연스럽게 감싸는 방향이 현재 무드와 잘 어울릴 가능성이 높아요.",
   },
   makeup: {
-    title: "메이크업 힌트",
+    title: "메이크업 컨설팅",
     content:
       "과한 음영보다 맑은 베이스와 포인트를 살린 메이크업이 원하는 분위기를 더 잘 살려줄 수 있어요.",
   },
@@ -1510,12 +1510,12 @@ const SHARED_MALE_MISSIONS = [
 
 const SHARED_MALE_HINTS: PreviewResult["hints"] = {
   styling: {
-    title: "스타일링 힌트",
+    title: "스타일링 컨설팅",
     content:
       "무채색과 뉴트럴 톤을 중심으로, 핏이 정돈된 아이템이 오늘의 추구미와 잘 맞을 수 있어요.",
   },
   hair: {
-    title: "헤어 힌트",
+    title: "헤어 컨설팅",
     content:
       "이마 라인과 옆머리를 깔끔하게 정리하는 방향이 현재 무드와 잘 어울릴 가능성이 높아요.",
   },
@@ -1523,7 +1523,7 @@ const SHARED_MALE_HINTS: PreviewResult["hints"] = {
     // 남성 리포트에는 메이크업 챕터가 없지만 PreviewResult.hints는 3개
     // 필드 모두 필수라 그루밍 팁으로 대체 — 어차피 male 리포트 렌더러는
     // 이 필드를 읽지 않는다 (makeupGuide 챕터 자체가 생성되지 않음).
-    title: "그루밍 힌트",
+    title: "그루밍 컨설팅",
     content:
       "과하지 않은 피부 정돈과 눈썹 정리 정도로도 전체 인상이 훨씬 깔끔해질 수 있어요.",
   },

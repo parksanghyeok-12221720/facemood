@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import Container from "@/app/components/Container";
 import type { PreviewResult } from "@/types/report";
@@ -123,7 +122,7 @@ function MagazineIntro() {
           className="text-[21px] font-bold leading-[1.45] text-[var(--ink)] break-keep"
           style={{ fontFamily: "'Noto Serif KR', serif" }}
         >
-          요즘 추구미는 얼굴보다
+          요즘 첫인상은 얼굴보다
           <br />
           분위기의 조합에서 시작돼요.
         </h2>
@@ -144,23 +143,23 @@ function MagazineIntro() {
 const MOOD_FACTORS = [
   {
     label: "헤어의 흐름",
-    desc: "볼륨이 실리는 위치와 컬의 방향만 바뀌어도 인상의 온도가 완전히 달라져요.",
+    desc: "볼륨 자리 하나, 컬 방향 하나 — 그 디테일이 오늘의 무드를 결정해요.",
   },
   {
     label: "메이크업 강도",
-    desc: "음영과 채도의 세기가 &lsquo;또렷함&rsquo;과 &lsquo;여림&rsquo; 사이 어디쯤 위치할지를 결정해요.",
+    desc: "쨍한 눈매 vs 뽀샤시 무쌍, 강도 하나로 &lsquo;또렷함&rsquo;과 &lsquo;여림&rsquo; 사이가 갈려요.",
   },
   {
     label: "옷의 색감",
-    desc: "톤의 채도와 명도는 사진 속 분위기를 가장 빠르게 바꾸는 요소예요.",
+    desc: "톤 하나 바꿨을 뿐인데 사진 속 분위기가 완전히 달라지는 마법.",
   },
   {
     label: "실루엣",
-    desc: "핏의 라인이 곧게 떨어지는지, 부드럽게 흐르는지에 따라 무드가 갈려요.",
+    desc: "핏이 떨어지는 라인, 그게 곧 무드 그 자체예요.",
   },
   {
     label: "사진의 밝기",
-    desc: "같은 스타일링도 조명 온도에 따라 전혀 다른 인상으로 읽힐 수 있어요.",
+    desc: "같은 옷, 같은 얼굴도 조명 온도에 따라 완전히 다른 사람이 돼요.",
   },
 ] as const;
 
@@ -411,9 +410,9 @@ function MoodFormula({ previewResult }: { previewResult: PreviewResult }) {
 
   const ingredients = [
     { label: "컬러톤", value: tone?.name ?? "무드 컬러", swatch: tone?.hex },
-    { label: "헤어 흐름", value: "결의 방향" },
-    { label: "메이크업 강도", value: "톤의 세기" },
-    { label: "옷 실루엣", value: "라인의 흐름" },
+    { label: "헤어 흐름", value: "웨이브 리듬" },
+    { label: "메이크업 강도", value: "톤 밸런스" },
+    { label: "옷 실루엣", value: "라인 감각" },
   ];
 
   function handleTap() {
@@ -738,64 +737,6 @@ function TodayMissions() {
 }
 
 // ---------------------------------------------------------------------------
-// 9. 상세 리포트에서 열리는 나만의 무드 보관함 — locked grid
-// ---------------------------------------------------------------------------
-
-const MOOD_VAULT_ITEMS = [
-  "내 얼굴 분위기에 맞는 최종 추구미는",
-  "내가 피해야 할 옷 색감은",
-  "나에게 맞는 앞머리 여부는",
-  "사진에서 더 예뻐 보이는 메이크업 강도는",
-  "이성이 처음 느끼는 내 분위기는",
-  "인스타 프로필에서 살아나는 포즈와 색감은",
-  "미용실에서 바로 말할 수 있는 헤어 문장은",
-  "쇼핑할 때 참고할 컬러 팔레트는",
-];
-
-function MoodVaultGrid() {
-  return (
-    <Container className="mt-16">
-      <FadeInSection>
-        <Eyebrow>MOOD VAULT</Eyebrow>
-        <h2
-          className="text-[21px] font-bold leading-[1.4] text-[var(--ink)] break-keep"
-          style={{ fontFamily: "'Noto Serif KR', serif" }}
-        >
-          상세 리포트에서 열리는
-          <br />
-          나만의 무드 보관함
-        </h2>
-
-        <div className="mt-6 grid grid-cols-2 gap-3">
-          {MOOD_VAULT_ITEMS.map((item) => (
-            <div
-              key={item}
-              className="relative flex h-[132px] flex-col justify-between overflow-hidden rounded-2xl border border-[var(--hairline)] bg-[var(--ivory)] p-4"
-            >
-              <p className="text-[12.5px] font-medium leading-relaxed text-[var(--ink)] break-keep">
-                {item}
-                <span className="select-none text-[var(--ink)]/0" aria-hidden="true">
-                  {" "}
-                  ●●●●●●●●●●
-                </span>
-              </p>
-              <div
-                className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-[var(--ivory)] to-transparent"
-                aria-hidden="true"
-              />
-              <span className="relative flex items-center gap-1 text-[10.5px] font-medium text-[var(--ink-soft)]">
-                <LockGlyph />
-                잠금
-              </span>
-            </div>
-          ))}
-        </div>
-      </FadeInSection>
-    </Container>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // 10. Magazine quote card (reused 3x, interspersed through the flow)
 // ---------------------------------------------------------------------------
 
@@ -811,30 +752,6 @@ function MagazineQuote({ children }: { children: React.ReactNode }) {
             &ldquo;{children}&rdquo;
           </p>
         </blockquote>
-      </FadeInSection>
-    </Container>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// 11. Bottom CTA
-// ---------------------------------------------------------------------------
-
-function MagazineBottomCTA() {
-  return (
-    <Container className="mt-16">
-      <FadeInSection>
-        <div className="rounded-[28px] bg-[var(--ink)] px-7 py-10 text-center">
-          <p className="text-[15px] font-medium leading-relaxed text-white/85">
-            상세 리포트에서 내 분위기에 맞는 추구미를 확인해보세요.
-          </p>
-          <Link
-            href="/checkout"
-            className="mt-5 inline-flex items-center justify-center rounded-full bg-white px-7 py-3.5 text-[14px] font-semibold text-[var(--ink)]"
-          >
-            잠금 해제하고 내 상세 무드 리포트 보기
-          </Link>
-        </div>
       </FadeInSection>
     </Container>
   );
@@ -900,8 +817,6 @@ export function MagazineBody({
         내가 바꾸고 싶은 건 얼굴이 아니라, 나에게 맞는 분위기일지도 몰라요.
       </MagazineQuote>
       <TodayMissions />
-      <MoodVaultGrid />
-      <MagazineBottomCTA />
 
       <style jsx>{`
         .magazine-fade-in {
