@@ -101,6 +101,125 @@ function CheckIcon({ className = "" }: { className?: string }) {
   );
 }
 
+// A 6-axis radar/hexagon chart of the top 6 mood-sync scores — a visual
+// "stat hexagon" read for the mood-match data that's otherwise only shown
+// as a bar list. Axis labels beyond the #1 recommended mood stay blurred,
+// matching the existing paywall-teaser treatment on the bar list below it.
+function HexagonMoodChart({
+  points,
+}: {
+  points: { mood: string; score: number }[];
+}) {
+  const size = 260;
+  const center = size / 2;
+  const maxRadius = 84;
+  const labelRadius = maxRadius + 34;
+  const angleStep = (Math.PI * 2) / points.length;
+  const startAngle = -Math.PI / 2;
+
+  function pointAt(index: number, radius: number) {
+    const angle = startAngle + angleStep * index;
+    return {
+      x: center + radius * Math.cos(angle),
+      y: center + radius * Math.sin(angle),
+    };
+  }
+
+  function polygonPath(radius: number | ((index: number) => number)) {
+    return (
+      points
+        .map((_, i) => {
+          const r = typeof radius === "function" ? radius(i) : radius;
+          const { x, y } = pointAt(i, r);
+          return `${i === 0 ? "M" : "L"}${x},${y}`;
+        })
+        .join(" ") + " Z"
+    );
+  }
+
+  const rings = [0.25, 0.5, 0.75, 1];
+
+  return (
+    <div className="relative mx-auto w-full max-w-[280px]">
+      <svg viewBox={`0 0 ${size} ${size}`} className="w-full">
+        {rings.map((ring) => (
+          <path
+            key={ring}
+            d={polygonPath(maxRadius * ring)}
+            fill="none"
+            stroke="var(--hairline)"
+            strokeWidth={1}
+          />
+        ))}
+        {points.map((_, i) => {
+          const outer = pointAt(i, maxRadius);
+          return (
+            <line
+              key={i}
+              x1={center}
+              y1={center}
+              x2={outer.x}
+              y2={outer.y}
+              stroke="var(--hairline)"
+              strokeWidth={1}
+            />
+          );
+        })}
+        <path
+          d={polygonPath((i) => (points[i].score / 100) * maxRadius)}
+          fill="var(--rose)"
+          fillOpacity={0.25}
+          stroke="var(--rose-deep)"
+          strokeWidth={2}
+          strokeLinejoin="round"
+        />
+        {points.map((p, i) => {
+          const pt = pointAt(i, (p.score / 100) * maxRadius);
+          return (
+            <circle
+              key={p.mood}
+              cx={pt.x}
+              cy={pt.y}
+              r={3.5}
+              fill="var(--rose-deep)"
+              stroke="#fff"
+              strokeWidth={1.5}
+            />
+          );
+        })}
+      </svg>
+      {points.map((p, i) => {
+        const pt = pointAt(i, labelRadius);
+        const isTop = i === 0;
+        return (
+          <div
+            key={p.mood}
+            className="absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center"
+            style={{ left: `${(pt.x / size) * 100}%`, top: `${(pt.y / size) * 100}%` }}
+          >
+            <span
+              className={`select-none whitespace-nowrap text-[11px] ${
+                isTop
+                  ? "font-bold text-[var(--rose-deep)]"
+                  : "text-[var(--ink-soft)] blur-[4px]"
+              }`}
+            >
+              {p.mood}
+            </span>
+            <span
+              className={`text-[10px] ${
+                isTop ? "font-bold text-[var(--rose-deep)]" : "text-[var(--ink-soft)]"
+              }`}
+            >
+              {p.score}%
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 const whyCards: { title: string; body: string }[] = [
   {
     title: "나에게 맞는 추구미를 먼저 찾기",
@@ -357,6 +476,7 @@ export default function ResultPage() {
   );
 
   const topMoodSync = sortedMoodSync.slice(0, 5);
+  const hexMoodSync = sortedMoodSync.slice(0, 6);
 
   return (
     <main
@@ -465,6 +585,18 @@ export default function ResultPage() {
                 {tag}
               </span>
             ))}
+          </div>
+
+          <div className="mt-6 border-t border-[var(--hairline)] pt-5">
+            <span className="block text-center text-[11px] font-semibold tracking-[0.16em] text-[var(--rose-deep)]">
+              MOOD BALANCE
+            </span>
+            <p className="mt-1 text-center text-[13px] font-semibold text-[var(--ink)]">
+              사진상 무드 밸런스
+            </p>
+            <div className="mt-4">
+              <HexagonMoodChart points={hexMoodSync} />
+            </div>
           </div>
 
           <div className="mt-6 flex flex-col gap-3.5 border-t border-[var(--hairline)] pt-5">
